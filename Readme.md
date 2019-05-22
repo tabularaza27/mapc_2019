@@ -20,6 +20,7 @@ This code is adapted from the mapc_rhbp_example package from Christopher
 4. Run `catkin_make` in the root folder of the mapc workspace
 
 ## Code Structure
+In our Repo with have subfolders for different versions of the implementations, so we can later test different versions against each other
 
 * *manual_player_package* (is used by *mapc_rhbp_manual_player*)
 * *mapc_rhbp_manual_player* (agents subscribe to the ros topic created by the manual_player_package to control the agents with the keyboard) --> this implementation is not very clean yet
@@ -33,8 +34,7 @@ This code is adapted from the mapc_rhbp_example package from Christopher
 ## Execution
 *Attention*: Don't forget to run ```catkin_make``` after cloning our repo
 
-The example can be executed with `roslaunch group_5_implementation rhbp_agents_example.launch`
-The configuration in above launch file is made for 10 agent scenario of default team A executed on localhost.
+See the Readme.md files of the corresponding packages for instructions on execution
 
 ## Exercises
 
