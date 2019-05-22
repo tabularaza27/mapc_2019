@@ -17,6 +17,14 @@ This code is adapted from the mapc_rhbp_example package from Christopher
 ```cd /src```  
 ```git clone git@gitlab.tubit.tu-berlin.de:aaip-ss19/group5.git```
 
+4. Run `catkin_make` in the root folder of the mapc workspace
+
+## Code Structure
+
+* *manual_player_package* (is used by *mapc_rhbp_manual_player*)
+* *mapc_rhbp_manual_player* (agents subscribe to the ros topic created by the manual_player_package to control the agents with the keyboard) --> this implementation is not very clean yet
+* *strategy_1* for now it is just a copy of the example
+
 ### GIT Workflow
 
 * Use of IDE (e.g. PyCharm) is recommended, it makes handling the remotes of the different repos and submodules very easy

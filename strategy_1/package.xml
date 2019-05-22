@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>group_5_implementation</name>
+  <name>strategy_1</name>
   <version>0.0.0</version>
-  <description>The group 5 package for MAPC 2019 adapted from mapc_rhbp_example </description>
+  <description>The strategy_1 of group 5 package for MAPC 2019 adapted from mapc_rhbp_example </description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
