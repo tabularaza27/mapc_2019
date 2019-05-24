@@ -1,3 +1,15 @@
+"""
+USAGE go into the util folder and run:
+python mapGeneration.py
+
+At the end of the file change the number of the example to save new examples with map and partial maps
+
+Feel free to copy and paste the code if necessary.
+I'm sorry if it's not commented very well, but it took me already 5 hours of work.
+Feel free to add meaningful comments and please tell me if I should change style of coding
+
+Author: Alessandro Amici
+"""
 import numpy as np
 import random
 import matplotlib.pyplot as plt
