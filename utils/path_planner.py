@@ -114,13 +114,13 @@ def astar(maze, start, end):
                     open_list.append(child)
 
 
-def path_relative_coord(path_matrix):
-    '''
+def path_relative_coord(path):
+    '''Calculates commands ('n','e','s','w') to fulfill path
 
     Args:
-        path_matrix: path to end point from start point in matrix notation (row, col)
+        path (list): path to end point from start point in matrix notation (row, col)
 
-    Returns: sequence of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
+    Returns: list of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
 
     '''
 
@@ -129,14 +129,14 @@ def path_relative_coord(path_matrix):
     direction = [(-1, 0), (1, 0), (0, 1), (0, -1)]  # direction = next position - actual position
     next_step = []
 
-    for index, node_matrix in enumerate(path_matrix):
+    for index, node_matrix in enumerate(path):
 
         # Check if the end has been reached
-        if len(path_matrix) - 1 == index:
+        if len(path) - 1 == index:
             break
         else:
             actual_pos = list(node_matrix)  # actual position from where it moves
-            next_pos = list(path_matrix[index + 1])  # next position to where it moves
+            next_pos = list(path[index + 1])  # next position to where it moves
 
         # Check direction of next step
         next_step.append(next_pos[0] - actual_pos[0])
@@ -152,6 +152,22 @@ def path_relative_coord(path_matrix):
 
     return path_rel
 
+
+def get_path(maze, start, end):
+    """Calculates path from start to end and returns commands to ('n','e','s','w') fulfill the path
+
+    Args:
+        maze (np.array): given local or global map
+        start (tuple): agent position in the map
+        end (tuple): goal of the agent
+
+    Returns:
+        list: list of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
+    """
+    coordinates_path = astar(maze, start, end)
+    command_path = path_relative_coord(coordinates_path)
+
+    return  command_path
 
 
 def main():
@@ -180,11 +196,12 @@ def main():
     start = (2, 1)
     end = (0, 7)
     '''
-    path = astar(maze, start, end)
-    print(path)  # (row, col) format: n=(-1,0), s=(1,0), e=(0,1), w=(0,-1)
-    path = path_relative_coord(path)
+    # path = astar(maze, start, end)
+    # print(path)  # (row, col) format: n=(-1,0), s=(1,0), e=(0,1), w=(0,-1)
+    # path = path_relative_coord(path)
+    # print(path)
+    path = get_path(maze, start, end)
     print(path)
-
 
 
 if __name__ == '__main__':
