@@ -66,7 +66,14 @@ class SimpleKeyTeleop():
         curses.KEY_DOWN:  "s",
         curses.KEY_LEFT:  "w",
         curses.KEY_RIGHT: "e",
-        ord("d"):         "d",
+        ord("d"):         "d", # dispense
+        ord("a"):         "a", # attach
+        ord("c"):         "c", # connect
+        ord("z"):         "z", # detach
+        ord("l"):         "l", # rotate left
+        ord("r"):         "r", # rotate right
+        ord("s"):         "s", # submit
+
         #add more keys here
     }
 
@@ -103,9 +110,15 @@ class SimpleKeyTeleop():
 
     def _publish(self):
         self._interface.clear()
-        self._interface.write_line(2, 'Last command sent: ' + self._direction)
-        self._interface.write_line(5, 'Use arrow keys to move, d to dispense, q to exit. :)')
-        self._interface.write_line(7, '8=================================================D')
+        self._interface.write_line(1, 'Last command sent: ' + self._direction)
+        self._interface.write_line(2, 'Use arrow keys to move, q to exit and :')
+        self._interface.write_line(3, 'a - attach')
+        self._interface.write_line(4, 'c - connect')
+        self._interface.write_line(5, 's - submit')
+        self._interface.write_line(6, 'l - rotate left')
+        self._interface.write_line(7, 'r - rotateright')
+        self._interface.write_line(8, 'z - detach')
+        self._interface.write_line(9, 'd - dispense')
         self._interface.refresh()
 
         

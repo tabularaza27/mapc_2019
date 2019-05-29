@@ -40,6 +40,24 @@ def callback_direzioni(data):
     elif (data.data == "d"):
         action = "dispense"
         rospy.loginfo("DISPENSO DIO")
+    elif (data.data == "a"):
+        action = "attach"
+        rospy.loginfo("ATTACH GOD")
+    elif (data.data == "z"):
+        action = "detach"
+        rospy.loginfo("detaching")
+    elif (data.data == "s"):
+        action = "submit"
+        rospy.loginfo("submitting")
+    elif (data.data == "l"):
+        action = "rotate_left"
+        rospy.loginfo("rotating_left")
+    elif (data.data == "r"):
+        action = "rotate_right"
+        rospy.loginfo("rotating_right")
+    elif (data.data == "c"):
+        action = "connect"
+        rospy.loginfo("connecting")
 
 class GenericActionBehaviour(BehaviourBase):
     """
@@ -98,8 +116,8 @@ class ManualMove(BehaviourBase):
             
             action = "wait"
         elif (action == "dispense"):
-            random_move = ['n', 's', 'e', 'w']
-            donde = random.choice(random_move)
+            #random_move = ['n', 's', 'e', 'w']
+            donde = 'n'
             params = [KeyValue(key="direction", value=donde)]
 
             rospy.loginfo(self._agent_name + "::" + self._name + " request dispense " + str(params))
@@ -107,6 +125,67 @@ class ManualMove(BehaviourBase):
                                   params=params)
 
             action = "wait"
+        elif (action == "attach"):
+            #random_move = ['n', 's', 'e', 'w']
+            donde = 'n'
+            params = [KeyValue(key="direction", value=donde)]
+
+            rospy.loginfo(self._agent_name + "::" + self._name + " request attach " + str(params))
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_ATTACH,
+                                  params=params)
+
+            action = "wait"
+        elif (action == "connect"):
+            #random_move = ['n', 's', 'e', 'w']
+            donde = 'TO DOOOOOOO'
+            params = [KeyValue(key="direction", value=donde)]
+
+            rospy.loginfo(self._agent_name + "::" + self._name + " request connect " + str(params))
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_CONNECT,
+                                  params=params)
+
+            action = "wait"
+        elif (action == "detach"):
+            #random_move = ['n', 's', 'e', 'w']
+            donde = 'n'
+            params = [KeyValue(key="direction", value=donde)]
+
+            rospy.loginfo(self._agent_name + "::" + self._name + " request detach " + str(params))
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_DETACH,
+                                  params=params)
+
+            action = "wait"
+        elif (action == "submit"):
+            #random_move = ['n', 's', 'e', 'w']
+            donde = 1
+            params = [KeyValue(key="task", value=donde)]
+
+            rospy.loginfo(self._agent_name + "::" + self._name + " request submit " + str(params))
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_SUBMIT,
+                                  params=params)
+
+            action = "wait"
+        elif (action == "rotate_left"):
+            #random_move = ['n', 's', 'e', 'w']
+            donde = 'ccw'
+            params = [KeyValue(key="direction", value=donde)]
+
+            rospy.loginfo(self._agent_name + "::" + self._name + " request rotate_left " + str(params))
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_ROTATE,
+                                  params=params)
+
+            action = "wait"
+        elif (action == "rotate_right"):
+            #random_move = ['n', 's', 'e', 'w']
+            donde = 'cw'
+            params = [KeyValue(key="direction", value=donde)]
+
+            rospy.loginfo(self._agent_name + "::" + self._name + " request rotate_right " + str(params))
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_ROTATE,
+                                  params=params)
+
+            action = "wait"
+
 
 '''
 class RandomMove(BehaviourBase):
