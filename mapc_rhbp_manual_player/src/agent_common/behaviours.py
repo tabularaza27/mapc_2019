@@ -73,13 +73,15 @@ class ManualMove(BehaviourBase):
     Move in randomly chosen directions
     """
 
-    def __init__(self, name, agent_name, **kwargs):
+    def __init__(self, name, perception_provider, agent_name, **kwargs):
         """
         :param name: name of the behaviour
         :param agent_name: name of the agent for determining the correct topic prefix
         :param kwargs: more optional parameter that are passed to the base class
         """
         super(ManualMove, self).__init__(name=name, requires_execution_steps=True, planner_prefix=agent_name, **kwargs)
+
+        self._perception_provider = perception_provider
 
         self._agent_name = agent_name
 
@@ -93,16 +95,23 @@ class ManualMove(BehaviourBase):
         global action
         if (action == "move"):
             params = [KeyValue(key="direction", value=direzione)]
-            rospy.loginfo(self._agent_name + "::" + self._name + " executing move to " + str(params))
+            rospy.loginfo(self._agent_name + "::" + self._name + " executing move to " + str(params) + "\n" + 
+                        "Current perception:\n" +
+                        "\tDispensers: " + str(self._perception_provider.dispensers)+"\n"+
+                        "\tObstacles: " + str(self._perception_provider.obstacles)+"\n"+
+                        "\tGoals: " + str(self._perception_provider.goals))
             action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE, params=params)
-            
             action = "wait"
         elif (action == "dispense"):
             random_move = ['n', 's', 'e', 'w']
             donde = random.choice(random_move)
             params = [KeyValue(key="direction", value=donde)]
 
-            rospy.loginfo(self._agent_name + "::" + self._name + " request dispense " + str(params))
+            rospy.loginfo(self._agent_name + "::" + self._name + " request dispense " + str(params) + "\n" + 
+                        "Current perception:\n" +
+                        "\tDispensers: " + str(self._perception_provider.dispensers)+"\n"+
+                        "\tObstacles: " + str(self._perception_provider.obstacles)+"\n"+
+                        "\tGoals: " + str(self._perception_provider.goals))
             action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_REQUEST,
                                   params=params)
 
