@@ -11,7 +11,7 @@
     {
       "steps" : 99000,
       "randomFail" : 1,
-      "entities" : [{"standard" : 1}],
+      "entities" : [{"standard" : 2}],
       "grid" : {
         "height" : 40,
         "width" : 40,
