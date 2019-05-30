@@ -13,6 +13,7 @@ from agent_common.behaviours import ManualMove #RandomMove, Dispense, MoveToDisp
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
+from classes.grid_map import GridMap
 
 class RhbpAgent(object):
     """
@@ -74,6 +75,7 @@ class RhbpAgent(object):
         :type msg: GenericAction
         """
         self._received_action_response = True
+
 
     def _sim_end_callback(self, msg):
         """
