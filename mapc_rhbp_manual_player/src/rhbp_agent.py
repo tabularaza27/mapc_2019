@@ -138,7 +138,7 @@ class RhbpAgent(object):
         """
 
         # Manual Player Move/Exploration
-        manual_move = ManualMove(name="manual_move", agent_name=self._agent_name)
+        manual_move = ManualMove(name="manual_move", perception_provider=self.perception_provider, agent_name=self._agent_name)
         self.behaviours.append(manual_move)
 
         '''
