@@ -10,10 +10,11 @@ Feel free to add meaningful comments and please tell me if I should change style
 
 Author: Alessandro Amici
 """
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import random
-import matplotlib.pyplot as plt
-import matplotlib as mpl
 
 """
     MAP SPECIFICATION

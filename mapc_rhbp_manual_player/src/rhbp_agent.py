@@ -32,10 +32,13 @@ class RhbpAgent(object):
         # ensure also max_parallel_behaviours during debugging
         self._manager = Manager(prefix=self._agent_name, max_parallel_behaviours=1)
 
+        # static things (terrain)
         self.behaviours = []
         self.goals = []
 
         self.perception_provider = PerceptionProvider()
+
+        self.local_map = GridMap()
 
         self._sim_started = False
 
@@ -114,7 +117,21 @@ class RhbpAgent(object):
 
         self.perception_provider.update_perception(request_action_msg=msg)
 
+        # Print current perception for debugging purposes
+        rospy.logdebug(('Simulationstep: {}'.format(msg.simulation_step)))
+        rospy.logdebug('Obstacles: {}'.format(self.perception_provider.obstacles))
+        rospy.logdebug('Goals: {}'.format(self.perception_provider.goals))
+        rospy.logdebug('Dispensers: {}'.format(self.perception_provider.dispensers))
+        rospy.logdebug('Entities: {}'.format(self.perception_provider.entities))
+        rospy.logdebug('Agent: {}'.format(msg.agent))
+        # rospy.logdebug('Whole Perception: \n {}'.format(self.perception_provider))
+
         self._received_action_response = False
+
+        # update map
+        self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
+
+        rospy.logdebug('Updated Map')
 
         # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
         while not self._received_action_response and rospy.get_rostime() < deadline:
