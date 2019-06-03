@@ -348,13 +348,14 @@ def get_path(maze, start, end):
     return command_path
 
 
-def show_path(maze, path_matrix):
+def show_path(maze, path_matrix, length=-1, pause=1.0):
     """Generate a representation of the map with the path of the agent coloured in orange and the blocks in yellow
 
     Args:
         maze (np.array): map matrix
         path_matrix (tuple): path in matrix notation
-
+        lenght(int): the length of the path to show
+        pause(float): the pause between each frame
     Returns:
         void: Nothing
 
@@ -362,24 +363,39 @@ def show_path(maze, path_matrix):
     # integer for path cell
     agent_path_cell = -4
     block_path_cell = -5
+    last_agent = -3
+    last_block = -1
     # make a copy of maze
     map_path = maze
     # create list out of path_matrix
-    for position in path_matrix:
+    if length == -1:
+        length = len(path_matrix)
+    counter = 0
+    for position in path_matrix[0:length]:
         path = list(position)
 
         # add path values to map
         for index, element in enumerate(path):
             i = element[0]
             j = element[1]
+            agent_color = agent_path_cell
+            block_color = block_path_cell
+            if counter == length-1: #change color of the current agent position
+                agent_color = last_agent
+                block_color = last_block
             if index == 0:
-                map_path[i][j] = agent_path_cell
-            elif map_path[i][j] != agent_path_cell:  # Agent cells overlapped block cells
-                map_path[i][j] = block_path_cell
+                map_path[i][j] = agent_color
+            elif map_path[i][j] != agent_color:  # Agent cells overlapped block cells
+                map_path[i][j] = block_color
+        counter += 1
 
     cmap = mpl.colors.ListedColormap(['yellow', 'orange', 'red', 'black', 'blue', 'white'])
-    plt.matshow(map_path, cmap=cmap, vmin=-5, vmax=1)
-    plt.show(block=False)
+    plt.imshow(map_path, cmap=cmap, vmin=-5, vmax=1)
+    
+    plt.draw()
+    plt.pause(pause)
+    if(length < len(path_matrix)-1): # don't clear the last image
+        plt.clf()
 
 
 def main():
@@ -411,13 +427,18 @@ def main():
     """
     path = astar(maze, start, end)  # path in matrix notation
     print (path)
-    if path != None:
-        show_path(maze, path)
+    #if path != None:
+    #    show_path(maze, path)
 
+    plt.ion()
+    for i in range(1,len(path)):
+
+        show_path(maze, path, i, 1.5)
     raw_input("Press Enter to continue...")
 
     # next_move_rotation
 
 
 if __name__ == '__main__':
+
     main()
