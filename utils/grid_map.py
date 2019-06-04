@@ -3,6 +3,7 @@ import matplotlib as mpl
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
 import random
+import os
 
 # ToDo: Implement blocks
 # ToDo: Convert Unknown Cell to empty cell
@@ -35,9 +36,8 @@ class GridMap:
 
     author: Alessandro
     """
-    PLOT_MAP = True
     # create plot every x steps
-    PLOT_FREQUENCY = 50
+    PLOT_FREQUENCY = 5
     # counter variable
     STEP = 0
 
@@ -50,10 +50,13 @@ class GridMap:
     BLOCK_CELL_STARTING_NUMBER = 101
 
     ### PUBLIC METHODS ###
-    def __init__(self):
+    def __init__(self, agent_name, live_plotting=False):
         """
         Initialization of the map. The agent is at the center of an unknown map
         """
+        self.agent_name = agent_name
+        self.live_plotting = live_plotting
+
         # map
         self._representation = np.full((11, 11), -1)  # init the map with unknown cells
         self._origin = (5, 5)  # the origin of the agent is at the center of the map
@@ -72,7 +75,6 @@ class GridMap:
         number_of_colors = 12
         colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
         self.cmap = mpl.colors.ListedColormap(colors)
-
 
 
     def update_map(self, agent, perception):
@@ -134,9 +136,8 @@ class GridMap:
                 self._dispensers.append(dispenser)
 
         # update blocks
-
-        if self.PLOT_MAP and self.STEP % self.PLOT_FREQUENCY == 0:
-            self.show_map()
+        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0:
+            self.write_data_to_file()
 
         self.STEP += 1
 
@@ -268,6 +269,11 @@ class GridMap:
 
 
     #### DEBUG FUNCTIONALITIES ####
+
+    def write_data_to_file(self):
+        # ToDo --> specifiy relative path
+        np.savetxt('/home/kaijeggle/dev/Uni/AAIP/mapc_workspace/src/group5/utils/generatedMaps/tmp_maps/{}.txt'.format(self.agent_name), self._representation, fmt='%i', delimiter=',')
+
 
     def show_map(self):
         """

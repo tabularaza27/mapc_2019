@@ -34,7 +34,7 @@ class RhbpAgent(object):
 
         self.perception_provider = PerceptionProvider()
 
-        self.local_map = GridMap()
+        self.local_map = GridMap(agent_name=self._agent_name,live_plotting=True)
 
         self._sim_started = False
 
