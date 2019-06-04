@@ -405,35 +405,38 @@ def main():
     """
 
     # Simple maze
-    maze = [[0, 0, 0, -2, 0, -2, -2, 0, 0, 0],
-            [-2, 0, 0, -2, 0, 0, -2, 0, 0, 0],
-            [0, 0, 0, -2, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, -2, -2, -2, -2, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [-2, 0, 0, 0, -2, 0, 0, -2, -2, -2],
-            [0, -2, 0, 0, -2, -2, -2, -2, 0, 0],
-            [0, 0, 0, 0, -2, 0, -2, 0, -2, 0],
-            [0, 0, 0, 0, -2, 0, -2, 0, 0, 0],
-            [0, 0, 0, 0, -2, 0, 0, 0, 0, 0]]
+    maze = [[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
+            [-2, 0, 0, -2, 0, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, -2, 0, 0, 0, 0, 0, 0],
+            [ 0, 0,-2,  0,-2,-2, 0, 0, 0, 0],
+            [ 0, 0, 0,  0, 0,-2, 0, 0, 0, 0],
+            [-2, 0, 0,  0, 0, 0, 0, 0,-2,-2],
+            [ 0,-2, 0,  0, 0, 0, 0,-2, 0, 0],
+            [ 0, 0, 0,  0,-2, 0,-2, 0,-2, 0],
+            [ 0, 0, 0,  0,-2, 0,-2, 0, 0, 0],
+            [ 0, 0, 0,  0,-2, 0, 0, 0, 0, 0]]
 
     # Example with 2 blocks attached (L shape)
-    start = [(1, 1), (1, 2), (2, 2)]
-    end = [(7, 1), (7, 0), (6, 0)]
+    start = [(0, 0), (0, 1), (1, 1)]
+    end = [(1, 5), (1, 4), (0, 4)]
 
     """
     # Example without blocks attached
     start = [(1, 1)]
-    end = [(0, 4)]
+    end = [(6, 8)]
     """
     path = astar(maze, start, end)  # path in matrix notation
     print (path)
     #if path != None:
     #    show_path(maze, path)
 
-    plt.ion()
-    for i in range(1,len(path)):
+    if path is not None:
+        plt.ion()
+        for i in range(1,len(path)):
+            show_path(maze, path, i, 0.5)
 
-        show_path(maze, path, i, 1.5)
+    else:
+        print ("There is no path")
     raw_input("Press Enter to continue...")
 
     # next_move_rotation
