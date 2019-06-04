@@ -432,7 +432,7 @@ def main():
 
     if path is not None:
         plt.ion()
-        for i in range(1,len(path)):
+        for i in range(1,len(path)+1):
             show_path(maze, path, i, 0.5)
 
     else:
