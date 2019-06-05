@@ -1,3 +1,7 @@
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+
+
 class Node():
     """A node class for A* Pathfinding"""
 
@@ -14,21 +18,24 @@ class Node():
 
 
 def astar(maze, start, end):
-    '''
+    """ Return a path list in map coordinates given a map (maze), an starting point and an end point
 
     Args:
-        maze: given local or global map
-        start: agent position in the map
-        end: goal of the agent
+        maze (np.array): given local or global map
+        start (list): starting position in the map of the object compose by the agent and all the blocks attached to it
+        end (list): ending position in the map of the object compose by the agent and all the blocks attached to it
 
-    Returns: path (in matrix coordinates)
+    Returns:
+        list: path in map coordinates
 
-    '''
+    """
 
-    # Check if the end point is a free cell, else exit
-    if maze[end[0]][end[1]] != 0:
-        print ("invalid End point")
-        return
+    # Check if the end point is not a free cell
+    for element in end:
+        end_pos = maze[element[0]][element[1]]
+        if end_pos != 0:  # ( ADD OTHER TYPES OF BLOCKED CELLS HERE )
+            print ("invalid End point")
+            return
 
     # Create start and end node
     start_node = Node(None, start)
@@ -37,8 +44,8 @@ def astar(maze, start, end):
     end_node.g = end_node.h = end_node.f = 0
 
     # Initialize both open and closed list
-    open_list = []          # include adjacent nodes that has to be evaluated (f value)
-    closed_list = []        # include nodes from the open_list which has been evaluated (lowest f value)
+    open_list = []  # include adjacent nodes that has to be evaluated (f value)
+    closed_list = []  # include nodes from the open_list which has been evaluated (lowest f value)
 
     # Add the start node
     open_list.append(start_node)
@@ -65,30 +72,33 @@ def astar(maze, start, end):
             while current is not None:
                 path.append(current.position)
                 current = current.parent
-            return path[::-1]  # Return reversed path
+            return path[::-1]  # return reversed path
 
         # Generate children
         children = []
 
-        # Check adjacent cells (n, s, e , w)
-        for new_position in [(1, 0), (-1, 0), (0, 1), (0, -1)]:  # maze(rows, col) = agent(y, x)
-
+        # Check adjacent cells (n, s, e , w) and rotations (left, right)
+        for new_position in [(-1, 0), (1, 0), (0, 1), (0, -1), 'left', 'right']:  # maze(rows, col) = agent(y, x)
             # Get node position
-            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
+            if new_position == 'left' or new_position == 'right':
+                node_position = rotation(current_node.position, new_position)
+            else:
+                node_position = translation(current_node.position, new_position)
 
-            # Make sure within range
-            if node_position[0] > (len(maze) - 1) or node_position[0] < 0 or node_position[1] > (len(maze[len(maze)-1]) -1) or node_position[1] < 0:
-                continue
+            for element in node_position:
+                # Make sure in range
+                if element[0] > (len(maze) - 1) or element[0] < 0 or element[1] > (len(maze[len(maze) - 1]) - 1) or \
+                        element[1] < 0:
+                    break
+                # Make sure walkable terrain
+                elif maze[element[0]][element[1]] != 0:
+                    break
+            else:
+                # Create new node
+                new_node = Node(current_node, node_position)
 
-            # Make sure walkable terrain
-            if maze[node_position[0]][node_position[1]] != 0:
-                continue
-
-            # Create new node
-            new_node = Node(current_node, node_position)
-
-            # Append
-            children.append(new_node)
+                # Append
+                children.append(new_node)
 
         # Loop through children
         for child in children:
@@ -100,7 +110,9 @@ def astar(maze, start, end):
                 # Create the f, g, and h values
                 child.g = current_node.g + 1
                 # H: Manhattan distance to end point
-                child.h = abs(child.position[0] - end_node.position[0]) + abs(child.position[1] - end_node.position[1])
+                agent_current_pos = child.position[0]
+                agent_end_pos = end_node.position[0]
+                child.h = abs(agent_current_pos[0] - agent_end_pos[0]) + abs(agent_end_pos[1] - agent_current_pos[1])
                 child.f = child.g + child.h
 
                 # Child is already in the open list
@@ -114,29 +126,195 @@ def astar(maze, start, end):
                     open_list.append(child)
 
 
-def path_relative_coord(path_matrix):
-    '''
+def translation(node, direction):
+    """Apply a translation (n, s, e, w) to a node (Agent + blocks attached) and return its new position in
+        map coordinates
 
     Args:
-        path_matrix: path to end point from start point in matrix notation (row, col)
+        node (list): Node to be translated
+        direction (list): Direction of the translation (n, s, e, w)
 
-    Returns: sequence of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
+    Returns:
+        list: Node translated in map coordinates
 
-    '''
+    """
+    # Apply transformation
+    node_translated = []
+    for element in node:
+        node_y = element[0] + direction[0]
+        node_x = element[1] + direction[1]
+        node_translated.append((node_y, node_x))
+
+    return node_translated
+
+
+def rotation(node, direction):
+    """ Apply a rotation (left, right) to a node (Agent + blocks attached) and return its new position in
+        map coordinates
+
+    Args:
+        node (list): Node to be rotated
+        direction (string): Direction of the rotation (Right = Clockwise or Left = Counterclockwise)
+
+    Returns:
+        list: Node rotated in map coordinates
+
+    """
+    # Rotation transformations
+    rotate_left = (-1, 1)
+    rotate_right = (1, -1)
+    # Check relative position of node
+    node_rotated = []
+    origin = node[0]
+    node_rel = transform_matrix_node_to_relative(node, origin)
+    for element in node_rel:
+        if element == (0, 0):
+            # Agent pos doesn't rotate : Transform to matrix notation and append
+            element_rotated_y = element[0] + origin[0]
+            element_rotated_x = element[1] + origin[1]
+            element_rotated = (element_rotated_y, element_rotated_x)
+            node_rotated.append(element_rotated)
+            continue
+
+        # Check direction of rotation
+        if direction == 'left':
+            rot_transf = rotate_left
+        else:  # right
+            rot_transf = rotate_right
+
+        # Element_rotated = swap (y,x) * rotate_left/right + origin
+        element_y = element[0]
+        element_x = element[1]
+        # Swap y and x
+        element_swap = (element_x, element_y)
+        # Apply rotation + conversion to matrix notation
+        element_rotated_y = element_swap[0] * rot_transf[0] + origin[0]
+        element_rotated_x = element_swap[1] * rot_transf[1] + origin[1]
+        element_rotated = (element_rotated_y, element_rotated_x)
+
+        # Add rotated element to the node
+        node_rotated.append(element_rotated)
+
+    return node_rotated
+
+
+def transform_matrix_list_to_relative(node_matrix, pos_init):
+    """Transform a list of nodes (agent + block) position in map coordinates to
+        relative coordinates (agent position = (0,0))
+
+
+    Args:
+        node_matrix (list): list of nodes in map coordinates
+        pos_init (tuple): position at the node initialization of the agent node in map coordinates
+
+    Returns:
+        list: List of nodes in relative coordinates (agent position = (0,0))
+
+    """
+    node_rel_list = []
+    node_rel_element = []
+    for list_matrix in node_matrix:
+        for element in list_matrix:
+            node_rel_y = element[0] - pos_init[0]
+            node_rel_x = element[1] - pos_init[1]
+            node_rel_element.append((node_rel_y, node_rel_x))
+        node_rel_list.append(node_rel_element)
+        node_rel_element = []  # reset list
+
+    return node_rel_list
+
+
+def transform_matrix_node_to_relative(node_matrix, pos_init):
+    """Transform a node (agent + block) position in map coordinates to relative coordinates (agent position = (0,0))
+
+
+    Args:
+        node_matrix (tuple): node in map coordinates
+        pos_init(tuple): position at the node initialization in map coordinates
+
+    Returns:
+        tuple: node in relative coordinates (agent position = (0,0)
+
+    """
+    node_rel = []
+    for element in node_matrix:
+        node_rel_y = element[0] - pos_init[0]
+        node_rel_x = element[1] - pos_init[1]
+        node_rel.append((node_rel_y, node_rel_x))
+
+    return node_rel
+
+
+def transform_relative_list_to_matrix(node_rel, pos_init):
+    """Transform a list of nodes (agent + block) position in relative coordinates (agent position = (0,0)) to
+        map coordinates
+
+    Args:
+        node_rel (list): list of nodes in relative coordinates
+        pos_init (tuple): position at the node initialization of the agent node in map coordinates
+
+    Returns:
+        list: List of nodes in map coordinates
+
+    """
+    node_matrix_list = []
+    node_matrix_element = []
+    for list_rel in node_rel:
+        for element in list_rel:
+            node_matrix_y = element[0] + pos_init[0]
+            node_matrix_x = element[1] + pos_init[1]
+            node_matrix_element.append((node_matrix_y, node_matrix_x))
+        node_matrix_list.append(node_matrix_element)
+        node_matrix_element = []
+
+    return node_matrix_list
+
+
+def transform_relative_node_to_matrix(node_rel, pos_init):
+    """Transform a node (agent + block) position in relative coordinates (agent position = (0,0)) to
+        map coordinates
+
+    Args:
+        node_rel (tuple): node in relative coordinates
+        pos_init (tuple): position at the node initialization in map coordinates
+
+    Returns:
+        tuple: node in map coordinates
+
+    """
+    node_matrix = []
+    for element in node_rel:
+        node_matrix_y = element[0] + pos_init[0]
+        node_matrix_x = element[1] + pos_init[1]
+        node_matrix.append((node_matrix_y, node_matrix_x))
+
+    return node_matrix
+
+
+def path_relative_coord(path):
+    """Calculates commands ('n','e','s','w') to fulfill path
+
+    Args:
+        path (list): path to end point from start point in matrix notation (row, col)
+
+    Returns:
+        list: list of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
+
+    """
 
     path_rel = []  # path in relative coordinates
     cardinal_points = ['n', 's', 'e', 'w']
     direction = [(-1, 0), (1, 0), (0, 1), (0, -1)]  # direction = next position - actual position
     next_step = []
 
-    for index, node_matrix in enumerate(path_matrix):
+    for index, node_matrix in enumerate(path):
 
         # Check if the end has been reached
-        if len(path_matrix) - 1 == index:
+        if len(path) - 1 == index:
             break
         else:
             actual_pos = list(node_matrix)  # actual position from where it moves
-            next_pos = list(path_matrix[index + 1])  # next position to where it moves
+            next_pos = list(path[index + 1])  # next position to where it moves
 
         # Check direction of next step
         next_step.append(next_pos[0] - actual_pos[0])
@@ -153,39 +331,117 @@ def path_relative_coord(path_matrix):
     return path_rel
 
 
+def get_path(maze, start, end):
+    """Calculates path from start to end and returns commands to ('n','e','s','w') fulfill the path
+
+    Args:
+        maze (np.array): given local or global map
+        start (tuple): agent position in the map
+        end (tuple): goal of the agent
+
+    Returns:
+        list: list of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
+    """
+    coordinates_path = astar(maze, start, end)
+    command_path = path_relative_coord(coordinates_path)
+
+    return command_path
+
+
+def show_path(maze, path_matrix, length=-1, pause=1.0):
+    """Generate a representation of the map with the path of the agent coloured in orange and the blocks in yellow
+
+    Args:
+        maze (np.array): map matrix
+        path_matrix (tuple): path in matrix notation
+        lenght(int): the length of the path to show
+        pause(float): the pause between each frame
+    Returns:
+        void: Nothing
+
+    """
+    # integer for path cell
+    agent_path_cell = -4
+    block_path_cell = -5
+    last_agent = -3
+    last_block = -1
+    # make a copy of maze
+    map_path = maze
+    # create list out of path_matrix
+    if length == -1:
+        length = len(path_matrix)
+    counter = 0
+    for position in path_matrix[0:length]:
+        path = list(position)
+
+        # add path values to map
+        for index, element in enumerate(path):
+            i = element[0]
+            j = element[1]
+            agent_color = agent_path_cell
+            block_color = block_path_cell
+            if counter == length-1: #change color of the current agent position
+                agent_color = last_agent
+                block_color = last_block
+            if index == 0:
+                map_path[i][j] = agent_color
+            elif map_path[i][j] != agent_color:  # Agent cells overlapped block cells
+                map_path[i][j] = block_color
+        counter += 1
+
+    cmap = mpl.colors.ListedColormap(['yellow', 'orange', 'red', 'black', 'blue', 'white'])
+    plt.imshow(map_path, cmap=cmap, vmin=-5, vmax=1)
+    
+    plt.draw()
+    plt.pause(pause)
+    if(length < len(path_matrix)-1): # don't clear the last image
+        plt.clf()
+
 
 def main():
-
-    # Load map from examples
+    """ Load map
     import numpy as np
     maze = np.loadtxt(open("generatedMaps/00/map.csv", "rb"), delimiter=",")
-    '''
+    """
 
-    maze = [[0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
-            [1, 0, 1, 1, 1, 0, 1, 0, 0, 0],
-            [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 0, 1, 1, 1, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 0, 1, 0, 0, 1, 1, 1],
-            [0, 1, 0, 0, 1, 1, 1, 1, 0, 0],
-            [0, 0, 0, 0, 1, 0, 1, 0, 1, 0],
-            [0, 0, 0, 0, 1, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0]]
+    # Simple maze
+    maze = [[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
+            [-2, 0, 0, -2, 0, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, -2, 0, 0, 0, 0, 0, 0],
+            [ 0, 0,-2,  0,-2,-2, 0, 0, 0, 0],
+            [ 0, 0, 0,  0, 0,-2, 0, 0, 0, 0],
+            [-2, 0, 0,  0, 0, 0, 0, 0,-2,-2],
+            [ 0,-2, 0,  0, 0, 0, 0,-2, 0, 0],
+            [ 0, 0, 0,  0,-2, 0,-2, 0,-2, 0],
+            [ 0, 0, 0,  0,-2, 0,-2, 0, 0, 0],
+            [ 0, 0, 0,  0,-2, 0, 0, 0, 0, 0]]
 
-    '''
-    # Example of start and end path with load map
-    start = (2, 4)
-    end = (21, 34)
-    '''
-    start = (2, 1)
-    end = (0, 7)
-    '''
-    path = astar(maze, start, end)
-    print(path)  # (row, col) format: n=(-1,0), s=(1,0), e=(0,1), w=(0,-1)
-    path = path_relative_coord(path)
-    print(path)
+    # Example with 2 blocks attached (L shape)
+    start = [(0, 0), (0, 1), (1, 1)]
+    end = [(1, 5), (1, 4), (0, 4)]
 
+    """
+    # Example without blocks attached
+    start = [(1, 1)]
+    end = [(6, 8)]
+    """
+    path = astar(maze, start, end)  # path in matrix notation
+    print (path)
+    #if path != None:
+    #    show_path(maze, path)
+
+    if path is not None:
+        plt.ion()
+        for i in range(1,len(path)+1):
+            show_path(maze, path, i, 0.5)
+
+    else:
+        print ("There is no path")
+    raw_input("Press Enter to continue...")
+
+    # next_move_rotation
 
 
 if __name__ == '__main__':
+
     main()

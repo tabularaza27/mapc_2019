@@ -1,3 +1,6 @@
+# example map csvs
+utils/generatedMaps/
+
 devel/
 logs/
 build/

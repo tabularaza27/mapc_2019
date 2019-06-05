@@ -171,31 +171,29 @@ def showMap(map):
     plt.matshow(map, cmap=cmap, vmin=-3, vmax=1)
     plt.show(block=False)
 
+if __name__ == "__main__":
+    #first example
+    example_numbler = 1
+    lenght = 40
+    width = 40
+    map = generateMap(lenght, width, blockDensity=0.2, n_types=4, n_dispenser=6)
+    saveMap(map, example_numbler)
+    showMap(map)
+    #print map
 
-#first example
-example_numbler = 1
-lenght = 40
-width = 40
-map = generateMap(lenght, width, blockDensity=0.2, n_types=4, n_dispenser=6)
-saveMap(map, example_numbler)
-showMap(map)
-#print map
+    for i in range(10):
+        partial_lenght = 20
+        partial_width = 20
+        partialMap = getAgentPartialMap(map, partial_lenght, partial_width, 0.1)
+        saveMap(partialMap, example_numbler, is_partial=True,partial_number=i)
+        print("done")
+        showMap(partialMap)
 
-for i in range(10):
-    partial_lenght = 20
-    partial_width = 20
-    partialMap = getAgentPartialMap(map, partial_lenght, partial_width, 0.1)
-    saveMap(partialMap, example_numbler, is_partial=True,partial_number=i)
-    print("done")
-    showMap(partialMap)
-
-
-
-#to read from csv
-map = np.loadtxt(open("generatedMaps/00/map.csv", "rb"), delimiter=",")
-print(map)
-data = input("Enter something to quit: ") # to leave the plots open
-#print partialMap
+    #to read from csv
+    map = np.loadtxt(open("generatedMaps/00/map.csv", "rb"), delimiter=",")
+    print(map)
+    data = input("Enter something to quit: ") # to leave the plots open
+    #print partialMap
 
 
 
