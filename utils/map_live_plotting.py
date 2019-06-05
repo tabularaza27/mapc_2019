@@ -1,3 +1,7 @@
+"""Live Plotting Functionalities.
+See https://matplotlib.org/3.1.0/gallery/images_contours_and_fields/multi_image.html#sphx-glr-gallery-images-contours-and-fields-multi-image-py for details on plotting multiple images
+"""
+
 from matplotlib import colors
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
