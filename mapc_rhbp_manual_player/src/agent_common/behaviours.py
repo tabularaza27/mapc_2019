@@ -140,7 +140,11 @@ class ManualMove(BehaviourBase):
     def do_step(self):
         if self._perception_provider._request_action_msg.agent.last_action != 'no_action':
             rospy.loginfo("Current perception:\n" +
-                          "\tRaw Perception: " + str(self._perception_provider._request_action_msg.agent))
+                          "\tRaw Perception: " + str(self._perception_provider._request_action_msg.agent) + "\n" +
+                          "\tDispensers: " + str(self._perception_provider.dispensers) + "\n" +
+                          "\tObstacles: " + str(self._perception_provider.obstacles) + "\n" +
+                          "\tGoals: " + str(self._perception_provider.goals)
+                          )
         global action
         if (action == "move"):
             params = [KeyValue(key="direction", value=direzione)]
