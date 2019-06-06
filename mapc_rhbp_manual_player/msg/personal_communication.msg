@@ -1,0 +1,3 @@
+string agent_id_from
+string agent_id_to
+string message

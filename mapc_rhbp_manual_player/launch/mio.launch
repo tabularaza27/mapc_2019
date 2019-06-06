@@ -1,0 +1,23 @@
+<launch>
+
+    <!-- Enable custom logger configuration-->
+    <env name="ROS_PYTHON_LOG_CONFIG_FILE" value="$(find mapc_rhbp_manual_player)/launch/python_logging.conf"/>
+
+    <include file="$(find knowledge_base)/launch/knowledge_base_node.launch">
+    </include>
+
+    <include file="$(find mapc_ros_bridge)/launch/mapc_ros_bridge.launch">
+        <arg name="agent_name" value="agentA1" />
+    </include>
+    <include file="$(find mapc_rhbp_manual_player)/launch/rhbp_agent.launch">
+        <arg name="agent_name" value="agentA1" />
+    </include>
+
+    <include file="$(find mapc_ros_bridge)/launch/mapc_ros_bridge.launch">
+        <arg name="agent_name" value="agentA2" />
+    </include>
+    <include file="$(find mapc_rhbp_manual_player)/launch/rhbp_agent.launch">
+        <arg name="agent_name" value="agentA2" />
+    </include>
+
+</launch>
