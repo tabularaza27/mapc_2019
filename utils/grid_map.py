@@ -160,6 +160,9 @@ class GridMap:
             return coord_a[0] + coord_b[0], coord_a[1] + coord_b[1]
         elif operation == 'sub':
             return coord_a[0] - coord_b[0], coord_a[1] + coord_b[1]
+    
+    def getLocalMap(self):
+        return self._representation
 
 
     ### PRIVATE METHODS ###

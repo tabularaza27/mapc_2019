@@ -5,11 +5,17 @@ from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, 
 
 from behaviour_components.managers import Manager
 
-from agent_common.behaviours import CommunicationTest #RandomMove, Dispense, MoveToDispenser
+from agent_common.behaviours import ManualMove #RandomMove, Dispense, MoveToDispenser
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
 from grid_map import GridMap
+
+from classes.communications import Communication
+from mapc_rhbp_manual_player.msg import general_communication, personal_communication
+from std_msgs.msg import String
+
+import numpy as np
 
 class RhbpAgent(object):
     """
@@ -48,6 +54,13 @@ class RhbpAgent(object):
         rospy.Subscriber(self._agent_topic_prefix + "bye", Bye, self._bye_callback)
 
         rospy.Subscriber(self._agent_topic_prefix + "generic_action", GenericAction, self._callback_generic_action)
+
+        # start communication class
+        self._communication = Communication(self._agent_name)
+        # Map topic
+        self._pub_map = self._communication.start_map(self._callback_map)
+        # Personal message topic
+        self._pub_agents = self._communication.start_agents(self._callback_agents)
 
         self._received_action_response = False
 
@@ -122,10 +135,19 @@ class RhbpAgent(object):
         rospy.logdebug('Agent: {}'.format(msg.agent))
         # rospy.logdebug('Whole Perception: \n {}'.format(self.perception_provider))
 
+        # send the map if perceive the goal
+        if self.perception_provider.goals:
+            map = self.local_map.getLocalMap()
+            self._communication.send_map(self._pub_map,str(map))
+
+        # send personal message test
+        if self._agent_name == "agentA1":
+            self._communication.send_message(self._pub_agents,"agentA2","task","[5,5]")
+
         self._received_action_response = False
 
         # update map
-        self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
+        #self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
 
         rospy.logdebug('Updated Map')
 
@@ -146,21 +168,46 @@ class RhbpAgent(object):
             rospy.logwarn("%s idle_action(): sim not yet started", self._agent_name)
         else:  # Our decision-making has taken too long
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
+    
+    def _callback_map(self, msg):
+        msg_id = msg.message_id
+        map_from = msg.agent_id
+        map_value = msg.message
+
+        if map_from != self._agent_name:
+            rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
+            map = np.array(map_value)
+
+            #do map merging
+    
+    def _callback_agents(self, msg):
+        msg_id = msg.message_id
+        msg_from = msg.agent_id_from
+        msg_type = msg.message_type
+        msg_param = msg.params
+
+        if msg.agent_id_to == self._agent_name:
+            rospy.loginfo(self._agent_name + " received message from " + msg_from + " | id: " + msg_id + " | type: " + msg_type + " | params: " + msg_param)
+            self._communication.send_message(self._pub_agents,msg_from,"received",msg_id)
+
+
 
     def _initialize_behaviour_model(self):
         """
         This function initialises the RHBP behaviour/goal model.
         """
 
-        '''
+        
         # Manual Player Move/Exploration
         manual_move = ManualMove(name="manual_move", perception_provider=self.perception_provider, agent_name=self._agent_name)
         self.behaviours.append(manual_move)
-        '''
+    
 
+        '''
         # Communication test
         comm_test = CommunicationTest(name="comm_test", perception_provider=self.perception_provider, agent_name=self._agent_name)
         self.behaviours.append(comm_test)
+        '''
 
         '''
         # Random Move/Exploration
