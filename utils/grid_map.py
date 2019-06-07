@@ -100,8 +100,6 @@ class GridMap:
                     self._representation[self._agent_position[1] - i][self._agent_position[0] + j] = 0
                     self._representation[self._agent_position[1] + i][self._agent_position[0] - j] = 0
 
-        if agent.last_action == "move" and agent.last_action_result == "success":
-            print('updated empty cells')
 
         # update obstacles
         for obs in perception.obstacles:
@@ -267,4 +265,3 @@ class GridMap:
         """writes two dimensional np.array to .txt file named after agent and in directory /utils/generatedMaps/tmp_maps"""
         np.savetxt(os.path.join(self.data_directory, '{}.txt'.format(self.agent_name)), self._representation, fmt='%i',
                    delimiter=',')
-        print(os.path.abspath(os.curdir))
