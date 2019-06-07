@@ -290,9 +290,9 @@ def transform_relative_node_to_matrix(node_rel, pos_init):
 
     return node_matrix
 
-
+'''
 def path_relative_coord(path):
-    """Calculates commands ('n','e','s','w') to fulfill path
+    """Calculates commands ('n','e','s','w','ccw','cw') to fulfill path
 
     Args:
         path (list): path to end point from start point in matrix notation (row, col)
@@ -346,6 +346,84 @@ def get_path(maze, start, end):
     command_path = path_relative_coord(coordinates_path)
 
     return command_path
+'''
+
+def next_move(node_pos, path, map):
+    """ Return the next move or rotate direction to perform with respect to a given path and map
+
+    Args:
+        node_pos (list): position of the agent + blocks at the moment
+        path (list): path to follow by the agent
+        map (np.array: given local or global map
+
+    Returns:
+        string: ( 'n', 's', 'e', 'w', 'ccw', 'cw' ) - Next move or rotate direction
+                'end' - current position is the end point
+                'unknown' - it is not possible to reach next position in path
+
+    """
+
+    # (move) north, south, east, west, counter-clockwise (left), clockwise (right)
+    action_list = ['n', 's', 'e', 'w', 'ccw', 'cw']
+    direction_list = [(-1, 0), (1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)]
+    path_index = 0
+
+    # Get agent and first block current position
+    current_agent_pos = node_pos[0]
+    first_block_pos = node_pos[1]
+
+    for index, path_step in enumerate(path):
+        # Discard previous steps from path
+        path_pos = path_step[0]
+        agent_pos = path_pos
+        #print(path_pos)
+        #print(agent_pos)
+        #print(path_pos == agent_pos)
+        if agent_pos == current_agent_pos:
+        # Check if the end has been reached --> return 'end'
+            path_length = len(path)
+            if index == path_length - 1:
+                next_action = 'end'
+                return next_action
+            else:
+                # Save the index of the current position in path
+                path_index = index
+                break   # Get out of the for loop
+
+    # Next position of the node
+    next_node_pos = path[path_index + 1]
+
+    # Check if there is any block attached
+    if first_block_pos is None:    # No blocks attached
+        current_pos = current_agent_pos   # Tracking block is the agent
+        next_pos = next_node_pos[0]
+    else:
+        current_pos = first_block_pos   # Tracking block is the first block attached
+        next_pos = next_node_pos[1]
+
+    # Calculate relative position of the next step w.r.t current position
+    current_pos_y = current_pos[0]
+    current_pos_x = current_pos[1]
+    next_pos_y = next_pos[0]
+    next_pos_x = next_pos[1]
+    # direction = next position - actual position
+    direction_y = next_pos_y - current_pos_y
+    direction_x = next_pos_x - current_pos_x
+    direction = (direction_y, direction_x)
+
+    # Get the next action
+    for coord, movement in enumerate(direction_list):
+        if direction != movement:
+            continue
+        if coord > len(direction_list) + 1:
+            print ("action is unknown")
+            next_action = 'unknown'
+            return next_action
+        else:
+            next_action = action_list[coord]
+            break
+
+    return next_action
 
 
 def show_path(maze, path_matrix, length=-1, pause=1.0):
@@ -427,19 +505,34 @@ def main():
     """
     path = astar(maze, start, end)  # path in matrix notation
     print (path)
-    #if path != None:
-    #    show_path(maze, path)
-
+    '''
+    # Animation of path
     if path is not None:
         plt.ion()
         for i in range(1,len(path)+1):
             show_path(maze, path, i, 0.5)
-
     else:
         print ("There is no path")
+        
     raw_input("Press Enter to continue...")
 
-    # next_move_rotation
+    '''
+    # Next_move print
+    if path is not None:
+        for next_step in path:
+            # Print next action
+            move = next_move(next_step, path, maze)
+            print (move)
+            '''
+            # Plot next step
+            plt.ion()
+            show_path(maze, next_step, index + 1, 0.5)
+            '''
+            raw_input("Press Enter to continue...")
+    else:
+        print ("There is no path")
+
+    raw_input("Press Enter to continue...")
 
 
 if __name__ == '__main__':
