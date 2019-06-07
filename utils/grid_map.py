@@ -4,6 +4,10 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import random
 
+import global_variables
+import rospy #for debug logs
+
+
 # ToDo: Implement blocks
 # ToDo: Convert Unknown Cell to empty cell
 # ToDo: Keep track of blocks / entities when they are moving
@@ -35,9 +39,7 @@ class GridMap:
 
     author: Alessandro
     """
-    PLOT_MAP = True
-    # create plot every x steps
-    PLOT_FREQUENCY = 50
+
     # counter variable
     STEP = 0
 
@@ -68,10 +70,18 @@ class GridMap:
         self._agents = []
         self._temporary_obstacles = []
 
-        # generate colors for mapping purposes
-        number_of_colors = 12
-        colors = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
-        self.cmap = mpl.colors.ListedColormap(colors)
+        #### DEBUG ####
+        if global_variables.DEBUG_MODE:
+            self.PLOT_MAP = True
+            # create plot every x steps
+            self.PLOT_FREQUENCY = 2
+            self.plot_shown = False
+            plt.ion()
+            # generate colors for mapping purposes
+            number_of_colors = 12
+            colors = ["#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
+            self.cmap = mpl.colors.ListedColormap(colors)
+
 
 
 
@@ -110,12 +120,12 @@ class GridMap:
                 self._goal_areas.append(pos)
 
         # update entities (other agents)
-        for entity in perception.entities:
-            if entity.pos.x == 0 and entity.pos.y == 0: continue
-            pos = (entity.pos.x, entity.pos.y)
-            matrix_pos = self._from_relative_to_matrix(pos)
-            # first index --> y value, second  --> x value
-            self._representation[matrix_pos[1]][matrix_pos[0]] = -5
+        # for entity in perception.entities:
+        #     if entity.pos.x == 0 and entity.pos.y == 0: continue
+        #     pos = (entity.pos.x, entity.pos.y)
+        #     matrix_pos = self._from_relative_to_matrix(pos)
+        #     # first index --> y value, second  --> x value
+        #     self._representation[matrix_pos[1]][matrix_pos[0]] = -5
 
             # ToDo update agents state variable, including info which team the agent belong
 
@@ -275,8 +285,17 @@ class GridMap:
         Returns: None
 
         """
+        #plt.show()
+        #plt.clf()
+        #plt.matshow(self._representation, cmap=self.cmap, vmin=-6, vmax=5)
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        im = ax.matshow(self._representation, cmap=self.cmap, vmin=-6, vmax=5)
-        fig.show()
+        #plt.draw()
+        rospy.logdebug("PRINTING THE MAP ----------")
+
+        plt.imshow(self._representation, cmap=self.cmap, vmin=-6, vmax=5)
+        if self.plot_shown:
+            plt.draw()
+            plt.clf()
+        else:
+            self.plot_shown = True
+            plt.show()

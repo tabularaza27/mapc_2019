@@ -13,6 +13,9 @@ from agent_common.behaviours import RandomMove, Dispense, MoveToDispenser
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
+import global_variables
+
+from grid_map import GridMap
 
 class RhbpAgent(object):
     """
@@ -20,9 +23,13 @@ class RhbpAgent(object):
     """
 
     def __init__(self):
+        ###DEBUG MODE###
+
+        log_level = rospy.DEBUG if global_variables.DEBUG_MODE else rospy.INFO
+        ################
         rospy.logdebug("RhbpAgent::init")
 
-        rospy.init_node('agent_node', anonymous=True, log_level=rospy.INFO)
+        rospy.init_node('agent_node', anonymous=True, log_level=log_level)
 
         self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
 
@@ -37,6 +44,9 @@ class RhbpAgent(object):
         self.perception_provider = PerceptionProvider()
 
         self._sim_started = False
+
+        # agent attributes
+        self.local_map = GridMap()
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -113,6 +123,12 @@ class RhbpAgent(object):
         self.perception_provider.update_perception(request_action_msg=msg)
 
         self._received_action_response = False
+
+        ###### UPDATE AND SYNCHRONIZATION ######
+        # update map
+        self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
+
+        ########################################
 
         # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
         while not self._received_action_response and rospy.get_rostime() < deadline:
