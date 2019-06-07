@@ -30,3 +30,16 @@ we may need to synchronize also this tasks:
 give more importance to some behaviors in certain conditions to reach
 long term goals faster
 - Then the RHBP manager is going to run and decide what to do
+
+
+every_step():
+    updateMyMap()
+    communication.shareMap()
+    communication.assignTaskManagement()
+    communication.waitFor(seconds, allAnswers)
+    taskSubdivison(myTasks)
+    communication.startAuction(myTasks)
+        #super hard
+    communication.waitFor(seconds, subtasksAssigned)
+    runRHBP()
+    
