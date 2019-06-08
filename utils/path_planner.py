@@ -1,6 +1,14 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
+"""
+NOTE.
+Improvements:
+- Global varaible for directions (n, s, ...) and tuple ([0,1], ...) 
+"""
+# Global variables
+direction_values = [(-1, 0), (1, 0), (0, 1), (0, -1), 'ccw', 'cw']  # maze(rows, col) = agent(y, x)
+direction_list = ['n', 's', 'e', 'w', 'ccw', 'cw']
 
 class Node():
     """A node class for A* Pathfinding"""
@@ -78,9 +86,9 @@ def astar(maze, start, end):
         children = []
 
         # Check adjacent cells (n, s, e , w) and rotations (left, right)
-        for new_position in [(-1, 0), (1, 0), (0, 1), (0, -1), 'left', 'right']:  # maze(rows, col) = agent(y, x)
+        for new_position in direction_values:
             # Get node position
-            if new_position == 'left' or new_position == 'right':
+            if new_position == 'ccw' or new_position == 'cw':
                 node_position = rotation(current_node.position, new_position)
             else:
                 node_position = translation(current_node.position, new_position)
@@ -149,12 +157,12 @@ def translation(node, direction):
 
 
 def rotation(node, direction):
-    """ Apply a rotation (left, right) to a node (Agent + blocks attached) and return its new position in
+    """ Apply a rotation (counterclockwise, clockwise) to a node (Agent + blocks attached) and return its new position in
         map coordinates
 
     Args:
         node (list): Node to be rotated
-        direction (string): Direction of the rotation (Right = Clockwise or Left = Counterclockwise)
+        direction (string): Direction of the rotation (cw = Clockwise or ccw = Counterclockwise)
 
     Returns:
         list: Node rotated in map coordinates
@@ -177,7 +185,7 @@ def rotation(node, direction):
             continue
 
         # Check direction of rotation
-        if direction == 'left':
+        if direction == 'ccw':
             rot_transf = rotate_left
         else:  # right
             rot_transf = rotate_right
@@ -290,140 +298,99 @@ def transform_relative_node_to_matrix(node_rel, pos_init):
 
     return node_matrix
 
-'''
-def path_relative_coord(path):
-    """Calculates commands ('n','e','s','w','ccw','cw') to fulfill path
 
-    Args:
-        path (list): path to end point from start point in matrix notation (row, col)
-
-    Returns:
-        list: list of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
-
-    """
-
-    path_rel = []  # path in relative coordinates
-    cardinal_points = ['n', 's', 'e', 'w']
-    direction = [(-1, 0), (1, 0), (0, 1), (0, -1)]  # direction = next position - actual position
-    next_step = []
-
-    for index, node_matrix in enumerate(path):
-
-        # Check if the end has been reached
-        if len(path) - 1 == index:
-            break
-        else:
-            actual_pos = list(node_matrix)  # actual position from where it moves
-            next_pos = list(path[index + 1])  # next position to where it moves
-
-        # Check direction of next step
-        next_step.append(next_pos[0] - actual_pos[0])
-        next_step.append(next_pos[1] - actual_pos[1])
-
-        # Transform step into cardinal points (n, s, e , w)
-        for coord, movement in enumerate(direction):
-            if next_step == list(movement):
-                path_rel.append(cardinal_points[coord])  # Append next step in cardinal point into path
-                # Remove old next steps
-                del next_step[:]
-                break
-
-    return path_rel
-
-
-def get_path(maze, start, end):
-    """Calculates path from start to end and returns commands to ('n','e','s','w') fulfill the path
-
-    Args:
-        maze (np.array): given local or global map
-        start (tuple): agent position in the map
-        end (tuple): goal of the agent
-
-    Returns:
-        list: list of steps to reach the end point from the start point in cardinal notation ( n, s, e, w)
-    """
-    coordinates_path = astar(maze, start, end)
-    command_path = path_relative_coord(coordinates_path)
-
-    return command_path
-'''
-
-def next_move(node_pos, path, map):
+def next_move_direction(node_pos, path):
     """ Return the next move or rotate direction to perform with respect to a given path and map
 
     Args:
         node_pos (list): position of the agent + blocks at the moment
         path (list): path to follow by the agent
-        map (np.array: given local or global map
 
     Returns:
         string: ( 'n', 's', 'e', 'w', 'ccw', 'cw' ) - Next move or rotate direction
                 'end' - current position is the end point
-                'unknown' - it is not possible to reach next position in path
+                'unknown position in the path' - position is not included in path
+                'unknown rotation' - rotation is not valid
+                'unknown translation' - translation is not valid
 
     """
 
-    # (move) north, south, east, west, counter-clockwise (left), clockwise (right)
-    action_list = ['n', 's', 'e', 'w', 'ccw', 'cw']
-    direction_list = [(-1, 0), (1, 0), (0, 1), (0, -1), (1, -1), (-1, 1)]
-    path_index = 0
-
-    # Get agent and first block current position
-    current_agent_pos = node_pos[0]
-    first_block_pos = node_pos[1]
-
-    for index, path_step in enumerate(path):
-        # Discard previous steps from path
-        path_pos = path_step[0]
-        agent_pos = path_pos
-        #print(path_pos)
-        #print(agent_pos)
-        #print(path_pos == agent_pos)
-        if agent_pos == current_agent_pos:
-        # Check if the end has been reached --> return 'end'
-            path_length = len(path)
-            if index == path_length - 1:
-                next_action = 'end'
-                return next_action
-            else:
-                # Save the index of the current position in path
-                path_index = index
-                break   # Get out of the for loop
-
-    # Next position of the node
-    next_node_pos = path[path_index + 1]
+    # Variables for getting actual position in path
+    path_position_index = 0
+    path_length = len(path)
+    block_number = len(path[0])     # number of elements in node (agent + blocks)
 
     # Check if there is any block attached
-    if first_block_pos is None:    # No blocks attached
-        current_pos = current_agent_pos   # Tracking block is the agent
-        next_pos = next_node_pos[0]
+    if block_number == 1:   # no blocks, only agent
+        current_block_pos = node_pos[0]     # we track agent position
+        block_index = 0
     else:
-        current_pos = first_block_pos   # Tracking block is the first block attached
-        next_pos = next_node_pos[1]
+        current_block_pos = node_pos[1]     # we track first block attached position
+        current_agent_pos = node_pos[0]     # for double check
+        block_index = 1
+
+    # Get index of the actual position in the path
+    for index, path_step in enumerate(path):
+        # Discard previous steps from path
+        block_pos = path_step[block_index]
+        if block_index == 0 and block_pos != current_block_pos:
+            continue
+        if block_index == 1:
+            agent_pos = path_step[block_index - 1]
+            if block_pos != current_block_pos or agent_pos != current_agent_pos:
+                continue
+        # Check if the position is the end point or not inside the path
+        end_index = path_length - 1     # end_point
+        if index == end_index:
+            next_action = 'end'
+            return next_action
+        elif index < end_index:
+            # Save the index of the current position in path
+            path_position_index = index
+            break   # Get out of the for loop
+        else:   # position is not in the path
+            next_action = 'unknown position in the path'
+            return next_action
+
+    # Next position of the node and tracking block
+    next_node_pos = path[path_position_index + 1]
+    next_pos = next_node_pos[block_index]
+    current_pos = current_block_pos
 
     # Calculate relative position of the next step w.r.t current position
     current_pos_y = current_pos[0]
     current_pos_x = current_pos[1]
     next_pos_y = next_pos[0]
     next_pos_x = next_pos[1]
+
     # direction = next position - actual position
     direction_y = next_pos_y - current_pos_y
     direction_x = next_pos_x - current_pos_x
+
+    # Check for type of movement ( rotation or translation)
+    if abs(direction_y + direction_x) != 1:     # rotation
+        # Apply inverse rotation to figure out the direction
+        for rotation_direction in ['ccw', 'cw']:
+            block_rotate = rotation(node_pos, rotation_direction)
+            if block_rotate[1] == (next_pos_y, next_pos_x):
+                next_action = rotation_direction
+                return next_action
+        print ("unknown rotation")
+        next_action = 'unknown rotation'
+        return next_action
+
+    # Translation
     direction = (direction_y, direction_x)
 
     # Get the next action
-    for coord, movement in enumerate(direction_list):
-        if direction != movement:
-            continue
-        if coord > len(direction_list) + 1:
-            print ("action is unknown")
-            next_action = 'unknown'
+    for coord, movement in enumerate(direction_values):
+        if movement == direction:
+            next_action = direction_list[coord]
             return next_action
-        else:
-            next_action = action_list[coord]
-            break
-
-    return next_action
+        elif coord == len(direction_values) - 1:
+            print ("action is unknown")
+            next_action = 'unknown translation'
+            return next_action
 
 
 def show_path(maze, path_matrix, length=-1, pause=1.0):
@@ -497,7 +464,6 @@ def main():
     # Example with 2 blocks attached (L shape)
     start = [(0, 0), (0, 1), (1, 1)]
     end = [(1, 5), (1, 4), (0, 4)]
-
     """
     # Example without blocks attached
     start = [(1, 1)]
@@ -505,34 +471,31 @@ def main():
     """
     path = astar(maze, start, end)  # path in matrix notation
     print (path)
-    '''
+
+
     # Animation of path
     if path is not None:
         plt.ion()
-        for i in range(1,len(path)+1):
+        for i in range(1, len(path)+1):
             show_path(maze, path, i, 0.5)
     else:
         print ("There is no path")
         
     raw_input("Press Enter to continue...")
 
-    '''
     # Next_move print
     if path is not None:
         for next_step in path:
             # Print next action
-            move = next_move(next_step, path, maze)
+            move = next_move_direction(next_step, path)
             print (move)
-            '''
-            # Plot next step
-            plt.ion()
-            show_path(maze, next_step, index + 1, 0.5)
-            '''
-            raw_input("Press Enter to continue...")
+            #raw_input("Press Enter to continue...")
     else:
         print ("There is no path")
 
     raw_input("Press Enter to continue...")
+
+
 
 
 if __name__ == '__main__':
