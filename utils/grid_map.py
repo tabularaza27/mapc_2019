@@ -3,16 +3,20 @@ import matplotlib as mpl
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
 import random
+import os
+
+from helpers import get_utils_location
+from helpers import add_coord
+from helpers import manhattan_distance
+
 
 import global_variables
 import rospy #for debug logs
 
 
 # ToDo: Implement blocks
-# ToDo: Convert Unknown Cell to empty cell
 # ToDo: Keep track of blocks / entities when they are moving
 # ToDo: Identify if other entity is enemy or ally
-# ToDo: Live Plotting Functionality, now a new plot get created every time
 
 
 class GridMap:
@@ -34,16 +38,15 @@ class GridMap:
 
     # enemy entity agent ??necessary??temporary??
     # ally entity agent ??necessary??temporary??
-    # 0,1,2,3,4,...: dispenser of type 1,2,3,4,...
-    # 100,101,102,103,104,...: block of type 1,2,3,4,...
+    # 10,11,12,13,14,...: dispenser of type 0,1,2,3,4,...
+    # 100,101,102,103,104,...: block of type 0,1,2,3,4,...
 
     author: Alessandro
     """
-
     # counter variable
     STEP = 0
 
-    # EMPTY_CELL = 0
+    EMPTY_CELL = 0
     UNKNOWN_CELL = -1
     WALL_CELL = -2
     GOAL_CELL = -3
@@ -51,11 +54,16 @@ class GridMap:
     ENTITY_CELL = -5
     BLOCK_CELL_STARTING_NUMBER = 101
 
-    ### PUBLIC METHODS ###
-    def __init__(self):
+    def __init__(self, agent_name):
         """
         Initialization of the map. The agent is at the center of an unknown map
         """
+        self.agent_name = agent_name
+        self.data_directory = self._get_data_directory()
+
+        # fixed for now, but could be made dynamic later
+        self.agent_vision = 5
+
         # map
         self._representation = np.full((11, 11), -1)  # init the map with unknown cells
         self._origin = (5, 5)  # the origin of the agent is at the center of the map
@@ -70,18 +78,13 @@ class GridMap:
         self._agents = []
         self._temporary_obstacles = []
 
+
         #### DEBUG ####
         if global_variables.DEBUG_MODE:
             self.PLOT_MAP = True
             # create plot every x steps
-            self.PLOT_FREQUENCY = 2
-            self.plot_shown = False
-            plt.ion()
-            # generate colors for mapping purposes
-            number_of_colors = 12
-            colors = ["#" + ''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
-            self.cmap = mpl.colors.ListedColormap(colors)
-
+            self.PLOT_FREQUENCY = 1
+            self.live_plotting = global_variables.LIVE_PLOTTING
 
 
 
@@ -98,6 +101,16 @@ class GridMap:
         # if last action was move update agent position and expand map size if sight is out of bounds
         if agent.last_action == "move" and agent.last_action_result == "success":
             self._update_agent_position(move=agent.last_action_params[0])
+
+        # update empty cells (all cells that are in vision range, get overwritten below if they are occupied)
+        for i in range(0, self.agent_vision + 1):
+            for j in range(0, self.agent_vision + 1):
+                if 0 < manhattan_distance(self._agent_position, add_coord(self._agent_position, (i, j))) <= 5:
+                    self._representation[self._agent_position[1] + i][self._agent_position[0] + j] = 0
+                    self._representation[self._agent_position[1] - i][self._agent_position[0] - j] = 0
+                    self._representation[self._agent_position[1] - i][self._agent_position[0] + j] = 0
+                    self._representation[self._agent_position[1] + i][self._agent_position[0] - j] = 0
+
 
         # update obstacles
         for obs in perception.obstacles:
@@ -136,7 +149,7 @@ class GridMap:
             # get dispenser type
             for i in range(4):
                 if str(i) in dispenser.type:
-                    self._representation[matrix_pos[1]][matrix_pos[0]] = i
+                    self._representation[matrix_pos[1]][matrix_pos[0]] = 10 + i
 
             # add to state variable as dict
             # {pos: {x: 3, y: 3}, type: 'b1'}
@@ -145,34 +158,12 @@ class GridMap:
 
         # update blocks
 
-        if self.PLOT_MAP and self.STEP % self.PLOT_FREQUENCY == 0:
-            self.show_map()
+        # write data to file, used for live plotting plotting
+        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0:
+            self._write_data_to_file()
 
         self.STEP += 1
 
-    @staticmethod
-    def add_coord(coord_a, coord_b, operation='add'):
-        """Add x and y values of two coordinates in tuple form
-
-        Args:
-            coord_a (tuple): coordinate in tuple form. first value is x, second value is y
-            coord_b (tuple): coordinate in tuple form. first value is x, second value is y
-            operation (str): 'add' for addition / 'sub' for subtraction
-        Returns:
-            tuple: resulting coord
-
-        """
-        assert isinstance(coord_a, tuple) and len(coord_a) == 2, 'Coordinate needs to be a tuple of length 2'
-        assert isinstance(coord_b, tuple) and len(coord_b) == 2, 'Coordinate needs to be a tuple of length 2'
-        assert operation in ['add', 'sub'], 'The operation needs to be "add" or "sub"'
-
-        if operation == 'add':
-            return coord_a[0] + coord_b[0], coord_a[1] + coord_b[1]
-        elif operation == 'sub':
-            return coord_a[0] - coord_b[0], coord_a[1] + coord_b[1]
-
-
-    ### PRIVATE METHODS ###
     def _from_relative_to_matrix(self, relative_coord):
         """
         Function that translate the coordinate with respect to the origin of the map to the
@@ -184,7 +175,7 @@ class GridMap:
         Returns:
             matrix_coord: (x',y') with respect to the origin of the matrix
         """
-        return GridMap.add_coord(relative_coord, self._agent_position)
+        return add_coord(relative_coord, self._agent_position)
 
     def _from_matrix_to_relative(self, matrix_coord):
         """
@@ -196,7 +187,7 @@ class GridMap:
             relative_coord: (x',y') with respect to the origin of the map
         """
 
-        return GridMap.add_coord(matrix_coord, self._agent_position, operation='sub')
+        return add_coord(matrix_coord, self._agent_position, operation='sub')
 
     def _update_agent_position(self, move=None):
         """update agents position in map and expand grid if sight is out of bounds
@@ -218,16 +209,16 @@ class GridMap:
                 if self._agent_position[1] - 5 <= 0:
                     self._expand_map('n')
                 else:
-                    self._agent_position = GridMap.add_coord(self._agent_position, (0, -1))
+                    self._agent_position = add_coord(self._agent_position, (0, -1))
 
 
             elif move == 'e':
-                self._agent_position = GridMap.add_coord(self._agent_position, (1, 0))
+                self._agent_position = add_coord(self._agent_position, (1, 0))
                 if self._agent_position[0] + 5 >= self._representation.shape[1]:
                     self._expand_map('e')
 
             elif move == 's':
-                self._agent_position = GridMap.add_coord(self._agent_position, (0, 1))
+                self._agent_position = add_coord(self._agent_position, (0, 1))
                 if self._agent_position[1] + 5 >= self._representation.shape[0]:
                     self._expand_map('s')
 
@@ -235,7 +226,7 @@ class GridMap:
                 if self._agent_position[0] - 5 <= 0:
                     self._expand_map('w')
                 else:
-                    self._agent_position = GridMap.add_coord(self._agent_position, (-1, 0))
+                    self._agent_position = add_coord(self._agent_position, (-1, 0))
 
             self._representation[self._agent_position[1]][self._agent_position[0]] = -4
 
@@ -276,26 +267,13 @@ class GridMap:
 
         self._representation = helper_map
 
+    def _get_data_directory(self):
+        """Returns Directory where map data is stored for plotting purposes"""
+        utils_dir = get_utils_location()
+        return os.path.join(utils_dir, 'generatedMaps', 'tmp_maps')
 
-    #### DEBUG FUNCTIONALITIES ####
+    def _write_data_to_file(self):
+        """writes two dimensional np.array to .txt file named after agent and in directory /utils/generatedMaps/tmp_maps"""
+        np.savetxt(os.path.join(self.data_directory, '{}.txt'.format(self.agent_name)), self._representation, fmt='%i',
+                   delimiter=',')
 
-    def show_map(self):
-        """
-        Debug function to show a colored map
-        Returns: None
-
-        """
-        #plt.show()
-        #plt.clf()
-        #plt.matshow(self._representation, cmap=self.cmap, vmin=-6, vmax=5)
-
-        #plt.draw()
-        rospy.logdebug("PRINTING THE MAP ----------")
-
-        plt.imshow(self._representation, cmap=self.cmap, vmin=-6, vmax=5)
-        if self.plot_shown:
-            plt.draw()
-            plt.clf()
-        else:
-            self.plot_shown = True
-            plt.show()

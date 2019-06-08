@@ -21,6 +21,9 @@ class PerceptionProvider(object):
 
         self.obstacles = []
 
+        # moving things ( entities --> other agents )
+        self.entities = []
+
         self.closest_dispenser = None
 
         self.closest_dispenser_distance_sensor = Sensor(name="closest_dispenser_distance", initial_value=sys.maxint)
@@ -40,6 +43,8 @@ class PerceptionProvider(object):
         self._request_action_msg = request_action_msg
 
         self._update_dispensers(request_action_msg)
+
+        self._update_entities(request_action_msg)
 
         self.goals = request_action_msg.goals  # TODO this could be more sophisticated and potentially extracted like above
 
@@ -74,3 +79,18 @@ class PerceptionProvider(object):
 
         self.closest_dispenser_distance_sensor.update(newValue=closest_distance)
         self.closest_dispenser_distance_sensor.sync()
+
+    def _update_entities(self, request_action_msg):
+        """ update entity perception
+
+        ToDo:
+            add attribute if entity is from our or different team
+
+        Args:
+            request_action_msg: full current request action message object
+
+        Returns: void
+
+        """
+
+        self.entities = request_action_msg.entities

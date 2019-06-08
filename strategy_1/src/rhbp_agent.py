@@ -17,6 +17,7 @@ import global_variables
 
 from grid_map import GridMap
 
+
 class RhbpAgent(object):
     """
     Main class of an agent, taking care of the main interaction with the mapc_ros_bridge
@@ -46,7 +47,7 @@ class RhbpAgent(object):
         self._sim_started = False
 
         # agent attributes
-        self.local_map = GridMap()
+        self.local_map = GridMap(agent_name=self._agent_name)
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
