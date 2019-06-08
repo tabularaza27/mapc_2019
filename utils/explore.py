@@ -17,7 +17,7 @@ Questions:
 """
 import numpy as np
 
-from path_planner import get_path
+from path_planner import astar
 
 
 def get_unknown_amount(map_representation, position):
@@ -86,7 +86,7 @@ def get_point_to_explore(map_representation, current_position):
     best_path = None
     for point in best_points:
         print(point)
-        path = get_path(map_representation, current_position, point)
+        path = astar(map_representation, current_position, point)
         print(path)
         if len(path) < shortest_path:
             best_point = point

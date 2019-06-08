@@ -9,7 +9,7 @@ from behaviour_components.conditions import Negation, Condition
 from behaviour_components.goals import GoalBase
 from behaviour_components.condition_elements import Effect
 
-from agent_common.behaviours import RandomMove, Dispense, MoveToDispenser
+from agent_common.behaviours import RandomMove, Dispense, MoveToDispenser, ExplorationBehaviour
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
@@ -128,6 +128,10 @@ class RhbpAgent(object):
         ###### UPDATE AND SYNCHRONIZATION ######
         # update map
         self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
+        #best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
+        #rospy.logdebug("Best point: " + str(best_point))
+        #rospy.logdebug("Best path: " + str(best_path))
+        #rospy.logdebug("Current high score: " + str(current_high_score))
 
         ########################################
 
@@ -155,11 +159,18 @@ class RhbpAgent(object):
         This function initialises the RHBP behaviour/goal model.
         """
 
+        # Exploration
+        exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
+        self.behaviours.append(exploration_move)
+        exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
+
+        """
         # Random Move/Exploration
         random_move = RandomMove(name="random_move", agent_name=self._agent_name)
         self.behaviours.append(random_move)
         random_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
 
+        
         # Moving to a dispenser if in vision range
         move_to_dispenser = MoveToDispenser(name="move_to_dispense", perception_provider=self.perception_provider,
                                             agent_name=self._agent_name)
@@ -185,7 +196,7 @@ class RhbpAgent(object):
                                  conditions=[Condition(self.perception_provider.number_of_blocks_sensor, GreedyActivator())],
                                  planner_prefix=self._agent_name)
         self.goals.append(dispense_goal)
-
+        """
 
 if __name__ == '__main__':
     try:
