@@ -13,6 +13,8 @@ from agent_common.behaviours import RandomMove, Dispense, MoveToDispenser
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
+from grid_map import  GridMap
+
 
 class RhbpAgent(object):
     """
@@ -35,6 +37,8 @@ class RhbpAgent(object):
         self.goals = []
 
         self.perception_provider = PerceptionProvider()
+
+        self.local_map = GridMap(agent_name=self._agent_name, live_plotting=True)
 
         self._sim_started = False
 
@@ -113,6 +117,9 @@ class RhbpAgent(object):
         self.perception_provider.update_perception(request_action_msg=msg)
 
         self._received_action_response = False
+
+        # update map
+        self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
 
         # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
         while not self._received_action_response and rospy.get_rostime() < deadline:
