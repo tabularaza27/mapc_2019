@@ -9,7 +9,7 @@ from behaviour_components.conditions import Negation, Condition
 from behaviour_components.goals import GoalBase
 from behaviour_components.condition_elements import Effect
 
-from agent_common.behaviours import RandomMove, Dispense, MoveToDispenser, ExplorationBehaviour
+from agent_common.behaviors import ExplorationBehaviour
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
