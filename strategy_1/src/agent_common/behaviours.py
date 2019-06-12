@@ -8,8 +8,6 @@ from diagnostic_msgs.msg import KeyValue
 from mapc_ros_bridge.msg import GenericAction
 
 
-
-
 from agent_common.providers import PerceptionProvider
 
 

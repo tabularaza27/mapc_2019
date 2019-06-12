@@ -9,7 +9,7 @@ from behaviour_components.conditions import Negation, Condition
 from behaviour_components.goals import GoalBase
 from behaviour_components.condition_elements import Effect
 
-from agent_common.behaviors import ExplorationBehaviour
+from behaviours_classes.exploration_behaviour import ExplorationBehaviour
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
@@ -162,7 +162,7 @@ class RhbpAgent(object):
         # Exploration
         exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(exploration_move)
-        exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
+        #exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
 
         """
         # Random Move/Exploration
