@@ -18,7 +18,9 @@ def get_utils_location():
     """
     pattern = '^(.*?group5)'
     # get current path --> needs to be beneath /group5
-    path = os.path.abspath(os.curdir)
+    #print("AAAAAAAAAAAAAAAAAAAAAAAAAAA: " + os.path.abspath(os.curdir).__str__())
+    #path = os.path.abspath(os.curdir)
+    path = "/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5"
     group_5_path = re.search(pattern, path)
 
     if group_5_path:
