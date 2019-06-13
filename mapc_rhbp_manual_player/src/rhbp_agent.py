@@ -12,7 +12,7 @@ from agent_common.agent_utils import get_bridge_topic_prefix
 from grid_map import GridMap
 
 from classes.communications import Communication
-from mapc_rhbp_manual_player.msg import auction_communication, general_communication, personal_communication
+from mapc_rhbp_manual_player.msg import map_communication, auction_communication, general_communication, personal_communication
 from std_msgs.msg import String
 
 from collections import OrderedDict
@@ -49,7 +49,7 @@ class RhbpAgent(object):
         # auction structure
 
         self.bids = {}
-        self.number_of_agents = 2 # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 3 # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -74,7 +74,7 @@ class RhbpAgent(object):
         self._pub_auction = self._communication.start_auction(self._callback_auction)
         self.time_to_bid = True # only test debug puposes
         self.task_subdivision = {"task1":
-                                 {"agents_needed":2,
+                                 {"agents_needed":3,
                                   "agents_assigned":[]
                                  }
                                 }
@@ -155,7 +155,7 @@ class RhbpAgent(object):
         # send the map if perceive the goal
         if self.perception_provider.goals:
             map = self.local_map.getLocalMap()
-            self._communication.send_map(self._pub_map,str(map))
+            self._communication.send_map(self._pub_map,str(map),3,5) #lm_x and lm_y to get
 
         # send personal message test
         if self._agent_name == "agentA1":
@@ -166,7 +166,10 @@ class RhbpAgent(object):
         # send bid 
         if self.time_to_bid:
             task_to_bid = "task1"
-            self._communication.send_bid(self._pub_auction,task_to_bid,10)
+            if (self._agent_name == "agentA1" or self._agent_name == "agentA2"):
+                self._communication.send_bid(self._pub_auction,task_to_bid,10)
+            else:
+                self._communication.send_bid(self._pub_auction,task_to_bid,random.randint(1,100))
             self.time_to_bid = False
             rospy.loginfo(self._agent_name + " ha biddato")
 
@@ -197,7 +200,9 @@ class RhbpAgent(object):
     def _callback_map(self, msg):
         msg_id = msg.message_id
         map_from = msg.agent_id
-        map_value = msg.message
+        map_value = msg.map
+        map_lm_x = msg.lm_x
+        map_lm_y = msg.lm_y
 
         if map_from != self._agent_name:
             rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
@@ -230,7 +235,8 @@ class RhbpAgent(object):
                 self.bids[task_id][msg_from] = task_bid_value
 
             if len(self.bids[task_id]) == self.number_of_agents + 1: # count the done
-                ordered_task = OrderedDict(sorted(self.bids[task_id].items(),key=itemgetter(1)))
+                ordered_task = OrderedDict(sorted(self.bids[task_id].items(),key=lambda x: (x[1],x[0])))
+                #rospy.loginfo(self._agent_name +  " | " + str(ordered_task))
                                 
                 duplicate = -999
                 i = 0
@@ -239,10 +245,11 @@ class RhbpAgent(object):
                         if (i == self.task_subdivision[task_id]["agents_needed"] + 1):
                             break
 
-                        available = (len(ordered_task) - 1)  - len(self.task_subdivision[task_id]["agents_assigned"]) - (i - 1)
-                        #rospy.loginfo(self._agent_name + " |1: " + str(len(ordered_task) - 1) + " | 2: " + str(len(self.task_subdivision[task_id]["agents_assigned"])) + "i: " + str(i))
-                        if (value != duplicate or available == 0):
+                        available = (len(ordered_task) - 1)  - len(self.task_subdivision[task_id]["agents_assigned"]) - i
+                        #rospy.loginfo(self._agent_name + " |1: " + str(len(ordered_task) - 1) + " | 2: " + str(len(self.task_subdivision[task_id]["agents_assigned"])) + "i: " + str(i) + " | current:" + key)
+                        if (value != duplicate or available <= 0):
                             self.task_subdivision[task_id]["agents_assigned"].append(key)
+                            
                         
                         duplicate = value
                             
