@@ -12,9 +12,13 @@ from agent_common.agent_utils import get_bridge_topic_prefix
 from grid_map import GridMap
 
 from classes.communications import Communication
-from mapc_rhbp_manual_player.msg import general_communication, personal_communication
+from mapc_rhbp_manual_player.msg import auction_communication, general_communication, personal_communication
 from std_msgs.msg import String
 
+from collections import OrderedDict
+from operator import itemgetter
+
+import random
 import numpy as np
 
 class RhbpAgent(object):
@@ -42,6 +46,11 @@ class RhbpAgent(object):
 
         self.local_map = GridMap()
 
+        # auction structure
+
+        self.bids = {}
+        self.number_of_agents = 2 # TODO: check if there's a way to get it automatically
+
         self._sim_started = False
 
         # subscribe to MAPC bridge core simulation topics
@@ -61,6 +70,14 @@ class RhbpAgent(object):
         self._pub_map = self._communication.start_map(self._callback_map)
         # Personal message topic
         self._pub_agents = self._communication.start_agents(self._callback_agents)
+        # Auction topic
+        self._pub_auction = self._communication.start_auction(self._callback_auction)
+        self.time_to_bid = True # only test debug puposes
+        self.task_subdivision = {"task1":
+                                 {"agents_needed":2,
+                                  "agents_assigned":[]
+                                 }
+                                }
 
         self._received_action_response = False
 
@@ -146,6 +163,14 @@ class RhbpAgent(object):
 
         self._received_action_response = False
 
+        # send bid 
+        if self.time_to_bid:
+            task_to_bid = "task1"
+            self._communication.send_bid(self._pub_auction,task_to_bid,10)
+            self.time_to_bid = False
+            rospy.loginfo(self._agent_name + " ha biddato")
+
+            
         # update map
         #self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
 
@@ -189,8 +214,44 @@ class RhbpAgent(object):
         if msg.agent_id_to == self._agent_name:
             rospy.loginfo(self._agent_name + " received message from " + msg_from + " | id: " + msg_id + " | type: " + msg_type + " | params: " + msg_param)
             self._communication.send_message(self._pub_agents,msg_from,"received",msg_id)
+    
+    def _callback_auction(self, msg):
+        msg_id = msg.message_id
+        msg_from = msg.agent_id
+        task_id = msg.task_id
+        task_bid_value = msg.bid_value
 
+        if (not task_id in self.bids):
+            self.bids[task_id] = OrderedDict()
+            self.bids[task_id]["done"] = False
+        
+        if (self.bids[task_id]["done"] == False):
+            if (not msg_from in self.bids[task_id]):
+                self.bids[task_id][msg_from] = task_bid_value
 
+            if len(self.bids[task_id]) == self.number_of_agents + 1: # count the done
+                ordered_task = OrderedDict(sorted(self.bids[task_id].items(),key=itemgetter(1)))
+                                
+                duplicate = -999
+                i = 0
+                for key, value in ordered_task.items():
+                    if (i > 0): #skip done
+                        if (i == self.task_subdivision[task_id]["agents_needed"] + 1):
+                            break
+
+                        available = (len(ordered_task) - 1)  - len(self.task_subdivision[task_id]["agents_assigned"]) - (i - 1)
+                        #rospy.loginfo(self._agent_name + " |1: " + str(len(ordered_task) - 1) + " | 2: " + str(len(self.task_subdivision[task_id]["agents_assigned"])) + "i: " + str(i))
+                        if (value != duplicate or available == 0):
+                            self.task_subdivision[task_id]["agents_assigned"].append(key)
+                        
+                        duplicate = value
+                            
+                    i += 1
+
+                self.bids[task_id]["done"] = True
+                rospy.loginfo("DONE: " + str(self.task_subdivision[task_id]["agents_assigned"]))
+        
+        
 
     def _initialize_behaviour_model(self):
         """
