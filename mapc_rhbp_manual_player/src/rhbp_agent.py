@@ -29,7 +29,7 @@ class RhbpAgent(object):
     def __init__(self):
         rospy.logdebug("RhbpAgent::init")
 
-        rospy.init_node('agent_node', anonymous=True, log_level=rospy.INFO)
+        rospy.init_node('agent_node', anonymous=True, log_level=rospy.DEBUG)
 
         self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
 
@@ -44,7 +44,7 @@ class RhbpAgent(object):
 
         self.perception_provider = PerceptionProvider()
 
-        self.local_map = GridMap()
+        self.local_map = GridMap(agent_name=self._agent_name,live_plotting=True)
 
         # auction structure
 
