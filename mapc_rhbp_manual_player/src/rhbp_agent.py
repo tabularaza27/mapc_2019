@@ -241,7 +241,7 @@ class RhbpAgent(object):
 
                         available = (len(ordered_task) - 1)  - len(self.task_subdivision[task_id]["agents_assigned"]) - (i - 1)
                         #rospy.loginfo(self._agent_name + " |1: " + str(len(ordered_task) - 1) + " | 2: " + str(len(self.task_subdivision[task_id]["agents_assigned"])) + "i: " + str(i))
-                        if (value != duplicate or available == 0):
+                        if (value != duplicate or available <= 0):
                             self.task_subdivision[task_id]["agents_assigned"].append(key)
                         
                         duplicate = value
