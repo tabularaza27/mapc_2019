@@ -19,7 +19,7 @@ class RhbpAgent(object):
     def __init__(self):
         rospy.logdebug("RhbpAgent::init")
 
-        rospy.init_node('agent_node', anonymous=True, log_level=rospy.INFO)
+        rospy.init_node('agent_node', anonymous=True, log_level=rospy.DEBUG)
 
         self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
 
