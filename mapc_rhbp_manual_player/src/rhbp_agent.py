@@ -5,7 +5,7 @@ from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, 
 
 from behaviour_components.managers import Manager
 
-from agent_common.behaviours import CommunicationTest #RandomMove, Dispense, MoveToDispenser
+from agent_common.behaviours import ManualMove, CommunicationTest #RandomMove, Dispense, MoveToDispenser
 from agent_common.providers import PerceptionProvider
 from agent_common.agent_utils import get_bridge_topic_prefix
 
@@ -152,17 +152,17 @@ class RhbpAgent(object):
         This function initialises the RHBP behaviour/goal model.
         """
 
-        '''
+
         # Manual Player Move/Exploration
         manual_move = ManualMove(name="manual_move", perception_provider=self.perception_provider, agent_name=self._agent_name)
         self.behaviours.append(manual_move)
-        '''
 
+
+        '''
         # Communication test
         comm_test = CommunicationTest(name="comm_test", perception_provider=self.perception_provider, agent_name=self._agent_name)
         self.behaviours.append(comm_test)
-
-        '''
+        
         # Random Move/Exploration
         random_move = RandomMove(name="random_move", agent_name=self._agent_name)
         self.behaviours.append(random_move)

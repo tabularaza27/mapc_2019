@@ -11,7 +11,7 @@ from helpers import manhattan_distance
 from path_planner import GridPathPlanner
 
 import global_variables
-import rospy #for debug logs
+#import rospy #for debug logs
 
 
 # ToDo: Implement blocks
@@ -360,8 +360,11 @@ class GridMap:
         for y, x in np.ndindex(self._representation.shape):
             if self._representation[y][x] == -1:
                 for direction in global_variables.moving_directions:
-                    cell_coord = (y+direction[0], x+direction[1])
-                    if cell_coord[0] < self._representation.shape[0] and cell_coord[1] < self._representation.shape[1]:
+                    cell_coord = (y + direction[0], x + direction[1])
+                    # Make sure in range
+                    if self._representation.shape[0] - 1 > cell_coord[0] >= 0 \
+                            and self._representation.shape[1] - 1 > cell_coord[1] >= 0:
+                        # Adherence cell is walkable
                         if self._representation[cell_coord] not in (self.UNKNOWN_CELL, self.WALL_CELL, self.ENTITY_CELL):
                             possible_points.append(cell_coord)
 
@@ -377,25 +380,55 @@ class GridMap:
             """
             # calculate the amount of unknown cells around this cell
             unknown_count = self._get_unknown_amount((y, x))
+            '''
             if unknown_count == current_high_score:
-                best_points.append([(y, x)])
+                best_points.append([(y, x)])            
             elif unknown_count > current_high_score:
                 current_high_score = unknown_count
                 best_points = [[(y, x)]]
+            '''
+            if unknown_count > current_high_score:
+                current_high_score = unknown_count
+                best_points.append([(y, x)])
+
 
         # calculate path length between current position and potential exploration points and choose the one with shortest path
         shortest_path = np.inf
         best_point = None
         best_path = None
+        print ("points:" + str(best_points))
         for point in best_points:
-            print(point)
-            path = self.path_planner.astar(self._representation, [self._agent_position], point)
-            print(path)
+            #print(point)
+            path = self.path_planner.astar(self._representation, self._agent_position, point)
+            #print(path)
+            length = len(path)
+            print (length)
             if path is not None:
-                if len(path) < shortest_path:
+                if length < shortest_path:
                     best_point = point
                     best_path = path
+                    shortest_path = length
 
         return best_point, best_path, current_high_score
 
 
+def main():
+    import time
+
+    my_map = GridMap('Agent1')
+    my_map._representation = np.loadtxt(open("generatedMaps/00/partial.csv", "rb"), delimiter=",")
+    my_agent = [[4, 14]]
+    my_map._agent_position = np.array(my_agent, dtype=np.int)
+
+    start_time = time.time()
+    best_point, best_path, current_high_score = my_map._get_point_to_explore()
+    print ("---%s seconds ---" % (time.time() - start_time))
+    print ("Best point:" + str(best_point))
+    #print ("Best path:" + str(best_path))
+    #print ("Current high score:" + str(current_high_score))
+
+
+
+
+if __name__ == '__main__':
+    main()

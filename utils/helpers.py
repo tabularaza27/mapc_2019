@@ -17,12 +17,18 @@ def get_utils_location():
         ValueError: if group5 folder could not be found ( reason is the the script was executed outside of /group5
     """
     pattern = '^(.*?group5)'
-    path = '/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5/mapc_rhbp_manual_player/src'
+
+    # get current path --> needs to be beneath /group5
+
+    #print("AAAAAAAAAAAAAAAAAAAAAAAAAAA: " + os.path.abspath(os.curdir).__str__())
+    #path = os.path.abspath(os.curdir)
+    path = "/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5"
+    
     group_5_path = re.search(pattern, path)
 
     if group_5_path:
         utils_path = os.path.join(group_5_path.group(0), 'utils')
-        return  utils_path
+        return utils_path
     else:
         raise ValueError('Could not find group5 dir, file was executed outside of /group5')
 
