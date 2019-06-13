@@ -185,7 +185,9 @@ class GridMap:
             direction = self.path_planner.next_move_direction(
                 self._from_relative_to_matrix(self._agent_position),
                 self.paths[path_id])
-
+    
+    def getLocalMap(self):
+        return self._representation
         rospy.logdebug("Best path: " + str(self.paths[path_id]))
         rospy.logdebug("direction: " + direction)
         return path_id, direction
