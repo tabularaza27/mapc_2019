@@ -1,14 +1,11 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import numpy as np
 
-"""
-NOTE.
-Improvements:
-- Global varaible for directions (n, s, ...) and tuple ([0,1], ...) 
-"""
-# Global variables
-direction_values = [(-1, 0), (1, 0), (0, 1), (0, -1), 'ccw', 'cw']  # maze(rows, col) = agent(y, x)
+# Global variables # TODO: import global variables
+direction_values = [[-1, 0], [1, 0], [0, 1], [0, -1], 'ccw', 'cw']  # maze(rows, col) = agent(y, x)
 direction_list = ['n', 's', 'e', 'w', 'ccw', 'cw']
+
 class GridPathPlanner():
     class Node():
         """A node class for A* Pathfinding"""
@@ -24,14 +21,13 @@ class GridPathPlanner():
         def __eq__(self, other):
             return self.position == other.position
 
-
     def astar(self, maze, start, end):
         """ Return a path list in map coordinates given a map (maze), an starting point and an end point
 
         Args:
             maze (np.array): given local or global map
-            start (list): starting position in the map of the object compose by the agent and all the blocks attached to it
-            end (list): ending position in the map of the object compose by the agent and all the blocks attached to it
+            start (np.array): starting position in the map of the object compose by the agent and all the blocks attached to it
+            end (np.array): ending position in the map of the object compose by the agent and all the blocks attached to it
 
         Returns:
             list: path in map coordinates
@@ -41,7 +37,7 @@ class GridPathPlanner():
         # Check if the end point is not a free cell
         for element in end:
             end_pos = maze[element[0]][element[1]]
-            if end_pos != 0:  # ( ADD OTHER TYPES OF BLOCKED CELLS HERE )
+            if end_pos != 0:  # TODO: ADD OTHER TYPES OF BLOCKED CELLS HERE
                 print ("invalid End point")
                 return
 
@@ -74,7 +70,7 @@ class GridPathPlanner():
             closed_list.append(current_node)
 
             # Found the goal
-            if current_node == end_node:
+            if (current_node == end_node).all():
                 path = []
                 current = current_node
                 while current is not None:
@@ -87,6 +83,7 @@ class GridPathPlanner():
 
             # Check adjacent cells (n, s, e , w) and rotations (left, right)
             for new_position in direction_values:
+
                 # Get node position
                 if new_position == 'ccw' or new_position == 'cw':
                     node_position = self.rotation(current_node.position, new_position)
@@ -112,7 +109,7 @@ class GridPathPlanner():
             for child in children:
                 # Child is on the closed list
                 for closed_child in closed_list:
-                    if child == closed_child:
+                    if (child == closed_child).all():
                         break
                 else:
                     # Create the f, g, and h values
@@ -127,85 +124,76 @@ class GridPathPlanner():
                     for open_node in open_list:
                         # check if the new path to children is worst or equal than
                         # one already in the open_list (by measuring g value)
-                        if child == open_node and child.g >= open_node.g:
+                        if (child == open_node).all() and child.g >= open_node.g:
                             break
                     else:
                         # Add the child to the open list
                         open_list.append(child)
-
 
     def translation(self, node, direction):
         """Apply a translation (n, s, e, w) to a node (Agent + blocks attached) and return its new position in
             map coordinates
 
         Args:
-            node (list): Node to be translated
+            node (np.array): Node to be translated
             direction (list): Direction of the translation (n, s, e, w)
 
         Returns:
-            list: Node translated in map coordinates
+            np.array: Node translated in map coordinates
 
         """
-        # Apply transformation
-        node_translated = []
-        for element in node:
-            node_y = element[0] + direction[0]
-            node_x = element[1] + direction[1]
-            node_translated.append((node_y, node_x))
+        # Create a copy of node
+        node_translated = np.copy(node)
+
+        # Apply translation
+        for i in range(0, node_translated.shape[0]):
+            node_translated[i] = node_translated[i] + direction
 
         return node_translated
-
 
     def rotation(self, node, direction):
         """ Apply a rotation (counterclockwise, clockwise) to a node (Agent + blocks attached) and return its new position in
             map coordinates
 
         Args:
-            node (list): Node to be rotated
+            node (np.array): Node to be rotated
             direction (string): Direction of the rotation (cw = Clockwise or ccw = Counterclockwise)
 
         Returns:
-            list: Node rotated in map coordinates
+            np.array: Node rotated in map coordinates
 
         """
         # Rotation transformations
-        rotate_left = (-1, 1)
-        rotate_right = (1, -1)
-        # Check relative position of node
-        node_rotated = []
+        rotate_left = [-1, 1]
+        rotate_right = [1, -1]
+
+        # Transform to relative coordinates
         origin = node[0]
-        node_rel = self.transform_matrix_node_to_relative(node, origin)
-        for element in node_rel:
-            if element == (0, 0):
-                # Agent pos doesn't rotate : Transform to matrix notation and append
-                element_rotated_y = element[0] + origin[0]
-                element_rotated_x = element[1] + origin[1]
-                element_rotated = (element_rotated_y, element_rotated_x)
-                node_rotated.append(element_rotated)
-                continue
+        node_rotated = self.transform_matrix_node_to_relative(node, origin)
 
-            # Check direction of rotation
-            if direction == 'ccw':
-                rot_transf = rotate_left
-            else:  # right
-                rot_transf = rotate_right
+        # Check direction of rotation
+        if direction == 'ccw':
+            rotation = rotate_left
+        else:   # cw
+            rotation = rotate_right
 
-            # Element_rotated = swap (y,x) * rotate_left/right + origin
-            element_y = element[0]
-            element_x = element[1]
-            # Swap y and x
-            element_swap = (element_x, element_y)
-            # Apply rotation + conversion to matrix notation
-            element_rotated_y = element_swap[0] * rot_transf[0] + origin[0]
-            element_rotated_x = element_swap[1] * rot_transf[1] + origin[1]
-            element_rotated = (element_rotated_y, element_rotated_x)
+        # Apply rotation: swap (y,x) * rotate_left/right + origin
+        for i in range(1, node_rotated.shape[0]):
+            # swap
+            node_element = node_rotated[i]
+            node_element = node_element[::-1]
+            # Multiply by rotation transformation
+            node_rotated_y = node_element[0]*rotation[0]
+            node_rotated_x = node_element[1]*rotation[1]
+            node_rotated[i] = [node_rotated_y, node_rotated_x]
 
-            # Add rotated element to the node
-            node_rotated.append(element_rotated)
+        # Convert back to map coordinates
+        node_rotated = self.transform_relative_node_to_matrix(node_rotated, origin)
 
         return node_rotated
 
-
+    # TODO: Translate function for converting path from map to relative coordinates
+    '''
     def transform_matrix_list_to_relative(self, node_matrix, pos_init):
         """Transform a list of nodes (agent + block) position in map coordinates to
             relative coordinates (agent position = (0,0))
@@ -230,6 +218,7 @@ class GridPathPlanner():
             node_rel_element = []  # reset list
 
         return node_rel_list
+    '''
 
 
     def transform_matrix_node_to_relative(self, node_matrix, pos_init):
@@ -237,22 +226,21 @@ class GridPathPlanner():
 
 
         Args:
-            node_matrix (tuple): node in map coordinates
-            pos_init(tuple): position at the node initialization in map coordinates
+            node_matrix (np.array): node in map coordinates
+            pos_init(np.array): position at the node initialization in map coordinates
 
         Returns:
-            tuple: node in relative coordinates (agent position = (0,0)
+            np.array: node in relative coordinates (agent position = (0,0)
 
         """
-        node_rel = []
-        for element in node_matrix:
-            node_rel_y = element[0] - pos_init[0]
-            node_rel_x = element[1] - pos_init[1]
-            node_rel.append((node_rel_y, node_rel_x))
+
+        node_rel = np.copy(node_matrix)
+        node_rel = node_rel - pos_init
 
         return node_rel
 
-
+    # TODO: Translate function for converting path from relative to map coordinates
+    '''
     def transform_relative_list_to_matrix(self, node_rel, pos_init):
         """Transform a list of nodes (agent + block) position in relative coordinates (agent position = (0,0)) to
             map coordinates
@@ -276,34 +264,31 @@ class GridPathPlanner():
             node_matrix_element = []
 
         return node_matrix_list
-
+    '''
 
     def transform_relative_node_to_matrix(self, node_rel, pos_init):
         """Transform a node (agent + block) position in relative coordinates (agent position = (0,0)) to
             map coordinates
 
         Args:
-            node_rel (tuple): node in relative coordinates
-            pos_init (tuple): position at the node initialization in map coordinates
+            node_rel (np.array): node in relative coordinates
+            pos_init (np.array): position at the node initialization in map coordinates
 
         Returns:
-            tuple: node in map coordinates
+            np.array: node in map coordinates
 
         """
-        node_matrix = []
-        for element in node_rel:
-            node_matrix_y = element[0] + pos_init[0]
-            node_matrix_x = element[1] + pos_init[1]
-            node_matrix.append((node_matrix_y, node_matrix_x))
+        node_matrix = np.copy(node_rel)
+        node_matrix = node_matrix + pos_init
 
         return node_matrix
 
 
-    def next_move_direction(self, node_pos, path):
-        """ Return the next move or rotate direction to perform with respect to a given path and map
+    def next_move_direction(self, actual_pos, path):
+        """ Return the next move or rotate direction to perform with respect to a given path and agent position
 
         Args:
-            node_pos (list): position of the agent + blocks at the moment
+            actual_pos (np.array): position of the agent + blocks at the moment
             path (list): path to follow by the agent
 
         Returns:
@@ -315,90 +300,58 @@ class GridPathPlanner():
 
         """
 
-        # Variables for getting actual position in path
-        path_position_index = 0
-        path_length = len(path)
-        block_number = len(path[0])     # number of elements in node (agent + blocks)
+        # Index of actual position in path
+        for index, node in enumerate(path):
+            if (node == actual_pos).all():
+                path_index = index
+                break   # get out
+            else:
+                path_index = -1
 
-        # Check if there is any block attached
-        if block_number == 1:   # no blocks, only agent
-            current_block_pos = node_pos[0]     # we track agent position
-            block_index = 0
-        else:
-            current_block_pos = node_pos[1]     # we track first block attached position
-            current_agent_pos = node_pos[0]     # for double check
-            block_index = 1
+        # Check if position doesn't exist in path
+        if path_index == -1:
+            next_action = 'unknown position'
+            return next_action
 
-        # Get index of the actual position in the path
-        for index, path_step in enumerate(path):
-            # Discard previous steps from path
-            block_pos = path_step[block_index]
-            if block_index == 0 and block_pos != current_block_pos:
-                continue
-            if block_index == 1:
-                agent_pos = path_step[block_index - 1]
-                if block_pos != current_block_pos or agent_pos != current_agent_pos:
-                    continue
-            # Check if the position is the end point or not inside the path
-            end_index = path_length - 1     # end_point
-            if index == end_index:
-                next_action = 'end'
-                return next_action
-            elif index < end_index:
-                # Save the index of the current position in path
-                path_position_index = index
-                break   # Get out of the for loop
-            else:   # position is not in the path
-                next_action = 'unknown position in the path'
-                return next_action
+        # Check if the end has been reached
+        if path_index == len(path) - 1:
+            next_action = 'end'
+            return next_action
 
-        # Next position of the node and tracking block
-        next_node_pos = path[path_position_index + 1]
-        next_pos = next_node_pos[block_index]
-        current_pos = current_block_pos
+        # Save next position from path
+        next_pos = np.copy(path[path_index + 1])
 
-        # Calculate relative position of the next step w.r.t current position
-        current_pos_y = current_pos[0]
-        current_pos_x = current_pos[1]
-        next_pos_y = next_pos[0]
-        next_pos_x = next_pos[1]
+        # Calculate difference between next and actual position
+        diff = next_pos - actual_pos
 
-        # direction = next position - actual position
-        direction_y = next_pos_y - current_pos_y
-        direction_x = next_pos_x - current_pos_x
-
-        # Check for type of movement ( rotation or translation)
-        if abs(direction_y + direction_x) != 1:     # rotation
-            # Apply inverse rotation to figure out the direction
-            for rotation_direction in ['ccw', 'cw']:
-                block_rotate = self.rotation(node_pos, rotation_direction)
-                if block_rotate[1] == (next_pos_y, next_pos_x):
-                    next_action = rotation_direction
+        # Check if diff is rotation
+        if np.sum(diff[0]) == 0:    # first node is equal in a rotation
+            for rotation in ['ccw', 'cw']:
+                block_rotate = self.rotation(actual_pos, rotation)
+                if (block_rotate == next_pos).all():
+                    next_action = rotation
                     return next_action
+
             print ("unknown rotation")
             next_action = 'unknown rotation'
             return next_action
 
-        # Translation
-        direction = (direction_y, direction_x)
+        else:   # translation
+            for coord, movement in enumerate(direction_values):
+                if (movement == diff[0]).all():     # Check agent, equal for all the blocks too
+                    next_action = direction_list[coord]
+                    return next_action
+                elif coord == len(direction_values) - 1:
+                    print ("action is unknown")
+                    next_action = 'unknown translation'
+                    return next_action
 
-        # Get the next action
-        for coord, movement in enumerate(direction_values):
-            if movement == direction:
-                next_action = direction_list[coord]
-                return next_action
-            elif coord == len(direction_values) - 1:
-                print ("action is unknown")
-                next_action = 'unknown translation'
-                return next_action
-
-
-    def show_path(self, maze, path_matrix, length=-1, pause=1.0):
+    def show_path(self, maze, path_matrix, length = -1, pause=1.0):
         """Generate a representation of the map with the path of the agent coloured in orange and the blocks in yellow
 
         Args:
             maze (np.array): map matrix
-            path_matrix (tuple): path in matrix notation
+            path_matrix (list): path in matrix notation
             lenght(int): the length of the path to show
             pause(float): the pause between each frame
         Returns:
@@ -425,7 +378,7 @@ class GridPathPlanner():
                 j = element[1]
                 agent_color = agent_path_cell
                 block_color = block_path_cell
-                if counter == length-1: #change color of the current agent position
+                if counter == length-1: # change color of the current agent position
                     agent_color = last_agent
                     block_color = last_block
                 if index == 0:
@@ -439,7 +392,8 @@ class GridPathPlanner():
 
         plt.draw()
         plt.pause(pause)
-        if(length < len(path_matrix)-1): # don't clear the last image
+        #if(length < len(path_matrix)-1): # don't clear the last image
+        if (length < len(path_matrix) - 1):  # don't clear the last image
             plt.clf()
 
 
@@ -461,19 +415,24 @@ def main():
             [ 0, 0, 0,  0,-2, 0,-2, 0, 0, 0],
             [ 0, 0, 0,  0,-2, 0, 0, 0, 0, 0]]
 
-    # Example with 2 blocks attached (L shape)
-    start = [(0, 0), (0, 1), (1, 1)]
-    end = [(1, 5), (1, 4), (0, 4)]
     """
-    # Example without blocks attached
-    start = [(1, 1)]
-    end = [(6, 8)]
+    # Single agent
+    start_point = [[1, 1]]
+    end_point = [[6, 8]]
     """
+
+    # Agent + blocks (L shape)
+    start_point = [[0, 0], [0, 1], [1, 1]]
+    end_point = [[1, 5], [1, 4], [0, 4]]
+
+    start = np.array(start_point, dtype=np.int)
+    end = np.array(end_point, dtype=np.int)
+    
     path_planner = GridPathPlanner()
     path = path_planner.astar(maze, start, end)  # path in matrix notation
     print (path)
 
-
+    """
     # Animation of path
     if path is not None:
         plt.ion()
@@ -483,6 +442,7 @@ def main():
         print ("There is no path")
         
     raw_input("Press Enter to continue...")
+    """
 
     # Next_move print
     if path is not None:
@@ -490,13 +450,10 @@ def main():
             # Print next action
             move = path_planner.next_move_direction(next_step, path)
             print (move)
-            #raw_input("Press Enter to continue...")
+            raw_input("Press Enter to continue...")
     else:
         print ("There is no path")
-
-    raw_input("Press Enter to continue...")
-
-
+        raw_input("Press Enter to continue...")
 
 
 if __name__ == '__main__':
