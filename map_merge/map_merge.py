@@ -1,34 +1,36 @@
-import numpy
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 
-def mapMerge(m1, m2):
+def mapMerge(m1, m2, lm1, lm2):
+    # TODO PASS AND USE TOP_LEFT COORDINATES
+    # TODO copy only the unknown in m2
     goal_landmark = 3
 
     # these should be saved in a variable during exploration to avoid computational waste
-    pos_landmark_m1 = numpy.where(m1 == goal_landmark)
-    pos_landmark_m2 = numpy.where(m2 == goal_landmark)
+    pos_landmark_m1 = np.where(m1 == goal_landmark)
+    pos_landmark_m2 = np.where(m2 == goal_landmark)
 
     print(pos_landmark_m1)
+    print(pos_landmark_m2)
 
-    '''
-
-    # calculate rows to add
     
-    top_rows_to_add = int(pos_landmark_m1[0] - pos_landmark_m2[0]) 
+    top_rows_to_add = int(lm1[0] - lm2[0])
     if top_rows_to_add < 0:
         top_rows_to_add = 0
-        
-    bottom_rows_to_add = int(len(m1) - pos_landmark_m1[0]) - int(len(m2) - pos_landmark_m2[0])
+
+
+    bottom_rows_to_add = int(len(m1) - lm1[0]) - int(len(m2) - lm2[0])
     if bottom_rows_to_add < 0:
         bottom_rows_to_add = 0
 
-    left_columns_to_add = int(pos_landmark_m1[1] - pos_landmark_m2[1])
+    
+    left_columns_to_add = int(lm1[1] - lm2[1])
     if left_columns_to_add < 0:
         left_columns_to_add = 0
 
-    right_columns_to_add = int(len(m1) - pos_landmark_m1[1]) - int(len(m2) - pos_landmark_m2[1])
+    right_columns_to_add = int(len(m1) - lm1[1]) - int(len(m2) - lm2[1])
     if right_columns_to_add < 0:
         right_columns_to_add = 0
     
@@ -37,54 +39,79 @@ def mapMerge(m1, m2):
     print(str(left_columns_to_add))
     print(str(right_columns_to_add))
 
-    n_rows = top_rows_to_add if top_rows_to_add > 0 else bottom_rows_to_add
-    n_columns = left_columns_to_add if left_columns_to_add > 0 else right_columns_to_add
 
-    if (n_rows != 0 or n_columns != 0):
-        print("---")
-        print(str(n_rows))
-        print(str(n_columns))
+    fill_top = np.full((top_rows_to_add, m2.shape[1]),-1)
+    m2 = np.r_[fill_top,m2]
 
-        fill_c = numpy.full((len(m2),n_columns),-1)
-        m2 = numpy.c_[fill_c,m2] if right_columns_to_add == 0 else numpy.c_[m2,fill_c]
-        
-        fill_r = numpy.full((n_rows,len(m2[0])),-1)
-        m2 = numpy.r_[m2,fill_r] if top_rows_to_add == 0 else numpy.r_[fill_r,m2]
-        print(m2)
-        
-        if (top_rows_to_add == 0):
-            i_m2_zeroval = int(pos_landmark_m2[0] - pos_landmark_m1[0])
-        else: # added on the top
-            i_m2_zeroval = int(pos_landmark_m2[0] - pos_landmark_m1[0]) + n_rows
+    fill_bot = np.full((bottom_rows_to_add, m2.shape[1]), -1)
+    m2 = np.r_[m2, fill_bot]
 
-        if (left_columns_to_add == 0):
-            j_m2_zeroval = int(pos_landmark_m2[1] - pos_landmark_m1[1])
-        else: # added on the left
-            j_m2_zeroval = int(pos_landmark_m2[1] - pos_landmark_m1[1]) + n_columns
-        
-        
+    fill_left = np.full((m2.shape[0], left_columns_to_add), -1)
+    m2 = np.c_[fill_left, m2]
 
-        i_m2 = i_m2_zeroval
+    fill_right = np.full((m2.shape[0], right_columns_to_add), -1)
+    m2 = np.c_[m2, fill_right]
 
-        print(i_m2_zeroval)
-        print(j_m2_zeroval)
-        
-        for i in range(0,len(m1)):
-            j_m2 = j_m2_zeroval
+    #showSingleMap(m2)
 
-            for j in range(0,len(m1[0])):
-                m2[i_m2,j_m2] = m1[i,j]
-                j_m2 += 1
-            
-            i_m2 += 1
+    # get new coordinates of landmarks of m2
+    lm2 = (lm2[0]+top_rows_to_add, lm2[1]+left_columns_to_add)
 
-        print("---")
-        print(str(m2))
-        return m2
-    else:
-        print("eh no dc")
+    print(lm1)
+    print(lm2)
+    shift = sum_tuple(lm2, lm1, minus=True)
+    print("shift: " + str(shift))
+
+    showSingleMap(m2)
+    showSingleMap(m1)
+
+    for i in range(m1.shape[0]):
+        for j in range(m1.shape[1]):
+            index_m2 = (i, j)
+            cell_value = m1[index_m2]
+
+            index_m2 = sum_tuple(index_m2, shift)
+            if m2[index_m2] == -1:
+                m2[index_m2] = cell_value
+
+    showSingleMap(m2)
+    """
+    if (top_rows_to_add == 0):
+        i_m2_zeroval = int(pos_landmark_m2[0] - pos_landmark_m1[0])
+    else: # added on the top
+        i_m2_zeroval = int(pos_landmark_m2[0] - pos_landmark_m1[0]) + n_rows
+
+    if (left_columns_to_add == 0):
+        j_m2_zeroval = int(pos_landmark_m2[1] - pos_landmark_m1[1])
+    else: # added on the left
+        j_m2_zeroval = int(pos_landmark_m2[1] - pos_landmark_m1[1]) + n_columns
     
-    '''
+    
+
+    i_m2 = i_m2_zeroval
+
+    print(i_m2_zeroval)
+    print(j_m2_zeroval)
+    
+    for i in range(0,len(m1)):
+        j_m2 = j_m2_zeroval
+
+        for j in range(0,len(m1[0])):
+            m2[i_m2,j_m2] = m1[i,j]
+            j_m2 += 1
+        
+        i_m2 += 1
+
+    print("---")
+    print(str(m2))
+    return m2
+    """
+
+def sum_tuple(a,b,minus=False):
+    if not minus:
+        return a[0] + b[0], a[1] + b[1]
+    else:
+        return a[0] - b[0], a[1] - b[1]
 
 def showSingleMap(map):
     cmap = 'cool'#mpl.colors.ListedColormap(['grey','white', 'black', 'blue', 'red'])
@@ -138,14 +165,14 @@ m2 = [ [1,0,1,0,0],
        [0,1,1,0,0] ]
 '''
 
-m1 = numpy.loadtxt(open("agentA1.txt", "rb"), delimiter=",", dtype=int)
-m2 = numpy.loadtxt(open("agentA2.txt", "rb"), delimiter=",", dtype=int)
+m1 = np.loadtxt(open("agentA1.txt", "rb"), delimiter=",", dtype=int)
+m2 = np.loadtxt(open("agentA2.txt", "rb"), delimiter=",", dtype=int)
 
-m2_m = mapMerge(m1,m2)
+m2_m = mapMerge(m1, m2, (8,23),(6,22))
 
 '''
-m1 = numpy.array(m1)
-m2 = numpy.array(m2)
+m1 = np.array(m1)
+m2 = np.array(m2)
 
 
 
