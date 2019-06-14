@@ -16,6 +16,7 @@ def get_utils_location():
     Raises:
         ValueError: if group5 folder could not be found ( reason is the the script was executed outside of /group5
     """
+
     pattern = '^(.*?group5)'
 
     # get current path --> needs to be beneath /group5
