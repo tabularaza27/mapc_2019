@@ -1,4 +1,5 @@
 import numpy as np
+from collections import deque
 import matplotlib as mpl
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ import os
 from helpers import get_utils_location
 from helpers import add_coord
 from helpers import manhattan_distance
+from helpers import coord_inside_matrix
 from path_planner import GridPathPlanner
 
 import global_variables
@@ -69,8 +71,9 @@ class GridMap:
         self._origin = (self.agent_vision, self.agent_vision)  # the origin of the agent is at the center of the map
 
         # info about agent in map
-        self._agent_position = self._origin
+        self._agent_position = (0, 0)
         self._representation[self._agent_position[1]][self._agent_position[0]] = -4
+        self._distances = np.array([]) # the matrix of all the distances from the agent
 
         # objects in map
         self._dispensers = []
@@ -104,15 +107,17 @@ class GridMap:
         # if last action was move update agent position and expand map size if sight is out of bounds
         if agent.last_action == "move" and agent.last_action_result == "success":
             self._update_agent_position(move=agent.last_action_params[0])
-
+        agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
+        self._representation[agent_in_matrix] = 0
         # update empty cells (all cells that are in vision range, get overwritten below if they are occupied)
         for i in range(0, self.agent_vision + 1):
             for j in range(0, self.agent_vision + 1):
-                if 0 < manhattan_distance(self._agent_position, add_coord(self._agent_position, (i, j))) <= 5:
-                    self._representation[self._agent_position[1] + i][self._agent_position[0] + j] = 0
-                    self._representation[self._agent_position[1] - i][self._agent_position[0] - j] = 0
-                    self._representation[self._agent_position[1] - i][self._agent_position[0] + j] = 0
-                    self._representation[self._agent_position[1] + i][self._agent_position[0] - j] = 0
+                cell = add_coord(agent_in_matrix, (j, i))
+                if 0 < manhattan_distance(agent_in_matrix, cell) <= 5:
+                    self._representation[agent_in_matrix[1] + i][agent_in_matrix[0] + j] = 0
+                    self._representation[agent_in_matrix[1] - i][agent_in_matrix[0] - j] = 0
+                    self._representation[agent_in_matrix[1] - i][agent_in_matrix[0] + j] = 0
+                    self._representation[agent_in_matrix[1] + i][agent_in_matrix[0] - j] = 0
 
 
         # update obstacles
@@ -160,12 +165,42 @@ class GridMap:
                 self._dispensers.append(dispenser)
 
         # update blocks
+            # TODO
+
+        # update distances
+        self._update_distances()
 
         # write data to file, used for live plotting plotting
         if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0:
             self._write_data_to_file()
 
         self.STEP += 1
+
+    def _update_distances(self):
+        """
+        Update the matrix of distances from the agent
+        Returns: void
+
+        """
+        dist_shape = self._representation.shape
+        self._distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
+        print(self._distances.shape)
+        print(self._origin)
+        print(self._agent_position)
+        agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
+        queue = deque([(agent_in_matrix, 0)])
+        while len(queue) > 0:
+            pos, dist = queue.popleft()
+            self._distances[pos] = dist
+            for direction in global_variables.moving_directions: # ADD ALSO ROTATIONS?
+                new_pos = add_coord(direction, pos)
+                if coord_inside_matrix(new_pos, dist_shape):
+                    if self._distances[new_pos] == -1:
+                        if self._representation[new_pos] != self.WALL_CELL \
+                                and self._representation[new_pos] != self.UNKNOWN_CELL:
+                            queue.append((new_pos, dist+1))
+
+
 
     def get_exploration_move(self, path_id):
         if not self.paths.has_key(path_id):
@@ -209,7 +244,7 @@ class GridMap:
         Returns:
             matrix_coord: (x',y') with respect to the origin of the matrix
         """
-        return add_coord(relative_coord, self._agent_position)
+        return add_coord(relative_coord, self._origin)
 
     def _from_matrix_to_relative(self, matrix_coord):
         """
@@ -221,7 +256,7 @@ class GridMap:
             relative_coord: (x',y') with respect to the origin of the map
         """
 
-        return add_coord(matrix_coord, self._agent_position, operation='sub')
+        return add_coord(matrix_coord, self._origin, operation='sub')
 
     def _update_agent_position(self, move=None):
         """update agents position in map and expand grid if sight is out of bounds
@@ -362,8 +397,7 @@ class GridMap:
                 for direction in global_variables.moving_directions:
                     cell_coord = (y + direction[0], x + direction[1])
                     # Make sure in range
-                    if self._representation.shape[0] - 1 > cell_coord[0] >= 0 \
-                            and self._representation.shape[1] - 1 > cell_coord[1] >= 0:
+                    if coord_inside_matrix(cell_coord, self._representation.shape):
                         # Adherence cell is walkable
                         if self._representation[cell_coord] not in (self.UNKNOWN_CELL, self.WALL_CELL, self.ENTITY_CELL):
                             possible_points.append(cell_coord)

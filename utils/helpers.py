@@ -66,3 +66,9 @@ def manhattan_distance(coord1, coord2):
 
     """
     return abs((coord2[0] - coord1[0])) + abs((coord2[1] - coord1[1]))
+
+def coord_inside_matrix(coord, shape):
+    if coord[0] >= 0 and coord[0] < shape[0] \
+        and coord[1] >= 0 and coord[1] < shape[1]:
+        return True
+    return False
