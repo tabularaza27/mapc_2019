@@ -110,7 +110,7 @@ class GridMap:
         if agent.last_action == "move" and agent.last_action_result == "success":
             self._update_agent_position(move=agent.last_action_params[0])
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
-        self._representation[agent_in_matrix] = 0
+        self._representation[agent_in_matrix[0],agent_in_matrix[1]] = 0
         # update empty cells (all cells that are in vision range, get overwritten below if they are occupied)
         for j in range(-self.agent_vision , self.agent_vision + 1):
             for i in range(-self.agent_vision, self.agent_vision + 1):
@@ -157,7 +157,7 @@ class GridMap:
             # get dispenser type
             for i in range(4):
                 if str(i) in dispenser.type:
-                    self._representation[matrix_pos[0]][matrix_pos[1]] = 10 + i
+                    self._representation[matrix_pos[0]][matrix_pos[1]] = global_variables.DISPENSER_STARTING_NUMBER + i
 
             # add to state variable as dict
             # {pos: {x: 3, y: 3}, type: 'b1'}
@@ -183,7 +183,7 @@ class GridMap:
 
         """
         dist_shape = self._representation.shape
-        self._distances = np.full((dist_shape[1], dist_shape[0]), -1, dtype=int)
+        self._distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
         print(self._distances.shape)
         print(self._origin)
         print(self._agent_position)
@@ -191,16 +191,16 @@ class GridMap:
         queue = deque([(agent_in_matrix, 0)])
         while len(queue) > 0:
             pos, dist = queue.popleft()
-
-            self._distances[pos[1], pos[0]] = dist
-            for direction in global_variables.moving_directions: # ADD ALSO ROTATIONS?
-                new_pos = direction + pos
-                if coord_inside_matrix(new_pos, dist_shape):
-                    if self._distances[new_pos[1], new_pos[0]] == -1:
-                        cell_value = self._representation[new_pos[1], new_pos[0]]
-                        if cell_value != self.WALL_CELL \
-                                and cell_value != self.UNKNOWN_CELL:
-                            queue.append((new_pos, dist+1))
+            if self._distances[pos[0], pos[1]] == -1: #to avoid infinite loop
+                self._distances[pos[0], pos[1]] = dist
+                for direction in global_variables.moving_directions: # ADD ALSO ROTATIONS?
+                    new_pos = direction + pos
+                    if coord_inside_matrix(new_pos, dist_shape):
+                        if self._distances[new_pos[0], new_pos[1]] == -1:
+                            cell_value = self._representation[new_pos[0], new_pos[1]]
+                            if cell_value != self.WALL_CELL \
+                                    and cell_value != self.UNKNOWN_CELL:
+                                queue.append((new_pos, dist+1))
 
 
 
@@ -211,7 +211,7 @@ class GridMap:
             path_id = self._save_path(best_path)
 
         direction = self.path_planner.next_move_direction(
-            self._from_relative_to_matrix(self._agent_position),
+            self._agent_position,
             self.paths[path_id])
 
         # TODO IMPROVE CODE QUALITY
@@ -220,7 +220,7 @@ class GridMap:
             path_id = self._save_path(best_path)
 
             direction = self.path_planner.next_move_direction(
-                self._from_relative_to_matrix(self._agent_position),
+                self._agent_position,
                 self.paths[path_id])
 
         rospy.logdebug("Best path: " + str(self.paths[path_id]))
@@ -290,7 +290,7 @@ class GridMap:
                 self._expand_map(move)
 
             agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
-            self._representation[agent_in_matrix[1]][agent_in_matrix[0]] = -4
+            self._representation[agent_in_matrix[0]][agent_in_matrix[1]] = -4
 
         else:
             pass
@@ -353,43 +353,17 @@ class GridMap:
             int: amount of unknown cells around given position
         """
         unknown_count = 0
-        visited_dim = self.agent_vision*2 + 1
-        visited = np.zeros((visited_dim, visited_dim))
-        visited_origin = np.array([self.agent_vision, self.agent_vision])
-        queue = deque([(position, 0)])
-        while len(queue) > 0:
-            pos, dist = queue.popleft()
-            if dist < self.agent_vision:
-                for direction in global_variables.moving_directions:  # ADD ALSO ROTATIONS?
-                    new_pos = direction + pos
-                    new_pos_in_visited = new_pos - position + visited_origin
-                    if visited[new_pos_in_visited[0], new_pos_in_visited[1]] == 0: # only check a position once
-                        visited[new_pos_in_visited[0], new_pos_in_visited[1]] = 1
-                        can_explore = False
-                        if not coord_inside_matrix(new_pos, self._representation.shape):
-                            can_explore = True
-                        else:
-                            if self._representation[new_pos[0], new_pos[1]] != self.WALL_CELL:
-                                can_explore = True
-                            if self._representation[new_pos[0], new_pos[1]] == self.UNKNOWN_CELL:
-                                unknown_count += 1
-                        if can_explore:
-                            queue.append((new_pos, dist + 1))
-        return unknown_count
-
         # loop through all cells that are in (theoretical) vision from specified position
         # not considering vision hindering through obstacles
-        for y in range(-vision_range, vision_range + 1):
-            for x in range(-vision_range, vision_range + 1):
-                cell_index = (position[0] + y, position[1] + x)
-                # omit cells that are out of bounds
-                if coord_inside_matrix(cell_index, self._representation.shape):
-                    # if unknown, increase unknown count
-                    if self._representation[cell_index[0], cell_index[1]] == -1:
+        for j in range(-self.agent_vision , self.agent_vision + 1):
+            for i in range(-self.agent_vision, self.agent_vision + 1):
+                cell = position + np.array([j, i])
+                if 0 < manhattan_distance(position, cell) <= self.agent_vision:
+                    if not coord_inside_matrix(cell, self._representation.shape):
                         unknown_count += 1
-                else:
-                    unknown_count += 1
-
+                    else:
+                        if self._representation[cell[0], cell[1]] == self.UNKNOWN_CELL:
+                            unknown_count += 1
         return unknown_count
 
     def _get_point_to_explore(self):
@@ -444,7 +418,9 @@ class GridMap:
             #print(point)
             #print(path)
             length = self._distances[possible_points[i][0],possible_points[i][1]]
-            new_score = unknown_counts[i]/length
+            if length == 0:
+                lenght = 100
+            new_score = unknown_counts[i]/(length+10)
             print (length)
             update_new_highscore = False
             if new_score > best_score:
@@ -456,11 +432,15 @@ class GridMap:
                 else:
                     update_new_highscore = True
             if update_new_highscore:
-                best_point = point
+                best_point = possible_points[i]
                 shortest_path = length
                 best_score = new_score
             
-        best_path = self.path_planner.astar(self._representation, np.array([self._from_relative_to_matrix(self._agent_position)]), np.array([best_point]))
+        best_path = self.path_planner.astar(
+            maze=self._representation,
+            origin=self._origin,
+            start=np.array([self._from_relative_to_matrix(self._agent_position)]),
+            end=np.array([best_point]))
         # TODO somewhere if best_score = 0 always we should set the exploring sensor to 0?
         return best_point, best_path, best_score
 

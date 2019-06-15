@@ -1,7 +1,7 @@
 import numpy as np
 
 DEBUG_MODE=True
-LIVE_PLOTTING=True
+LIVE_PLOTTING=False
 
 moving_directions = [[-1, 0], [1, 0], [0, 1], [0, -1]]
 movements = {

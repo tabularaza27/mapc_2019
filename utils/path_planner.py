@@ -22,7 +22,7 @@ class GridPathPlanner():
         def __eq__(self, other):
             return self.position == other.position
 
-    def astar(self, maze, start, end):
+    def astar(self, maze, origin, start, end):
         """ Return a path list in map coordinates given a map (maze), an starting point and an end point
 
         Args:
@@ -75,7 +75,9 @@ class GridPathPlanner():
                 path = []
                 current = current_node
                 while current is not None:
-                    path.append(current.position)
+                    # Transform path to relative
+                    relative_pos = self.transform_matrix_node_to_relative(current.position, origin)
+                    path.append(relative_pos)
                     current = current.parent
                 return path[::-1]  # return reversed path
 
@@ -130,6 +132,7 @@ class GridPathPlanner():
                     else:
                         # Add the child to the open list
                         open_list.append(child)
+
 
     def is_walkable(self, cell):
         if cell in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL) or \
