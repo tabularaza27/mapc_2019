@@ -47,7 +47,7 @@ class RhbpAgent(object):
         self._sim_started = False
 
         # agent attributes
-        self.local_map = GridMap(agent_name=self._agent_name)
+        self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5) # TODO change to get the vision
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
