@@ -54,6 +54,7 @@ class GridMap:
     AGENT_CELL = -4
     ENTITY_CELL = -5
     BLOCK_CELL_STARTING_NUMBER = 101
+    DISPENSER_STARTING_NUMBER = 1
 
     def __init__(self, agent_name, agent_vision):
         """
