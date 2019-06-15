@@ -1,3 +1,5 @@
+string message_id
 string agent_id_from
 string agent_id_to
-string message
+string message_type
+string params

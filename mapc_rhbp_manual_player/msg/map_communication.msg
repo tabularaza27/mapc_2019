@@ -1,3 +1,5 @@
 string message_id
 string agent_id
-string message
+string map
+int32 lm_x
+int32 lm_y
