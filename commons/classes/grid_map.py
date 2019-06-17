@@ -6,9 +6,7 @@ import matplotlib.pyplot as plt
 import random
 import os
 
-from helpers import get_utils_location
-from helpers import manhattan_distance
-from helpers import coord_inside_matrix
+from helpers import get_commons_location
 from path_planner import GridPathPlanner
 
 import global_variables
@@ -115,7 +113,7 @@ class GridMap:
         for j in range(-self.agent_vision , self.agent_vision + 1):
             for i in range(-self.agent_vision, self.agent_vision + 1):
                 cell = agent_in_matrix + np.array([j, i])
-                if 0 < manhattan_distance(agent_in_matrix, cell) <= self.agent_vision:
+                if 0 < GridMap.manhattan_distance(agent_in_matrix, cell) <= self.agent_vision:
                     self._representation[cell[0]][cell[1]] = 0
 
 
@@ -195,7 +193,7 @@ class GridMap:
                 self._distances[pos[0], pos[1]] = dist
                 for direction in global_variables.moving_directions: # ADD ALSO ROTATIONS?
                     new_pos = direction + pos
-                    if coord_inside_matrix(new_pos, dist_shape):
+                    if GridMap.coord_inside_matrix(new_pos, dist_shape):
                         if self._distances[new_pos[0], new_pos[1]] == -1:
                             cell_value = self._representation[new_pos[0], new_pos[1]]
                             if cell_value != self.WALL_CELL \
@@ -315,17 +313,17 @@ class GridMap:
         # this is the fastest way to add a row / column to a numpy array
         # see 'https://stackoverflow.com/questions/8486294/how-to-add-an-extra-column-to-a-numpy-array' if interested
         if direction == 'n':
-            helper_map = np.full((old_map_shape[0] + 1, old_map_shape[1]), fill_value=-1)
+            helper_map = np.full((old_map_shape[0] + 1, old_map_shape[1]), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[1:, :] = self._representation
             self._origin = self._origin + np.array([1, 0])
         if direction == 's':
-            helper_map = np.full((old_map_shape[0] + 1, old_map_shape[1]), fill_value=-1)
+            helper_map = np.full((old_map_shape[0] + 1, old_map_shape[1]), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[:-1, :] = self._representation
         if direction == 'e':
-            helper_map = np.full((old_map_shape[0], old_map_shape[1] + 1), fill_value=-1)
+            helper_map = np.full((old_map_shape[0], old_map_shape[1] + 1), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[:, :-1] = self._representation
         if direction == 'w':
-            helper_map = np.full((old_map_shape[0], old_map_shape[1] + 1), fill_value=-1)
+            helper_map = np.full((old_map_shape[0], old_map_shape[1] + 1), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[:, 1:] = self._representation
             self._origin = self._origin + np.array([0, 1])
 
@@ -333,11 +331,11 @@ class GridMap:
 
     def _get_data_directory(self):
         """Returns Directory where map data is stored for plotting purposes"""
-        utils_dir = get_utils_location()
-        return os.path.join(utils_dir, 'generatedMaps', 'tmp_maps')
+        commons_dir = get_commons_location()
+        return os.path.join(commons_dir, 'generatedMaps', 'tmp_maps')
 
     def _write_data_to_file(self):
-        """writes two dimensional np.array to .txt file named after agent and in directory /utils/generatedMaps/tmp_maps"""
+        """writes two dimensional np.array to .txt file named after agent and in directory /commons/generatedMaps/tmp_maps"""
         np.savetxt(os.path.join(self.data_directory, '{}.txt'.format(self.agent_name)), self._representation, fmt='%i',
                    delimiter=',')
 
@@ -358,8 +356,8 @@ class GridMap:
         for j in range(-self.agent_vision , self.agent_vision + 1):
             for i in range(-self.agent_vision, self.agent_vision + 1):
                 cell = position + np.array([j, i])
-                if 0 < manhattan_distance(position, cell) <= self.agent_vision:
-                    if not coord_inside_matrix(cell, self._representation.shape):
+                if 0 < GridMap.manhattan_distance(position, cell) <= self.agent_vision:
+                    if not GridMap.coord_inside_matrix(cell, self._representation.shape):
                         unknown_count += 1
                     else:
                         if self._representation[cell[0], cell[1]] == self.UNKNOWN_CELL:
@@ -391,7 +389,7 @@ class GridMap:
                 for direction in global_variables.moving_directions:
                     cell_coord = np.array([y + direction[0], x + direction[1]])
                     # Make sure in range
-                    if coord_inside_matrix(cell_coord, self._distances.shape):
+                    if GridMap.coord_inside_matrix(cell_coord, self._distances.shape):
                         # Adherence cell is walkable
                         if self._distances[cell_coord[0], cell_coord[1]] > 0:
                             possible_points.append(cell_coord)
@@ -443,6 +441,51 @@ class GridMap:
             end=np.array([best_point]))
         # TODO somewhere if best_score = 0 always we should set the exploring sensor to 0?
         return best_point, best_path, best_score
+
+
+    ### static methods ###
+
+    @staticmethod
+    def add_coord(coord_a, coord_b, operation='add'):
+        """Add x and y values of two coordinates in tuple form
+
+        Args:
+            coord_a (tuple): coordinate in tuple form. first value is x, second value is y
+            coord_b (tuple): coordinate in tuple form. first value is x, second value is y
+            operation (str): 'add' for addition / 'sub' for subtraction
+        Returns:
+            tuple: resulting coord
+
+        """
+        assert isinstance(coord_a, tuple) and len(coord_a) == 2, 'Coordinate needs to be a tuple of length 2'
+        assert isinstance(coord_b, tuple) and len(coord_b) == 2, 'Coordinate needs to be a tuple of length 2'
+        assert operation in ['add', 'sub'], 'The operation needs to be "add" or "sub"'
+
+        if operation == 'add':
+            return coord_a[0] + coord_b[0], coord_a[1] + coord_b[1]
+        elif operation == 'sub':
+            return coord_a[0] - coord_b[0], coord_a[1] + coord_b[1]
+
+    @staticmethod
+    def manhattan_distance(coord1, coord2):
+        """Calculate the manhattan distance between two coordinates in tuple form
+
+        Args:
+            coord1 (tuple): first coordinate
+            coord2 (tuple): second coordinate
+
+        Returns:
+            int: euclidean distance
+
+        """
+        return abs((coord2[0] - coord1[0])) + abs((coord2[1] - coord1[1]))
+
+    @staticmethod
+    def coord_inside_matrix(coord, shape):
+        if coord[0] >= 0 and coord[0] < shape[0] \
+                and coord[1] >= 0 and coord[1] < shape[1]:
+            return True
+        return False
 
 
 def main():

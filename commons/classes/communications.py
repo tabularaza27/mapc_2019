@@ -2,7 +2,9 @@
 
 import rospy
 import uuid
-from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, general_communication
+from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, \
+    general_communication
+
 
 class Communication:
     # for synchronization
@@ -20,7 +22,7 @@ class Communication:
 
         self._agent_name = agent_name
 
-    def start_auction(self, callback_function, topic_name = "auction", message_type = auction_communication):
+    def start_auction(self, callback_function, topic_name="auction", message_type=auction_communication):
         """
         Initialization of the auction subscriber and publisher
         Args:
@@ -35,9 +37,8 @@ class Communication:
         pub_auction = rospy.Publisher(topic_name, message_type, queue_size=10)
 
         return pub_auction
-    
 
-    def start_map(self, callback_function, topic_name = "map", message_type = map_communication):
+    def start_map(self, callback_function, topic_name="map", message_type=map_communication):
         """
         Initialization of the map subscriber and publisher
         Args:
@@ -52,8 +53,8 @@ class Communication:
         pub_map = rospy.Publisher(topic_name, message_type, queue_size=10)
 
         return pub_map
-    
-    def start_agents(self, callback_function, topic_name = "agents", message_type = personal_communication):
+
+    def start_agents(self, callback_function, topic_name="agents", message_type=personal_communication):
         """
         Initialization of the intra agents communication subscriber and publisher
         Args:
@@ -110,7 +111,7 @@ class Communication:
             msg.params = params
             publisher.publish(msg)
             self.lock()
-    
+
     def send_bid(self, publisher, task_id, bid_value):
         """
         Send the bid through the auction communication topic
@@ -128,7 +129,7 @@ class Communication:
         msg.task_id = task_id
         msg.bid_value = bid_value
         publisher.publish(msg)
-    
+
     def lock(self):
         """
         Lock the intra agent communication behaviour to stop sending messages
@@ -137,7 +138,7 @@ class Communication:
         """
 
         self.wait = True
-    
+
     def unlock(self):
         """
         Unlock the intra agent communication behaviour to enable sending messages 

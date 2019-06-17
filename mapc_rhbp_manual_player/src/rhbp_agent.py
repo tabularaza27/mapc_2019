@@ -5,21 +5,19 @@ from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, 
 
 from behaviour_components.managers import Manager
 
-from agent_common.behaviours import ManualMove #RandomMove, Dispense, MoveToDispenser
-from agent_common.providers import PerceptionProvider
-from agent_common.agent_utils import get_bridge_topic_prefix
+from agent_common.behaviours import ManualMove  # RandomMove, Dispense, MoveToDispenser
+from agent_commons.providers import PerceptionProvider
+from agent_commons.agent_utils import get_bridge_topic_prefix
 
-from grid_map import GridMap
+from classes.grid_map import GridMap
 
 from classes.communications import Communication
-from mapc_rhbp_manual_player.msg import map_communication, auction_communication, general_communication, personal_communication
-from std_msgs.msg import String
 
 from collections import OrderedDict
-from operator import itemgetter
 
 import random
 import numpy as np
+
 
 class RhbpAgent(object):
     """
@@ -44,12 +42,12 @@ class RhbpAgent(object):
 
         self.perception_provider = PerceptionProvider()
 
-        self.local_map = GridMap(agent_name=self._agent_name,live_plotting=True)
+        self.local_map = GridMap(agent_name=self._agent_name, live_plotting=True)
 
         # auction structure
 
         self.bids = {}
-        self.number_of_agents = 2 # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -72,12 +70,12 @@ class RhbpAgent(object):
         self._pub_agents = self._communication.start_agents(self._callback_agents)
         # Auction topic
         self._pub_auction = self._communication.start_auction(self._callback_auction)
-        self.time_to_bid = True # only test debug puposes
+        self.time_to_bid = True  # only test debug puposes
         self.task_subdivision = {"task1":
-                                 {"agents_needed":3,
-                                  "agents_assigned":[]
+                                     {"agents_needed": 3,
+                                      "agents_assigned": []
+                                      }
                                  }
-                                }
 
         self._received_action_response = False
 
@@ -104,7 +102,6 @@ class RhbpAgent(object):
         :type msg: GenericAction
         """
         self._received_action_response = True
-
 
     def _sim_end_callback(self, msg):
         """
@@ -155,11 +152,11 @@ class RhbpAgent(object):
         # send the map if perceive the goal
         if self.perception_provider.goals:
             map = self.local_map.getLocalMap()
-            self._communication.send_map(self._pub_map,str(map),3,5) #lm_x and lm_y to get
+            self._communication.send_map(self._pub_map, str(map), 3, 5)  # lm_x and lm_y to get
 
         # send personal message test
         if self._agent_name == "agentA1":
-            self._communication.send_message(self._pub_agents,"agentA2","task","[5,5]")
+            self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
 
         self._received_action_response = False
 
@@ -167,15 +164,14 @@ class RhbpAgent(object):
         if self.time_to_bid:
             task_to_bid = "task1"
             if (self._agent_name == "agentA1" or self._agent_name == "agentA2"):
-                self._communication.send_bid(self._pub_auction,task_to_bid,10)
+                self._communication.send_bid(self._pub_auction, task_to_bid, 10)
             else:
-                self._communication.send_bid(self._pub_auction,task_to_bid,random.randint(1,100))
+                self._communication.send_bid(self._pub_auction, task_to_bid, random.randint(1, 100))
             self.time_to_bid = False
             rospy.loginfo(self._agent_name + " ha biddato")
 
-            
         # update map
-        #self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
+        # self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
 
         rospy.logdebug('Updated Map')
 
@@ -196,7 +192,7 @@ class RhbpAgent(object):
             rospy.logwarn("%s idle_action(): sim not yet started", self._agent_name)
         else:  # Our decision-making has taken too long
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
-    
+
     def _callback_map(self, msg):
         msg_id = msg.message_id
         map_from = msg.agent_id
@@ -208,8 +204,8 @@ class RhbpAgent(object):
             rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
             map = np.array(map_value)
 
-            #do map merging
-    
+            # do map merging
+
     def _callback_agents(self, msg):
         msg_id = msg.message_id
         msg_from = msg.agent_id_from
@@ -217,9 +213,10 @@ class RhbpAgent(object):
         msg_param = msg.params
 
         if msg.agent_id_to == self._agent_name:
-            rospy.loginfo(self._agent_name + " received message from " + msg_from + " | id: " + msg_id + " | type: " + msg_type + " | params: " + msg_param)
-            self._communication.send_message(self._pub_agents,msg_from,"received",msg_id)
-    
+            rospy.loginfo(
+                self._agent_name + " received message from " + msg_from + " | id: " + msg_id + " | type: " + msg_type + " | params: " + msg_param)
+            self._communication.send_message(self._pub_agents, msg_from, "received", msg_id)
+
     def _callback_auction(self, msg):
         msg_id = msg.message_id
         msg_from = msg.agent_id
@@ -229,47 +226,43 @@ class RhbpAgent(object):
         if (not task_id in self.bids):
             self.bids[task_id] = OrderedDict()
             self.bids[task_id]["done"] = False
-        
+
         if (self.bids[task_id]["done"] == False):
             if (not msg_from in self.bids[task_id]):
                 self.bids[task_id][msg_from] = task_bid_value
 
-            if len(self.bids[task_id]) == self.number_of_agents + 1: # count the done
-                ordered_task = OrderedDict(sorted(self.bids[task_id].items(),key=lambda x: (x[1],x[0])))
-                #rospy.loginfo(self._agent_name +  " | " + str(ordered_task))
-                                
+            if len(self.bids[task_id]) == self.number_of_agents + 1:  # count the done
+                ordered_task = OrderedDict(sorted(self.bids[task_id].items(), key=lambda x: (x[1], x[0])))
+                # rospy.loginfo(self._agent_name +  " | " + str(ordered_task))
+
                 duplicate = -999
                 i = 0
                 for key, value in ordered_task.items():
-                    if (i > 0): #skip done
+                    if (i > 0):  # skip done
                         if (i == self.task_subdivision[task_id]["agents_needed"] + 1):
                             break
 
-                        available = (len(ordered_task) - 1)  - len(self.task_subdivision[task_id]["agents_assigned"]) - i
-                        #rospy.loginfo(self._agent_name + " |1: " + str(len(ordered_task) - 1) + " | 2: " + str(len(self.task_subdivision[task_id]["agents_assigned"])) + "i: " + str(i) + " | current:" + key)
+                        available = (len(ordered_task) - 1) - len(self.task_subdivision[task_id]["agents_assigned"]) - i
+                        # rospy.loginfo(self._agent_name + " |1: " + str(len(ordered_task) - 1) + " | 2: " + str(len(self.task_subdivision[task_id]["agents_assigned"])) + "i: " + str(i) + " | current:" + key)
                         if (value != duplicate or available <= 0):
                             self.task_subdivision[task_id]["agents_assigned"].append(key)
-                            
-                        
+
                         duplicate = value
-                            
+
                     i += 1
 
                 self.bids[task_id]["done"] = True
                 rospy.loginfo("DONE: " + str(self.task_subdivision[task_id]["agents_assigned"]))
-        
-        
 
     def _initialize_behaviour_model(self):
         """
         This function initialises the RHBP behaviour/goal model.
         """
 
-        
         # Manual Player Move/Exploration
-        manual_move = ManualMove(name="manual_move", perception_provider=self.perception_provider, agent_name=self._agent_name)
+        manual_move = ManualMove(name="manual_move", perception_provider=self.perception_provider,
+                                 agent_name=self._agent_name)
         self.behaviours.append(manual_move)
-    
 
         '''
         # Communication test

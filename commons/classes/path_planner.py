@@ -7,6 +7,7 @@ import global_variables
 direction_values = [[-1, 0], [1, 0], [0, 1], [0, -1], 'ccw', 'cw']  # maze(rows, col) = agent(y, x)
 direction_list = ['n', 's', 'e', 'w', 'ccw', 'cw']
 
+
 class GridPathPlanner():
     class Node():
         """A node class for A* Pathfinding"""

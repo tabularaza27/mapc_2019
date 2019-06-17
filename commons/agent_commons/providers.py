@@ -1,10 +1,10 @@
 from __future__ import division  # force floating point division when using plain /
-import rospy
+
 import sys
 
-from behaviour_components.sensors import Sensor
+from agent_utils import relative_euclidean_distance
 
-from agent_common.agent_utils import relative_euclidean_distance
+from behaviour_components.sensors import Sensor
 
 
 class PerceptionProvider(object):
