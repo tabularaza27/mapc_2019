@@ -25,8 +25,6 @@ from collections import OrderedDict
 import random
 import numpy as np
 
-import pickle
-
 class RhbpAgent(object):
     """
     Main class of an agent, taking care of the main interaction with the mapc_ros_bridge
@@ -167,8 +165,8 @@ class RhbpAgent(object):
         # send the map if perceive the goal
         if self.local_map.goal_area_fully_discovered:
             map = self.local_map._representation
-            top_left_corner = self.local_map.goal_top_left
-            self._communication.send_map(self._pub_map, pickle.dumps(map), top_left_corner[0], top_left_corner[1])  # lm_x and lm_y to get
+            top_left_corner = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+            self._communication.send_map(self._pub_map, map.tostring(), top_left_corner[0], top_left_corner[1], map.shape[0], map.shape[1])  # lm_x and lm_y to get
 
         '''
         # send personal message test
@@ -215,17 +213,21 @@ class RhbpAgent(object):
         map_value = msg.map
         map_lm_x = msg.lm_x
         map_lm_y = msg.lm_y
+        map_rows = msg.rows
+        map_columns = msg.columns
 
         if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
+        #if self.local_map.goal_area_fully_discovered:
             rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
-            map = pickle.loads(map_value)
+            map = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
             lm = [map_lm_x,map_lm_y]
-            lm = self.local_map._from_relative_to_matrix(lm)
             lm2 = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
             # do map merge
             merged_map = mapMerge(map,self.local_map._representation,lm,lm2)
 
             self.local_map._representation = merged_map
+            rospy.logdebug('MAPPA MERGED')
+            rospy.logdebug(str(merged_map))
 
 
             

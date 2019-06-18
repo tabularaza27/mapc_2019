@@ -66,7 +66,7 @@ def mapMerge(m1, m2, lm1, lm2):
             index_m2 = sum_tuple(index_m2, shift)
             if m2[index_m2] == -1:
                 m2[index_m2] = cell_value
-
+    return m2
     #showSingleMap(m2)
     """
     if (top_rows_to_add == 0):
