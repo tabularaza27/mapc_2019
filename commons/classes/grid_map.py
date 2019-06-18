@@ -427,7 +427,7 @@ class GridMap():
             if start_area and not goal_present_in_row:
                 break
 
-        self.goal_top_left = np.array([top, left])
+        self.goal_top_left = self._from_matrix_to_relative(np.array([top, left]))
 
     def _get_point_to_explore(self):
         """Calculates point that is most suited for exploring and path to it
