@@ -294,7 +294,7 @@ class GridMap():
         """
 
         relative_coord = np.copy(matrix_coord)
-        relative_coord = relative_coord + self._origin
+        relative_coord = relative_coord - self._origin
 
         return relative_coord
 
