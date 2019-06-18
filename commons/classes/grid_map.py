@@ -171,6 +171,9 @@ class GridMap():
 
         # Update temporary map used by path_planner to avoid obstacles
         self._path_planner_representation = np.copy(self._representation)
+        # add agent position
+        matrix_pos = self._from_relative_to_matrix(self._agent_position)
+        self._path_planner_representation[matrix_pos[0]][matrix_pos[1]] = global_variables.AGENT_CELL
 
         # update blocks
         for block in perception.blocks:
@@ -182,13 +185,18 @@ class GridMap():
 
         # updates entities
         for entity in perception.entities:
-            if entity.pos.y != 0 and entity.pos.x != 0:
-                pos = np.array([entity.pos.y, entity.pos.x]) + self._agent_position
-                matrix_pos = self._from_relative_to_matrix(pos)
-                # first index --> y value, second  --> x value
+            # It detects itself as an entity
+            if entity.pos.y == 0 and entity.pos.x == 0:
+                continue
 
-                self._path_planner_representation[matrix_pos[0]][
-                    matrix_pos[1]] = global_variables.ENTITY_CELL
+            pos = np.array([entity.pos.y, entity.pos.x]) + self._agent_position
+            matrix_pos = self._from_relative_to_matrix(pos)
+            # first index --> y value, second  --> x value
+
+            self._path_planner_representation[matrix_pos[0]][
+                matrix_pos[1]] = global_variables.ENTITY_CELL
+
+            #rospy.logdebug("temporary map: " + str(self._path_planner_representation))
 
         # update distances
         self._update_distances()
@@ -241,7 +249,7 @@ class GridMap():
             # check possible collision and end of the path
             next_cell = self._from_relative_to_matrix(self._agent_position) \
                         + global_variables.movements[direction]
-            if direction == 'end' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell)):
+            if direction == 'end' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation)):
                 self._remove_path(path_id)
                 best_path = path_creation_function()
                 path_id = self._save_path(best_path)
