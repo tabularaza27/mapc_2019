@@ -25,6 +25,7 @@ from collections import OrderedDict
 import random
 import numpy as np
 
+import pickle
 
 class RhbpAgent(object):
     """
@@ -165,9 +166,9 @@ class RhbpAgent(object):
 
         # send the map if perceive the goal
         if self.local_map.goal_area_fully_discovered:
-            map = self.local_map._representfromstringation
+            map = self.local_map._representation
             top_left_corner = self.local_map.goal_top_left
-            self._communication.send_map(self._pub_map, np.array2string(map), top_left_corner[0], top_left_corner[1])  # lm_x and lm_y to get
+            self._communication.send_map(self._pub_map, pickle.dumps(map), top_left_corner[0], top_left_corner[1])  # lm_x and lm_y to get
 
         '''
         # send personal message test
@@ -217,7 +218,7 @@ class RhbpAgent(object):
 
         if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
             rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
-            map = np.fromstring(map_value,dtype=int)
+            map = pickle.loads(map_value)
             lm = [map_lm_x,map_lm_y]
             lm = self.local_map._from_relative_to_matrix(lm)
             lm2 = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
