@@ -228,9 +228,8 @@ class GridMap():
                     new_pos = direction + pos
                     if GridMap.coord_inside_matrix(new_pos, dist_shape):
                         if self._distances[new_pos[0], new_pos[1]] == -1:
-                            cell_value = self._representation[new_pos[0], new_pos[1]]
-                            if cell_value != self.WALL_CELL \
-                                    and cell_value != self.UNKNOWN_CELL:
+                            cell_value = self._path_planner_representation[new_pos[0], new_pos[1]]
+                            if GridPathPlanner.is_walkable(cell_value):
                                 queue.append((new_pos, dist+1))
 
     def get_move_direction(self, path_id, path_creation_function):
@@ -249,7 +248,7 @@ class GridMap():
             # check possible collision and end of the path
             next_cell = self._from_relative_to_matrix(self._agent_position) \
                         + global_variables.movements[direction]
-            if direction == 'end' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation)):
+            if direction == 'end' or direction == 'unknown position' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation)):
                 self._remove_path(path_id)
                 best_path = path_creation_function()
                 path_id = self._save_path(best_path)
@@ -261,6 +260,9 @@ class GridMap():
             path_id = None
             direction = None
             rospy.logdebug("THERE IS NO PATH TO THE POINT!! ")
+        # Check unkonwn position
+        if best_path == 'unknown position':
+            rospy.logdebug("UNKNOWN POSITION!!!!!")
         rospy.logdebug("Best path: " + str(self.paths[path_id]))
         rospy.logdebug("direction: " + direction)
         return path_id, direction
