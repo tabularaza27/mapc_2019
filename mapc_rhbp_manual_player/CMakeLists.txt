@@ -46,6 +46,7 @@ catkin_python_setup()
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
+  map_communication.msg
   general_communication.msg
   personal_communication.msg
   auction_communication.msg

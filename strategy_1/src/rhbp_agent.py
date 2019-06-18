@@ -4,18 +4,17 @@ import rospy
 from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, Bye
 
 from behaviour_components.managers import Manager
-from behaviour_components.activators import BooleanActivator, ThresholdActivator, EqualActivator, GreedyActivator
-from behaviour_components.conditions import Negation, Condition
-from behaviour_components.goals import GoalBase
 from behaviour_components.condition_elements import Effect
 
-from behaviours_classes.exploration_behaviour import ExplorationBehaviour
-from agent_common.providers import PerceptionProvider
-from agent_common.agent_utils import get_bridge_topic_prefix
+
+from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBehaviour
+from agent_commons.providers import PerceptionProvider
+from agent_commons.agent_utils import get_bridge_topic_prefix
+
 
 import global_variables
 
-from grid_map import GridMap
+from classes.grid_map import GridMap
 
 
 class RhbpAgent(object):
@@ -47,7 +46,7 @@ class RhbpAgent(object):
         self._sim_started = False
 
         # agent attributes
-        self.local_map = GridMap(agent_name=self._agent_name)
+        self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5) # TODO change to get the vision
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)

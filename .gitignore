@@ -1,5 +1,5 @@
 # example map csvs
-utils/generatedMaps/
+commons/generatedMaps/
 
 devel/
 logs/

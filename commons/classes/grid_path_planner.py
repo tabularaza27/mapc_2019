@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
+import global_variables
 
 # Global variables # TODO: import global variables
 direction_values = [[-1, 0], [1, 0], [0, 1], [0, -1], 'ccw', 'cw']  # maze(rows, col) = agent(y, x)
 direction_list = ['n', 's', 'e', 'w', 'ccw', 'cw']
+
 
 class GridPathPlanner():
     class Node():
@@ -21,7 +23,7 @@ class GridPathPlanner():
         def __eq__(self, other):
             return self.position == other.position
 
-    def astar(self, maze, start, end):
+    def astar(self, maze, origin, start, end):
         """ Return a path list in map coordinates given a map (maze), an starting point and an end point
 
         Args:
@@ -37,7 +39,7 @@ class GridPathPlanner():
         # Check if the end point is not a free cell
         for element in end:
             end_pos = maze[element[0]][element[1]]
-            if end_pos != 0:  # TODO: ADD OTHER TYPES OF BLOCKED CELLS HERE
+            if not GridPathPlanner.is_walkable(end_pos):
                 print ("invalid End point")
                 return
 
@@ -74,7 +76,9 @@ class GridPathPlanner():
                 path = []
                 current = current_node
                 while current is not None:
-                    path.append(current.position)
+                    # Transform path to relative
+                    relative_pos = self.transform_matrix_node_to_relative(current.position, origin)
+                    path.append(relative_pos)
                     current = current.parent
                 return path[::-1]  # return reversed path
 
@@ -96,7 +100,7 @@ class GridPathPlanner():
                             element[1] < 0:
                         break
                     # Make sure walkable terrain
-                    elif maze[element[0]][element[1]] != 0:
+                    elif not GridPathPlanner.is_walkable(maze[element[0], element[1]]):
                         break
                 else:
                     # Create new node
@@ -129,6 +133,14 @@ class GridPathPlanner():
                     else:
                         # Add the child to the open list
                         open_list.append(child)
+
+    @staticmethod
+    def is_walkable(cell):
+        if cell in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL) or \
+                global_variables.DISPENSER_STARTING_NUMBER <= cell < global_variables.BLOCK_CELL_STARTING_NUMBER:
+            return True
+
+        return False
 
     def translation(self, node, direction):
         """Apply a translation (n, s, e, w) to a node (Agent + blocks attached) and return its new position in
@@ -405,10 +417,10 @@ def main():
 
     # Simple maze
     maze = [[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
-            [-2, 0, 0, -2, 0, 0, 0, 0, 0, 0],
+            [-2, 2, 0, -2, 5, 0, 0, 0, 0, 0],
             [ 0, 0, 0, -2, 0, 0, 0, 0, 0, 0],
             [ 0, 0,-2,  0,-2,-2, 0, 0, 0, 0],
-            [ 0, 0, 0,  0, 0,-2, 0, 0, 0, 0],
+            [ -3, 0, 0,  0, 0,-2, 0, 0, 0, 0],
             [-2, 0, 0,  0, 0, 0, 0, 0,-2,-2],
             [ 0,-2, 0,  0, 0, 0, 0,-2, 0, 0],
             [ 0, 0, 0,  0,-2, 0,-2, 0,-2, 0],
