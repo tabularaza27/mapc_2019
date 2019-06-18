@@ -7,7 +7,7 @@ import random
 import os
 
 from helpers import get_commons_location
-from path_planner import GridPathPlanner
+from grid_path_planner import GridPathPlanner
 
 import global_variables
 import rospy #for debug logs
@@ -18,7 +18,7 @@ import rospy #for debug logs
 # ToDo: Identify if other entity is enemy or ally
 
 
-class GridMap:
+class GridMap():
     """
     Class that represent the local map of an agent like in the scenario.
 
@@ -137,7 +137,8 @@ class GridMap:
             # add to goals variable
             if pos not in self._goal_areas:
                 self._goal_areas.append(pos)
-
+        # TODO COPY IN MAZE_MAP AND PUT BLOCKS(NOT ATTACHED) AND ENTITIES
+        # TODO EXPLORE THE GOAL AREA AND SET A BOOL GOAL_EXPLORED = TRUE
         # update entities (other agents)
         # for entity in perception.entities:
         #     if entity.pos.x == 0 and entity.pos.y == 0: continue
@@ -182,9 +183,9 @@ class GridMap:
         """
         dist_shape = self._representation.shape
         self._distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
-        print(self._distances.shape)
-        print(self._origin)
-        print(self._agent_position)
+        #print(self._distances.shape)
+        #print(self._origin)
+        #print(self._agent_position)
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         queue = deque([(agent_in_matrix, 0)])
         while len(queue) > 0:
@@ -200,38 +201,66 @@ class GridMap:
                                     and cell_value != self.UNKNOWN_CELL:
                                 queue.append((new_pos, dist+1))
 
-
-
-    def get_exploration_move(self, path_id):
+    def get_move_direction(self, path_id, path_creation_function):
         if not self.paths.has_key(path_id):
             # TODO do we need only the path?
-            best_point, best_path, current_high_score = self._get_point_to_explore()
+            best_path = path_creation_function()
             path_id = self._save_path(best_path)
-
-        direction = self.path_planner.next_move_direction(
-            self._agent_position,
-            self.paths[path_id])
-
-        # TODO IMPROVE CODE QUALITY
-        if direction == 'end':
-            best_point, best_path, current_high_score = self._get_point_to_explore()
-            path_id = self._save_path(best_path)
-
+        else:
+            best_path = self.paths[path_id]
+        good_direction = False
+        direction = None
+        while not good_direction and best_path != None:
             direction = self.path_planner.next_move_direction(
                 self._agent_position,
                 self.paths[path_id])
+            # check possible collision and end of the path
+            next_cell = self._from_relative_to_matrix(self._agent_position) \
+                        + global_variables.movements[direction]
+            if direction == 'end' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell)):
+                self._remove_path(path_id)
+                best_path = path_creation_function()
+                path_id = self._save_path(best_path)
+            else:
+                good_direction = True
 
+        if best_path == None:
+            #TODO what should we do when there is no path to the point? rethink the best point?
+            path_id = None
+            direction = None
+            rospy.logdebug("THERE IS NO PATH TO THE POINT!! ")
         rospy.logdebug("Best path: " + str(self.paths[path_id]))
         rospy.logdebug("direction: " + direction)
         return path_id, direction
 
+    def get_exploration_move(self, path_id):
+        return self.get_move_direction(path_id, self._get_point_to_explore)
+
     ### PRIVATE METHODS ###
-    def _save_path(self, path):
-        path_id = random.randint(1,9999999)
-        while self.paths.has_key(path_id):
-            path_id = random.randint(1, 9999999)
+    def _get_value_of_cell(self, coord, maze=None):
+        if maze is None:
+            maze = self._representation
+        return maze[coord[0], coord[1]]
+
+    def _remove_path(self, path_id):
+        if self.paths.has_key(path_id):
+            del self.paths[path_id]
+
+    def _save_path(self, path, path_id=-1):
+        if path_id == -1:
+            path_id = random.randint(1,9999999)
+            while self.paths.has_key(path_id):
+                path_id = random.randint(1, 9999999)
         self.paths[path_id] = path
         return path_id
+    def _clear_map_from_temporary_obstacles(self): #TODO IMPROVE THIS FUNCTION TO ONLY CHECK THE DIAMOND VISION
+        for i in range(self._representation.shape[0]):
+            for j in range(self._representation.shape[1]):
+                cell_value = self._representation[i,j]
+                if cell_value == -4 \
+                        or cell_value == -5 \
+                        or cell_value >= self.BLOCK_CELL_STARTING_NUMBER:
+                    self._representation
 
     def _from_relative_to_matrix(self, relative_coord):
         """
@@ -440,7 +469,7 @@ class GridMap:
             start=np.array([self._from_relative_to_matrix(self._agent_position)]),
             end=np.array([best_point]))
         # TODO somewhere if best_score = 0 always we should set the exploring sensor to 0?
-        return best_point, best_path, best_score
+        return best_path
 
 
     ### static methods ###
@@ -491,20 +520,18 @@ class GridMap:
 def main():
     import time
 
-    my_map = GridMap('Agent1')
-    my_map._representation = np.loadtxt(open("generatedMaps/00/partial.csv", "rb"), delimiter=",")
-    my_agent = [[4, 14]]
-    my_map._agent_position = np.array(my_agent, dtype=np.int)
+    my_map = GridMap('Agent1', 5)
+    my_map._representation = np.loadtxt(open("../../utils/generatedMaps/00/partial.csv", "rb"), delimiter=",")
+    my_map._update_distances()
+    my_map._origin = np.array([4, 14], dtype=np.int)
+    my_map._agent_position = np.array([0, 0], dtype=np.int)
 
     start_time = time.time()
-    best_point, best_path, current_high_score = my_map._get_point_to_explore()
+    best_path = my_map._get_point_to_explore()
     print ("---%s seconds ---" % (time.time() - start_time))
-    print ("Best point:" + str(best_point))
-    #print ("Best path:" + str(best_path))
+    #print ("Best point:" + str(best_point))
+    print ("Best path:" + str(best_path))
     #print ("Current high score:" + str(current_high_score))
-
-
-
 
 if __name__ == '__main__':
     main()

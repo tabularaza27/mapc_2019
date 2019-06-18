@@ -23,13 +23,13 @@ def get_commons_location():
 
     #print("AAAAAAAAAAAAAAAAAAAAAAAAAAA: " + os.path.abspath(os.curdir).__str__())
     #path = os.path.abspath(os.curdir)
-    # path = "/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5"
-    path = "/home/kaijeggle/dev/Uni/AAIP/mapc_workspace/src/group5"
+    path = "/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5"
+    #path = "/home/kaijeggle/dev/Uni/AAIP/mapc_workspace/src/group5"
     
     group_5_path = re.search(pattern, path)
 
     if group_5_path:
-        utils_path = os.path.join(group_5_path.group(0), 'commons')
+        utils_path = os.path.join(group_5_path.group(0), 'utils')
         return utils_path
     else:
         raise ValueError('Could not find group5 dir, file was executed outside of /group5')

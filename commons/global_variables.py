@@ -8,7 +8,8 @@ movements = {
     'n': np.array([-1, 0]),
     's': np.array([1, 0]),
     'w': np.array([0, -1]),
-    'e': np.array([0, 1])
+    'e': np.array([0, 1]),
+    'end': np.array([0, 0])
 }
 
 # Cells values

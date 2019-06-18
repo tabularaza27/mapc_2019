@@ -39,7 +39,7 @@ class GridPathPlanner():
         # Check if the end point is not a free cell
         for element in end:
             end_pos = maze[element[0]][element[1]]
-            if not self.is_walkable(end_pos):
+            if not GridPathPlanner.is_walkable(end_pos):
                 print ("invalid End point")
                 return
 
@@ -100,7 +100,7 @@ class GridPathPlanner():
                             element[1] < 0:
                         break
                     # Make sure walkable terrain
-                    elif not self.is_walkable(maze[element[0]][element[1]]):
+                    elif not GridPathPlanner.is_walkable(maze[element[0], element[1]]):
                         break
                 else:
                     # Create new node
@@ -134,8 +134,8 @@ class GridPathPlanner():
                         # Add the child to the open list
                         open_list.append(child)
 
-
-    def is_walkable(self, cell):
+    @staticmethod
+    def is_walkable(cell):
         if cell in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL) or \
                 global_variables.DISPENSER_STARTING_NUMBER <= cell < global_variables.BLOCK_CELL_STARTING_NUMBER:
             return True
