@@ -24,6 +24,9 @@ class PerceptionProvider(object):
         # moving things ( entities --> other agents )
         self.entities = []
 
+        # blocks
+        self.blocks = []
+
         self.closest_dispenser = None
 
         self.closest_dispenser_distance_sensor = Sensor(name="closest_dispenser_distance", initial_value=sys.maxint)
@@ -49,6 +52,9 @@ class PerceptionProvider(object):
         self.goals = request_action_msg.goals  # TODO this could be more sophisticated and potentially extracted like above
 
         self.obstacles = request_action_msg.obstacles  # TODO this could be more sophisticated and potentially extracted like above
+
+        # Update blocks
+        self.blocks = request_action_msg.blocks  # TODO this could be more sophisticated and potentially extracted like above
 
     def _update_dispensers(self, request_action_msg):
         """
