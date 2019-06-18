@@ -67,6 +67,7 @@ class GridMap():
         # map
         self._representation = np.full((11, 11), -1)  # init the map with unknown cells
         self._origin = (self.agent_vision, self.agent_vision)  # the origin of the agent is at the center of the map
+        self._path_planner_representation = np.copy(self._representation)   # map with fixed and temporary stuffs
 
         # info about agent in map
         self._agent_position = np.array([0, 0])
@@ -129,7 +130,7 @@ class GridMap():
             matrix_pos = self._from_relative_to_matrix(pos)
             # first index --> y value, second  --> x value
 
-            self._representation[matrix_pos[0]][matrix_pos[1]] = -2
+            self._representation[matrix_pos[0]][matrix_pos[1]] = global_variables.WALL_CELL
 
         # update goals
         for goal in perception.goals:
@@ -169,8 +170,26 @@ class GridMap():
             if dispenser not in self._dispensers:
                 self._dispensers.append(dispenser)
 
+        # Update temporary map used by path_planner to avoid obstacles
+        self._path_planner_representation = np.copy(self._representation)
+
         # update blocks
-            # TODO
+        for block in perception.blocks:
+            pos = np.array([block.pos.y, block.pos.x]) + self._agent_position
+            matrix_pos = self._from_relative_to_matrix(pos)
+            # first index --> y value, second  --> x value
+
+            self._path_planner_representation[matrix_pos[0]][matrix_pos[1]] = global_variables.BLOCK_CELL_STARTING_NUMBER
+
+        # updates entities
+        for entity in perception.entities:
+            if entity.pos.y != 0 and entity.pos.x != 0:
+                pos = np.array([entity.pos.y, entity.pos.x]) + self._agent_position
+                matrix_pos = self._from_relative_to_matrix(pos)
+                # first index --> y value, second  --> x value
+
+                self._path_planner_representation[matrix_pos[0]][
+                    matrix_pos[1]] = global_variables.ENTITY_CELL
 
         # update distances
         self._update_distances()
@@ -514,7 +533,7 @@ class GridMap():
                 best_score = new_score
             
         best_path = self.path_planner.astar(
-            maze=self._representation,
+            maze=self._path_planner_representation,
             origin=self._origin,
             start=np.array([self._from_relative_to_matrix(self._agent_position)]),
             end=np.array([best_point]))
