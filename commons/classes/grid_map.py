@@ -80,8 +80,12 @@ class GridMap():
         self._goal_areas = []
         self._agents = []
         self._temporary_obstacles = []
+
+        # goal area discovery
         self.goal_area_fully_discovered = False
+        self.goal_top_left = None
         self._start_discovering_goal_area = False
+
         # path_planner
         self.path_planner = GridPathPlanner()
         self.paths = {}
@@ -396,6 +400,35 @@ class GridMap():
 
         return unknown_count
 
+    def _set_goal_top_left(self):
+        """
+        Set the goal_top_left variable with the relative coordinates of the
+        top left corner of the goal area.
+        With this we can merge maps using this fixed common point.
+        Returns: void
+
+        """
+        top_discovered = False
+        start_area = False
+        top = 10000
+        left = 10000
+        for i in range(self._representation.shape[0]):
+            goal_present_in_row = False
+            for j in range(self._representation.shape[1]):
+                value = self._get_value_of_cell(np.array([i, j]))
+                if value == global_variables.GOAL_CELL:
+                    start_area = True
+                    goal_present_in_row = True
+                    if i < top:
+                        top = i
+                    if j < left:
+                        left = j
+                    break
+            if start_area and not goal_present_in_row:
+                break
+
+        self.goal_top_left = np.array([top, left])
+
     def _get_point_to_explore(self):
         """Calculates point that is most suited for exploring and path to it
 
@@ -445,11 +478,13 @@ class GridMap():
             unknown_counts.append(unknown_count)
 
         # DISCOVERING GOAL AREA
+        # TODO IF THE AGENT IS BORN IN THE GOAL AREA THIS IS NOT WORKING
         if not self.goal_area_fully_discovered:
             if goal_area_in_border:
                 self._start_discovering_goal_area = True
             if self._start_discovering_goal_area and not goal_area_in_border:
                 self.goal_area_fully_discovered = True
+                self._set_goal_top_left()
         # calculate path length between current position and potential exploration points and choose the one with shortest path
         shortest_path = 1000000
         best_point = None
