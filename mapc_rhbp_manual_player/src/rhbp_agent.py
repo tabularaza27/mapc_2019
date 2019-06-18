@@ -150,10 +150,12 @@ class RhbpAgent(object):
         # rospy.logdebug('Whole Perception: \n {}'.format(self.perception_provider))
 
         # send the map if perceive the goal
-        if self.perception_provider.goals:
-            map = self.local_map.getLocalMap()
-            self._communication.send_map(self._pub_map, str(map), 3, 5)  # lm_x and lm_y to get
+        if self.local_map.goal_area_fully_discovered:
+            map = self.local_map._representation
+            top_left_corner = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+            self._communication.send_map(self._pub_map, str(map), top_left_corner[0], top_left_corner[1])  # lm_x and lm_y to get
 
+        '''
         # send personal message test
         if self._agent_name == "agentA1":
             self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
@@ -169,9 +171,10 @@ class RhbpAgent(object):
                 self._communication.send_bid(self._pub_auction, task_to_bid, random.randint(1, 100))
             self.time_to_bid = False
             rospy.loginfo(self._agent_name + " ha biddato")
+        '''
 
         # update map
-        # self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
+        self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
 
         rospy.logdebug('Updated Map')
 

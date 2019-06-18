@@ -8,16 +8,13 @@ def mapMerge(m1, m2, lm1, lm2):
     # TODO copy only the unknown in m2
     goal_landmark = 3
 
-    print(pos_landmark_m1)
-    print(pos_landmark_m2)
-
     
     top_rows_to_add = int(lm1[0] - lm2[0])
     if top_rows_to_add < 0:
         top_rows_to_add = 0
 
 
-    bottom_rows_to_add = int(len(m1) - lm1[0]) - int(len(m2) - lm2[0])
+    bottom_rows_to_add = int(m1.shape[0] - lm1[0]) - int(m2.shape[0] - lm2[0])
     if bottom_rows_to_add < 0:
         bottom_rows_to_add = 0
 
@@ -26,7 +23,7 @@ def mapMerge(m1, m2, lm1, lm2):
     if left_columns_to_add < 0:
         left_columns_to_add = 0
 
-    right_columns_to_add = int(len(m1) - lm1[1]) - int(len(m2) - lm2[1])
+    right_columns_to_add = int(m1.shape[0] - lm1[1]) - int(m2.shape[0] - lm2[1])
     if right_columns_to_add < 0:
         right_columns_to_add = 0
     
@@ -89,7 +86,7 @@ def mapMerge(m1, m2, lm1, lm2):
     print(i_m2_zeroval)
     print(j_m2_zeroval)
     
-    for i in range(0,len(m1)):
+    for i in range(0,m1.shape[0]):
         j_m2 = j_m2_zeroval
 
         for j in range(0,len(m1[0])):

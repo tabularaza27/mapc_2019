@@ -95,7 +95,8 @@ class GridMap():
             self.PLOT_MAP = True
             # create plot every x steps
             self.PLOT_FREQUENCY = 1
-            self.live_plotting = global_variables.LIVE_PLOTTING
+        
+        self.live_plotting = global_variables.LIVE_PLOTTING
 
 
     ### PUBLIC METHODS ###
