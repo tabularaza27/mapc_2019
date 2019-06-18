@@ -80,7 +80,8 @@ class GridMap():
         self._goal_areas = []
         self._agents = []
         self._temporary_obstacles = []
-
+        self.goal_area_fully_discovered = False
+        self._start_discovering_goal_area = False
         # path_planner
         self.path_planner = GridPathPlanner()
         self.paths = {}
@@ -129,14 +130,14 @@ class GridMap():
         for goal in perception.goals:
 
             # add to local map
-            pos = (goal.pos.y, goal.pos.x)
+            pos = np.array([goal.pos.y, goal.pos.x]) + self._agent_position
             matrix_pos = self._from_relative_to_matrix(pos)
             # first index --> y value, second  --> x value
-            self._representation[matrix_pos[0]][matrix_pos[1]] = -3
+            self._representation[matrix_pos[0]][matrix_pos[1]] = global_variables.GOAL_CELL
 
             # add to goals variable
-            if pos not in self._goal_areas:
-                self._goal_areas.append(pos)
+            #if not self._goal_areas.__contains__(pos):
+                #self._goal_areas.append(pos)
         # TODO COPY IN MAZE_MAP AND PUT BLOCKS(NOT ATTACHED) AND ENTITIES
         # TODO EXPLORE THE GOAL AREA AND SET A BOOL GOAL_EXPLORED = TRUE
         # update entities (other agents)
@@ -386,11 +387,13 @@ class GridMap():
             for i in range(-self.agent_vision, self.agent_vision + 1):
                 cell = position + np.array([j, i])
                 if 0 < GridMap.manhattan_distance(position, cell) <= self.agent_vision:
+                    update_counter = False
                     if not GridMap.coord_inside_matrix(cell, self._representation.shape):
                         unknown_count += 1
                     else:
                         if self._representation[cell[0], cell[1]] == self.UNKNOWN_CELL:
                             unknown_count += 1
+
         return unknown_count
 
     def _get_point_to_explore(self):
@@ -433,9 +436,20 @@ class GridMap():
                 del possible_points[i]
             else:
                 i += 1
+        goal_area_in_border = False
         for point in possible_points:
-            unknown_counts.append(float(self._get_unknown_amount(point)))
+            unknown_count = float(self._get_unknown_amount(point))
+            if self._get_value_of_cell(point) == global_variables.GOAL_CELL:
+                unknown_count *= 10000
+                goal_area_in_border = True
+            unknown_counts.append(unknown_count)
 
+        # DISCOVERING GOAL AREA
+        if not self.goal_area_fully_discovered:
+            if goal_area_in_border:
+                self._start_discovering_goal_area = True
+            if self._start_discovering_goal_area and not goal_area_in_border:
+                self.goal_area_fully_discovered = True
         # calculate path length between current position and potential exploration points and choose the one with shortest path
         shortest_path = 1000000
         best_point = None
