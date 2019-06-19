@@ -25,6 +25,7 @@ def get_commons_location():
     #path = os.path.abspath(os.curdir)
     path = "/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5"
     #path = "/home/kaijeggle/dev/Uni/AAIP/mapc_workspace/src/group5"
+    #path = "/home/osboxes/Desktop/new/mapc_workspace/src/group5/"
     
     group_5_path = re.search(pattern, path)
 

@@ -32,11 +32,14 @@ def load_map_data():
     """
     map_data ={}
     commons_path = get_commons_location()
-    file_paths = glob.glob(os.path.join(commons_path,"generatedMaps/tmp_maps/*.txt"))
+    print (commons_path)
+    file_paths = glob.glob(os.path.join(commons_path, "generatedMaps/tmp_maps/*.txt"))
     for file in file_paths:
         agent_name = file[file.rindex('/')+1:].split('.')[0]
-        agent_map = np.loadtxt(open(file, "rb"), delimiter=",", dtype=int)
-        map_data.update({agent_name: agent_map})
+        if agent_name in ('agentA1', 'agentA2'):
+            print(agent_name)
+            agent_map = np.loadtxt(open(file, "rb"), delimiter=",", dtype=int)
+            map_data.update({agent_name: agent_map})
 
     return map_data
 
@@ -72,7 +75,7 @@ def live_plotting():
             axs[i].set_title(agent)
             # axs[i].label_counter()
             i += 1
-
+    print(images)
     # Find the min and max of all colors for use in setting the color scale.
     vmin = min(image.get_array().min() for image in images)
     vmax = max(image.get_array().max() for image in images)
@@ -94,7 +97,7 @@ def live_plotting():
                     continue
 
 
-    ani = animation.FuncAnimation(fig, animate, interval=1000)
+    ani = animation.FuncAnimation(fig, animate, interval=2000)
     plt.show()
 
 if __name__ == '__main__':

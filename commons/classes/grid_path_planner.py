@@ -306,7 +306,7 @@ class GridPathPlanner():
         Returns:
             string: ( 'n', 's', 'e', 'w', 'ccw', 'cw' ) - Next move or rotate direction
                     'end' - current position is the end point
-                    'unknown position in the path' - position is not included in path
+                    'unknown position' - position is not included in path
                     'unknown rotation' - rotation is not valid
                     'unknown translation' - translation is not valid
 
