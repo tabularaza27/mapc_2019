@@ -60,6 +60,7 @@ class RhbpAgent(object):
 
         # agent attributes
         self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5) # TODO change to get the vision
+        self.map_messages_buffer = []
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -162,6 +163,34 @@ class RhbpAgent(object):
 
         ########################################
 
+        # process the maps in the buffer
+
+        for msg in self.map_messages_buffer[:]:
+            msg_id = msg.message_id
+            map_from = msg.agent_id
+            map_value = msg.map
+            map_lm_x = msg.lm_x
+            map_lm_y = msg.lm_y
+            map_rows = msg.rows
+            map_columns = msg.columns
+
+            if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
+                rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
+                '''
+                map = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
+                lm = [map_lm_x,map_lm_y]
+                lm2 = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+                # do map merge
+                merged_map = mapMerge(map,self.local_map._representation,lm,lm2)
+
+                self.local_map._representation = merged_map
+                #rospy.logdebug('MAPPA MERGED')
+                #rospy.logdebug(str(merged_map))
+                '''
+            
+            self.map_messages_buffer.remove(msg)
+
+
         # send the map if perceive the goal
         if self.local_map.goal_area_fully_discovered:
             map = self.local_map._representation
@@ -208,29 +237,7 @@ class RhbpAgent(object):
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
 
     def _callback_map(self, msg):
-        msg_id = msg.message_id
-        map_from = msg.agent_id
-        map_value = msg.map
-        map_lm_x = msg.lm_x
-        map_lm_y = msg.lm_y
-        map_rows = msg.rows
-        map_columns = msg.columns
-
-        #if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
-        if False and self.local_map.goal_area_fully_discovered:
-            #rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
-            map = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
-            lm = [map_lm_x,map_lm_y]
-            lm2 = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-            # do map merge
-            merged_map = mapMerge(map,self.local_map._representation,lm,lm2)
-
-            self.local_map._representation = merged_map
-            #rospy.logdebug('MAPPA MERGED')
-            #rospy.logdebug(str(merged_map))
-
-
-            
+        self.map_messages_buffer.append(msg)            
 
     def _callback_agents(self, msg):
         msg_id = msg.message_id
