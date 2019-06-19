@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import rospy
+import os
 from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, Bye
 
 from behaviour_components.managers import Manager
@@ -15,6 +16,7 @@ from agent_commons.agent_utils import get_bridge_topic_prefix
 import global_variables
 
 from classes.grid_map import GridMap
+from classes.tasks.task_decomposition import update_tasks
 
 
 class RhbpAgent(object):
@@ -47,6 +49,9 @@ class RhbpAgent(object):
 
         # agent attributes
         self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5) # TODO change to get the vision
+
+        # representation of tasks
+        self.tasks = {}
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -125,6 +130,7 @@ class RhbpAgent(object):
         self._received_action_response = False
 
         ###### UPDATE AND SYNCHRONIZATION ######
+
         # update map
         self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
         #best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
@@ -132,6 +138,9 @@ class RhbpAgent(object):
         #rospy.logdebug("Best path: " + str(best_path))
         #rospy.logdebug("Current high score: " + str(current_high_score))
 
+        # update tasks
+        self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks, simulation_step=self.perception_provider.simulation_step)
+        rospy.logdebug("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
         ########################################
 
         # self._received_action_response is set to True if a generic action response was received(send by any behaviour)

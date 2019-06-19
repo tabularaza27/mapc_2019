@@ -3,8 +3,6 @@
 from classes.tasks.task import Task
 
 
-# ToDo these functions either go in the agent commons folder or the rhbp_agent.py itself
-
 def update_tasks(current_tasks, tasks_percept, simulation_step):
     """updates task representation based on new percept.
 
@@ -30,10 +28,10 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
     # mark expired tasks & mark complete tasks
     # ToDo implement way so that completed and expired tasks don't get looped through again every time
     for task_name, task_object in new_tasks.iteritems():
-        # expired
+        # mark expired tasks
         if task_object.deadline > simulation_step:
             task_object.expired = True
-        # complete
+        # mark complete tasks
         elif not task_object.complete:
             task_object.check_sub_task_completness()
 

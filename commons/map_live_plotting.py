@@ -9,7 +9,7 @@ import numpy as np
 import os
 import glob
 
-from helpers import get_commons_location
+from helpers import get_data_location
 
 
 def cleanup(agent_name):
@@ -18,8 +18,8 @@ def cleanup(agent_name):
     Args:
         agent_name (str): name of agent, e.g. agentA1
     """
-    commons_path = get_commons_location()
-    file_path = os.path.join(commons_path,'generatedMaps/tmp_maps/{}.txt'.format(agent_name))
+    data_path = get_data_location()
+    file_path = os.path.join(data_path,'generatedMaps/tmp_maps/{}.txt'.format(agent_name))
     if os.path.isfile(file_path):
         os.remove(file_path)
 
@@ -31,8 +31,8 @@ def load_map_data():
         dict: agent names as keys, map data ( 2-dim np.array as values )
     """
     map_data ={}
-    commons_path = get_commons_location()
-    file_paths = glob.glob(os.path.join(commons_path,"generatedMaps/tmp_maps/*.txt"))
+    data_path = get_data_location()
+    file_paths = glob.glob(os.path.join(data_path,"generatedMaps/tmp_maps/*.txt"))
     for file in file_paths:
         agent_name = file[file.rindex('/')+1:].split('.')[0]
         agent_map = np.loadtxt(open(file, "rb"), delimiter=",", dtype=int)
