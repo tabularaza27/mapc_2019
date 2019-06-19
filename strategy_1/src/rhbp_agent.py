@@ -216,9 +216,9 @@ class RhbpAgent(object):
         map_rows = msg.rows
         map_columns = msg.columns
 
-        if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
-        #if self.local_map.goal_area_fully_discovered:
-            rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
+        #if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
+        if False and self.local_map.goal_area_fully_discovered:
+            #rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
             map = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
             lm = [map_lm_x,map_lm_y]
             lm2 = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
@@ -226,8 +226,8 @@ class RhbpAgent(object):
             merged_map = mapMerge(map,self.local_map._representation,lm,lm2)
 
             self.local_map._representation = merged_map
-            rospy.logdebug('MAPPA MERGED')
-            rospy.logdebug(str(merged_map))
+            #rospy.logdebug('MAPPA MERGED')
+            #rospy.logdebug(str(merged_map))
 
 
             
