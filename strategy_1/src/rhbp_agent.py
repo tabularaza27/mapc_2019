@@ -16,6 +16,14 @@ import global_variables
 
 from classes.grid_map import GridMap
 
+from classes.communications import Communication
+
+from classes.map_merge import mapMerge
+
+from collections import OrderedDict
+
+import random
+import numpy as np
 
 class RhbpAgent(object):
     """
@@ -43,6 +51,11 @@ class RhbpAgent(object):
 
         self.perception_provider = PerceptionProvider()
 
+        # auction structure
+
+        self.bids = {}
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+
         self._sim_started = False
 
         # agent attributes
@@ -58,6 +71,21 @@ class RhbpAgent(object):
         rospy.Subscriber(self._agent_topic_prefix + "bye", Bye, self._bye_callback)
 
         rospy.Subscriber(self._agent_topic_prefix + "generic_action", GenericAction, self._callback_generic_action)
+
+        # start communication class
+        self._communication = Communication(self._agent_name)
+        # Map topic
+        self._pub_map = self._communication.start_map(self._callback_map)
+        # Personal message topic
+        self._pub_agents = self._communication.start_agents(self._callback_agents)
+        # Auction topic
+        self._pub_auction = self._communication.start_auction(self._callback_auction)
+        self.time_to_bid = True  # only test debug puposes
+        self.task_subdivision = {"task1":
+                                     {"agents_needed": 3,
+                                      "agents_assigned": []
+                                      }
+                                 }
 
         self._received_action_response = False
 
@@ -134,6 +162,32 @@ class RhbpAgent(object):
 
         ########################################
 
+        # send the map if perceive the goal
+        if self.local_map.goal_area_fully_discovered:
+            map = self.local_map._representation
+            top_left_corner = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+            self._communication.send_map(self._pub_map, map.tostring(), top_left_corner[0], top_left_corner[1], map.shape[0], map.shape[1])  # lm_x and lm_y to get
+
+        '''
+        # send personal message test
+        if self._agent_name == "agentA1":
+            self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
+
+        self._received_action_response = False
+
+        # send bid 
+        if self.time_to_bid:
+            task_to_bid = "task1"
+            if (self._agent_name == "agentA1" or self._agent_name == "agentA2"):
+                self._communication.send_bid(self._pub_auction, task_to_bid, 10)
+            else:
+                self._communication.send_bid(self._pub_auction, task_to_bid, random.randint(1, 100))
+            self.time_to_bid = False
+            rospy.loginfo(self._agent_name + " ha biddato")
+        '''
+
+        
+
         # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
         while not self._received_action_response and rospy.get_rostime() < deadline:
             # wait until this agent is completely initialised
@@ -152,6 +206,79 @@ class RhbpAgent(object):
             rospy.logwarn("%s idle_action(): sim not yet started", self._agent_name)
         else:  # Our decision-making has taken too long
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
+
+    def _callback_map(self, msg):
+        msg_id = msg.message_id
+        map_from = msg.agent_id
+        map_value = msg.map
+        map_lm_x = msg.lm_x
+        map_lm_y = msg.lm_y
+        map_rows = msg.rows
+        map_columns = msg.columns
+
+        #if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
+        if False and self.local_map.goal_area_fully_discovered:
+            #rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
+            map = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
+            lm = [map_lm_x,map_lm_y]
+            lm2 = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+            # do map merge
+            merged_map = mapMerge(map,self.local_map._representation,lm,lm2)
+
+            self.local_map._representation = merged_map
+            #rospy.logdebug('MAPPA MERGED')
+            #rospy.logdebug(str(merged_map))
+
+
+            
+
+    def _callback_agents(self, msg):
+        msg_id = msg.message_id
+        msg_from = msg.agent_id_from
+        msg_type = msg.message_type
+        msg_param = msg.params
+
+        if msg.agent_id_to == self._agent_name:
+            rospy.loginfo(
+                self._agent_name + " received message from " + msg_from + " | id: " + msg_id + " | type: " + msg_type + " | params: " + msg_param)
+            self._communication.send_message(self._pub_agents, msg_from, "received", msg_id)
+
+    def _callback_auction(self, msg):
+        msg_id = msg.message_id
+        msg_from = msg.agent_id
+        task_id = msg.task_id
+        task_bid_value = msg.bid_value
+
+        if (not task_id in self.bids):
+            self.bids[task_id] = OrderedDict()
+            self.bids[task_id]["done"] = False
+
+        if (self.bids[task_id]["done"] == False):
+            if (not msg_from in self.bids[task_id]):
+                self.bids[task_id][msg_from] = task_bid_value
+
+            if len(self.bids[task_id]) == self.number_of_agents + 1:  # count the done
+                ordered_task = OrderedDict(sorted(self.bids[task_id].items(), key=lambda x: (x[1], x[0])))
+                # rospy.loginfo(self._agent_name +  " | " + str(ordered_task))
+
+                duplicate = -999
+                i = 0
+                for key, value in ordered_task.items():
+                    if (i > 0):  # skip done
+                        if (i == self.task_subdivision[task_id]["agents_needed"] + 1):
+                            break
+
+                        available = (len(ordered_task) - 1) - len(self.task_subdivision[task_id]["agents_assigned"]) - i
+                        # rospy.loginfo(self._agent_name + " |1: " + str(len(ordered_task) - 1) + " | 2: " + str(len(self.task_subdivision[task_id]["agents_assigned"])) + "i: " + str(i) + " | current:" + key)
+                        if (value != duplicate or available <= 0):
+                            self.task_subdivision[task_id]["agents_assigned"].append(key)
+
+                        duplicate = value
+
+                    i += 1
+
+                self.bids[task_id]["done"] = True
+                rospy.loginfo("DONE: " + str(self.task_subdivision[task_id]["agents_assigned"]))
 
     def _initialize_behaviour_model(self):
         """
