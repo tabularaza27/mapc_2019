@@ -71,7 +71,7 @@ class Communication:
 
         return pub_agents
 
-    def send_map(self, publisher, map, lm_x, lm_y):
+    def send_map(self, publisher, map, lm_x, lm_y, rows, columns):
         """
         Send the map through the map topic
         Args:
@@ -88,6 +88,8 @@ class Communication:
             msg.map = map
             msg.lm_x = lm_x
             msg.lm_y = lm_y
+            msg.rows = rows
+            msg.columns = columns
             publisher.publish(msg)
 
     def send_message(self, publisher, id_to, message_type, params):
