@@ -95,8 +95,9 @@ class GridMap():
         if global_variables.DEBUG_MODE:
             self.PLOT_MAP = True
             # create plot every x steps
-            self.PLOT_FREQUENCY = 1
-            self.live_plotting = global_variables.LIVE_PLOTTING
+            self.PLOT_FREQUENCY = 4
+        
+        self.live_plotting = global_variables.LIVE_PLOTTING
 
 
     ### PUBLIC METHODS ###
@@ -157,7 +158,7 @@ class GridMap():
 
         # update dispensers
         for dispenser in perception.dispensers:
-            pos = (dispenser.pos.y, dispenser.pos.x)
+            pos = (dispenser.pos.y, dispenser.pos.x) + self._agent_position
             matrix_pos = self._from_relative_to_matrix(pos)
             # get dispenser type
             for i in range(4):
@@ -202,7 +203,8 @@ class GridMap():
         self._update_distances()
 
         # write data to file, used for live plotting plotting
-        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0:
+        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0\
+                and self.agent_name in ('agentA1', 'agentA2'):
             self._write_data_to_file()
 
         self.STEP += 1

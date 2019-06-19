@@ -22,8 +22,14 @@ def get_data_location():
     # get current path --> needs to be beneath /group5
 
     #path = os.path.abspath(os.curdir)
+<<<<<<< HEAD
     # path = "/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5"
     path = os.path.abspath(__file__)
+=======
+    #path = "/home/ale/Desktop/EIT/AppAI/mapc_workspace/src/group5"
+    #path = "/home/kaijeggle/dev/Uni/AAIP/mapc_workspace/src/group5"
+    path = "/home/osboxes/Desktop/new/mapc_workspace/src/group5/"
+>>>>>>> common_code_base
     
     group_5_path = re.search(pattern, path)
 

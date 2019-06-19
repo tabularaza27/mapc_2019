@@ -52,3 +52,6 @@ qtcreator-*
 
 # Catkin custom files
 CATKIN_IGNORE
+
+#generated maps
+utils/generatedMaps/tmp_maps/*.txt
