@@ -185,8 +185,11 @@ class RhbpAgent(object):
                     self._communication.send_bid(self._pub_auction,subtask_id, bid_value) 
 
                     # wait until the bid is done
+                    while subtask_id not in self.bids:
+                        pass
+                    
                     while self.bids[subtask_id]["done"] == None:
-                        continue
+                        pass
                     
                     rospy.logdebug("------ DONE: " + str(self.bids[subtask_id]["done"]))
                     sub.assigned_agent = self.bids[subtask_id]["done"]
