@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 import rospy
+import os
 from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, Bye
 
 from behaviour_components.managers import Manager
@@ -15,6 +16,7 @@ from agent_commons.agent_utils import get_bridge_topic_prefix
 import global_variables
 
 from classes.grid_map import GridMap
+from classes.tasks.task_decomposition import update_tasks
 
 from classes.communications import Communication
 
@@ -54,13 +56,16 @@ class RhbpAgent(object):
         # auction structure
 
         self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 5  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
         # agent attributes
         self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5) # TODO change to get the vision
         self.map_messages_buffer = []
+
+        # representation of tasks
+        self.tasks = {}
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -81,12 +86,6 @@ class RhbpAgent(object):
         self._pub_agents = self._communication.start_agents(self._callback_agents)
         # Auction topic
         self._pub_auction = self._communication.start_auction(self._callback_auction)
-        self.time_to_bid = True  # only test debug puposes
-        self.task_subdivision = {"task1":
-                                     {"agents_needed": 3,
-                                      "agents_assigned": []
-                                      }
-                                 }
 
         self._received_action_response = False
 
@@ -154,12 +153,50 @@ class RhbpAgent(object):
         self._received_action_response = False
 
         ###### UPDATE AND SYNCHRONIZATION ######
+
         # update map
         self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
         #best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
         #rospy.logdebug("Best point: " + str(best_point))
         #rospy.logdebug("Best path: " + str(best_path))
         #rospy.logdebug("Current high score: " + str(current_high_score))
+
+        # update tasks
+        self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks, simulation_step=self.perception_provider.simulation_step)
+        rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
+
+        for task_name, task_object in self.tasks.iteritems():
+            #TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
+            
+            rospy.logdebug("-- Analyizing: " + task_name)
+            assigned = []
+            
+            for sub in task_object.sub_tasks:
+                if (sub.assigned_agent == None): 
+                    subtask_id = sub.sub_task_name
+                    rospy.logdebug("---- Bid needed for " + subtask_id)
+
+                    # check if the agent is already assigned to some subtasks of the same parent 
+                    if (self._agent_name in assigned):
+                        bid_value = 9999
+                    else:
+                        bid_value = random.randint(1, 100) #TODO: calculate the bid value
+
+                    self._communication.send_bid(self._pub_auction,subtask_id, bid_value) 
+
+                    # wait until the bid is done
+                    while subtask_id not in self.bids:
+                        pass
+                    
+                    while self.bids[subtask_id]["done"] == None:
+                        pass
+                    
+                    rospy.logdebug("------ DONE: " + str(self.bids[subtask_id]["done"]))
+                    sub.assigned_agent = self.bids[subtask_id]["done"]
+
+                    assigned.append(sub.assigned_agent)
+
+                    del self.bids[sub.sub_task_name] #free memory 
 
         ########################################
 
@@ -258,16 +295,18 @@ class RhbpAgent(object):
 
         if (not task_id in self.bids):
             self.bids[task_id] = OrderedDict()
-            self.bids[task_id]["done"] = False
+            self.bids[task_id]["done"] = None
 
-        if (self.bids[task_id]["done"] == False):
+        if (self.bids[task_id]["done"] == None):
             if (not msg_from in self.bids[task_id]):
                 self.bids[task_id][msg_from] = task_bid_value
 
             if len(self.bids[task_id]) == self.number_of_agents + 1:  # count the done
                 ordered_task = OrderedDict(sorted(self.bids[task_id].items(), key=lambda x: (x[1], x[0])))
-                # rospy.loginfo(self._agent_name +  " | " + str(ordered_task))
+                
+                '''
 
+                This in case we want to extend it to the possibility of more than one agent assigned to a sub task
                 duplicate = -999
                 i = 0
                 for key, value in ordered_task.items():
@@ -283,9 +322,15 @@ class RhbpAgent(object):
                         duplicate = value
 
                     i += 1
+                '''
 
-                self.bids[task_id]["done"] = True
-                rospy.loginfo("DONE: " + str(self.task_subdivision[task_id]["agents_assigned"]))
+                i = 0
+                for key, value in ordered_task.items():
+                    if (i > 0):  # skip done
+                        self.bids[task_id]["done"] = key
+                        break
+
+                    i += 1
 
     def _initialize_behaviour_model(self):
         """
