@@ -12,6 +12,11 @@ def my_map():
     return my_map
 
 def test_left_corner(my_map):
+    """
+    Function that test the function GridMap._set_goal_top_left
+    Args:
+        my_map: a GridMap instance for testing
+    """
     my_map._set_goal_top_left()
     print(my_map.goal_top_left)
     np.testing.assert_array_equal(my_map.goal_top_left, np.array([-2,-11]))
