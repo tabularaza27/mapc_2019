@@ -94,9 +94,9 @@ class GridMap():
         #### DEBUG ####
         if global_variables.DEBUG_MODE:
             self.PLOT_MAP = True
-            # create plot every x steps
-            self.PLOT_FREQUENCY = 4
-        
+            
+        # create plot every x steps
+        self.PLOT_FREQUENCY = 4
         self.live_plotting = global_variables.LIVE_PLOTTING
 
 
