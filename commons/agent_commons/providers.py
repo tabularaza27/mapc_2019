@@ -15,6 +15,10 @@ class PerceptionProvider(object):
 
     def __init__(self):
 
+        self.simulation_step = 0
+
+        self.tasks = []
+
         self.goals = []
 
         self.dispensers = []
@@ -24,7 +28,6 @@ class PerceptionProvider(object):
         # moving things ( entities --> other agents )
         self.entities = []
 
-        # blocks
         self.blocks = []
 
         self.closest_dispenser = None
@@ -53,8 +56,11 @@ class PerceptionProvider(object):
 
         self.obstacles = request_action_msg.obstacles  # TODO this could be more sophisticated and potentially extracted like above
 
-        # Update blocks
         self.blocks = request_action_msg.blocks  # TODO this could be more sophisticated and potentially extracted like above
+
+        self.simulation_step = request_action_msg.simulation_step
+
+        self.tasks = request_action_msg.tasks
 
     def _update_dispensers(self, request_action_msg):
         """

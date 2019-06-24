@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import random
 import os
 
-from helpers import get_commons_location
+from helpers import get_data_location
 from grid_path_planner import GridPathPlanner
 
 import global_variables
@@ -94,9 +94,9 @@ class GridMap():
         #### DEBUG ####
         if global_variables.DEBUG_MODE:
             self.PLOT_MAP = True
-            # create plot every x steps
-            self.PLOT_FREQUENCY = 4
-        
+            
+        # create plot every x steps
+        self.PLOT_FREQUENCY = 4
         self.live_plotting = global_variables.LIVE_PLOTTING
 
 
@@ -404,8 +404,8 @@ class GridMap():
 
     def _get_data_directory(self):
         """Returns Directory where map data is stored for plotting purposes"""
-        commons_dir = get_commons_location()
-        return os.path.join(commons_dir, 'generatedMaps', 'tmp_maps')
+        data_path = get_data_location()
+        return os.path.join(data_path, 'generatedMaps', 'tmp_maps')
 
     def _write_data_to_file(self):
         """writes two dimensional np.array to .txt file named after agent and in directory /commons/generatedMaps/tmp_maps"""
@@ -617,7 +617,7 @@ def main():
     import time
 
     my_map = GridMap('Agent1', 5)
-    my_map._representation = np.loadtxt(open("../../utils/generatedMaps/00/partial.csv", "rb"), delimiter=",")
+    my_map._representation = np.loadtxt(open("../../data/generatedMaps/00/partial.csv", "rb"), delimiter=",")
     my_map._update_distances()
     my_map.origin = np.array([4, 14], dtype=np.int)
     my_map._agent_position = np.array([0, 0], dtype=np.int)
