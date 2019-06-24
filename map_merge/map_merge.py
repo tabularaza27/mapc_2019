@@ -6,11 +6,10 @@ from matplotlib import rcParams
 def mapMerge(m1, m2, lm1, lm2):
     # TODO PASS AND USE TOP_LEFT COORDINATES
     # TODO copy only the unknown in m2
-    goal_landmark = 3
+    #goal_landmark = 3
 
     print(pos_landmark_m1)
     print(pos_landmark_m2)
-
     
     top_rows_to_add = int(lm1[0] - lm2[0])
     if top_rows_to_add < 0:

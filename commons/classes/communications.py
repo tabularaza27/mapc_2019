@@ -71,7 +71,7 @@ class Communication:
 
         return pub_agents
 
-    def send_map(self, publisher, map, lm_x, lm_y, rows, columns):
+    def send_map(self, publisher, map, lm_y, lm_x, rows, columns):
         """
         Send the map through the map topic
         Args:

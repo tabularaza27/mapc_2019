@@ -2,39 +2,39 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+import rospy
 
-def mapMerge(m1, m2, lm1, lm2):
+def mapMerge(m1, m2, lm1, lm2, origin):
     # TODO PASS AND USE TOP_LEFT COORDINATES
     # TODO copy only the unknown in m2
-    goal_landmark = 3
+    #goal_landmark = 3
 
-    
+    # Check rows and columns added in the merge map
     top_rows_to_add = int(lm1[0] - lm2[0])
     if top_rows_to_add < 0:
         top_rows_to_add = 0
 
-
     bottom_rows_to_add = int(m1.shape[0] - lm1[0]) - int(m2.shape[0] - lm2[0])
     if bottom_rows_to_add < 0:
         bottom_rows_to_add = 0
-
     
     left_columns_to_add = int(lm1[1] - lm2[1])
     if left_columns_to_add < 0:
         left_columns_to_add = 0
 
-    right_columns_to_add = int(m1.shape[0] - lm1[1]) - int(m2.shape[0] - lm2[1])
+    right_columns_to_add = int(m1.shape[1] - lm1[1]) - int(m2.shape[1] - lm2[1])
     if right_columns_to_add < 0:
         right_columns_to_add = 0
-    
+
+    # Comment out
     print(str(top_rows_to_add))
     print(str(bottom_rows_to_add))
     print(str(left_columns_to_add))
     print(str(right_columns_to_add))
 
-
-    fill_top = np.full((top_rows_to_add, m2.shape[1]),-1)
-    m2 = np.r_[fill_top,m2]
+    # Fill extra columns and rows with -1
+    fill_top = np.full((top_rows_to_add, m2.shape[1]), -1)
+    m2 = np.r_[fill_top, m2]
 
     fill_bot = np.full((bottom_rows_to_add, m2.shape[1]), -1)
     m2 = np.r_[m2, fill_bot]
@@ -50,10 +50,16 @@ def mapMerge(m1, m2, lm1, lm2):
     # get new coordinates of landmarks of m2
     lm2 = (lm2[0]+top_rows_to_add, lm2[1]+left_columns_to_add)
 
+    # get new coordinates of origin
+    new_origin = [origin[0] + top_rows_to_add, origin[1] + left_columns_to_add]
+
     print(lm1)
     print(lm2)
     shift = sum_tuple(lm2, lm1, minus=True)
     print("shift: " + str(shift))
+    print ("SHAAAAPEEEEEEEEEEEEE M1!!!!!!!!!!!!!!!!!!!!!" + str(m1.shape))
+    print ("SHAAAAPEEEEEEEEEEEEE M2!!!!!!!!!!!!!!!!!!!!!" + str(m2.shape))
+
 
     #showSingleMap(m2)
     #showSingleMap(m1)
@@ -61,12 +67,14 @@ def mapMerge(m1, m2, lm1, lm2):
     for i in range(m1.shape[0]):
         for j in range(m1.shape[1]):
             index_m2 = (i, j)
+            #print (index_m2)
             cell_value = m1[index_m2]
 
             index_m2 = sum_tuple(index_m2, shift)
             if m2[index_m2] == -1:
                 m2[index_m2] = cell_value
-    return m2
+
+    return m2, new_origin
     #showSingleMap(m2)
     """
     if (top_rows_to_add == 0):
@@ -131,49 +139,56 @@ def showAllMaps(m1,m2,m2_m):
 
     plt.show()
 
-'''m1 = [ [0,0,0,0,1], 
-	   [0,0,0,0,2],
-       [0,0,0,0,3],
-	   [0,7,1,0,0],
-	   [0,1,0,4,0],
-       [0,0,3,0,0],
-       [0,1,2,3,4] ]
 
-m2 = [ [0,0,0,0,0], 
-	   [0,1,0,0,0],
-	   [0,0,0,7,1],
-	   [0,0,0,1,0],
-	   [0,3,0,0,3] ]'''
+def main():
+    '''
+    m1 = [ [0,0,0,0,1],
+           [0,0,0,0,2],
+           [0,0,0,0,3],
+           [0,7,1,0,0],
+           [0,1,0,4,0],
+           [0,0,3,0,0],
+           [0,1,2,3,4] ]
 
-'''
-m1 = [ [0,0,0,0],
-       [0,4,0,0],
-       [0,1,1,1],
-       [0,0,0,0] ]
+    m2 = [ [0,0,0,0,0],
+           [0,1,0,0,0],
+           [0,0,0,7,1],
+           [0,0,0,1,0],
+           [0,3,0,0,3] ]'''
 
-m2 = [ [1,0,1,0,0],
-       [1,1,1,0,0],
-       [0,0,0,0,4],
-       [0,1,0,0,1],
-       [0,1,1,0,0] ]
-'''
+    '''
+    m1 = [ [0,0,0,0],
+           [0,4,0,0],
+           [0,1,1,1],
+           [0,0,0,0] ]
+    
+    m2 = [ [1,0,1,0,0],
+           [1,1,1,0,0],
+           [0,0,0,0,4],
+           [0,1,0,0,1],
+           [0,1,1,0,0] ]
+    '''
 
-'''
-m1 = np.loadtxt(open("agentA1.txt", "rb"), delimiter=",", dtype=int)
-m2 = np.loadtxt(open("agentA2.txt", "rb"), delimiter=",", dtype=int)
 
-m2_m = mapMerge(m1, m2, (8,23),(6,22))
-'''
+    m1 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA1.txt", "rb"), delimiter=",", dtype=int)
+    m2 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA2.txt", "rb"), delimiter=",", dtype=int)
 
-'''
-m1 = np.array(m1)
-m2 = np.array(m2)
+    m2_m = mapMerge(m1, m2, (8,23),(6,22))
 
 
 
-showAllMaps(m1,m2,m2_m)
-showSingleMap(m1)
-showSingleMap(m2)
+    m1 = np.array(m1)
+    m2 = np.array(m2)
 
-showSingleMap(m2_m)
-'''
+
+
+    showAllMaps(m1,m2,m2_m)
+    showSingleMap(m1)
+    showSingleMap(m2)
+
+    showSingleMap(m2_m)
+
+
+if __name__ == '__main__':
+
+    main()

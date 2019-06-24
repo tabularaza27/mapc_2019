@@ -66,7 +66,7 @@ class GridMap():
 
         # map
         self._representation = np.full((11, 11), -1)  # init the map with unknown cells
-        self._origin = (self.agent_vision, self.agent_vision)  # the origin of the agent is at the center of the map
+        self.origin = (self.agent_vision, self.agent_vision)  # the origin of the agent is at the center of the map
         self._path_planner_representation = np.copy(self._representation)   # map with fixed and temporary stuffs
 
         # info about agent in map
@@ -203,8 +203,7 @@ class GridMap():
         self._update_distances()
 
         # write data to file, used for live plotting plotting
-        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0\
-                and self.agent_name in ('agentA1', 'agentA2'):
+        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0: #and self.agent_name in ('agentA1', 'agentA2'):
             self._write_data_to_file()
 
         self.STEP += 1
@@ -218,7 +217,7 @@ class GridMap():
         dist_shape = self._representation.shape
         self._distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
         #print(self._distances.shape)
-        #print(self._origin)
+        #print(self.origin)
         #print(self._agent_position)
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         queue = deque([(agent_in_matrix, 0)])
@@ -243,19 +242,28 @@ class GridMap():
             best_path = self.paths[path_id]
         good_direction = False
         direction = None
-        while not good_direction and best_path != None:
-            direction = self.path_planner.next_move_direction(
-                self._agent_position,
-                self.paths[path_id])
-            # check possible collision and end of the path
-            next_cell = self._from_relative_to_matrix(self._agent_position) \
-                        + global_variables.movements[direction]
-            if direction == 'end' or direction == 'unknown position' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation)):
-                self._remove_path(path_id)
-                best_path = path_creation_function()
-                path_id = self._save_path(best_path)
-            else:
-                good_direction = True
+
+        # Check if the map has been fully discovered
+        # TODO add better behavior when map is fully discovered
+        if best_path != -1:
+            while not good_direction and best_path != None:
+                direction = self.path_planner.next_move_direction(
+                    self._agent_position,
+                    self.paths[path_id])
+                # check possible collision and end of the path
+                next_cell = self._from_relative_to_matrix(self._agent_position) \
+                            + global_variables.movements[direction]
+                if direction == 'end' or direction == 'unknown position' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation)):
+                    self._remove_path(path_id)
+                    best_path = path_creation_function()
+                    path_id = self._save_path(best_path)
+                else:
+                    good_direction = True
+        # Map discovered
+        else:
+            rospy.loginfo("map discovered completely")
+            direction = 'end'
+            path_id = None
 
         if best_path == None:
             #TODO what should we do when there is no path to the point? rethink the best point?
@@ -310,7 +318,7 @@ class GridMap():
             matrix_coord: (x',y') with respect to the origin of the matrix
         """
         matrix_coord = np.copy(relative_coord)
-        matrix_coord = matrix_coord + self._origin
+        matrix_coord = matrix_coord + self.origin
 
         return matrix_coord
 
@@ -325,7 +333,7 @@ class GridMap():
         """
 
         relative_coord = np.copy(matrix_coord)
-        relative_coord = relative_coord - self._origin
+        relative_coord = relative_coord - self.origin
 
         return relative_coord
 
@@ -380,7 +388,7 @@ class GridMap():
         if direction == 'n':
             helper_map = np.full((old_map_shape[0] + 1, old_map_shape[1]), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[1:, :] = self._representation
-            self._origin = self._origin + np.array([1, 0])
+            self.origin = self.origin + np.array([1, 0])
         if direction == 's':
             helper_map = np.full((old_map_shape[0] + 1, old_map_shape[1]), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[:-1, :] = self._representation
@@ -390,7 +398,7 @@ class GridMap():
         if direction == 'w':
             helper_map = np.full((old_map_shape[0], old_map_shape[1] + 1), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[:, 1:] = self._representation
-            self._origin = self._origin + np.array([0, 1])
+            self.origin = self.origin + np.array([0, 1])
 
         self._representation = helper_map
 
@@ -469,6 +477,7 @@ class GridMap():
 
         Returns:
             tuple: tuple containing best_point (tuple), best_path list(tuples), amount of unkown cells to be explored when this point is reached by the agent (int)
+            int: -1 if map is fully discovered
         """
         # map indices
         lower_bound = 0
@@ -520,7 +529,7 @@ class GridMap():
         shortest_path = 1000000
         best_point = None
         best_score = -1
-        print ("points:" + str(possible_points))
+        #print ("points:" + str(possible_points))
         for i in range(len(possible_points)):
             #print(point)
             #print(path)
@@ -528,7 +537,7 @@ class GridMap():
             if length == 0:
                 lenght = 100
             new_score = unknown_counts[i]/(length+10)
-            print (length)
+            #print (length)
             update_new_highscore = False
             if new_score > best_score:
                 update_new_highscore = True
@@ -542,13 +551,20 @@ class GridMap():
                 best_point = possible_points[i]
                 shortest_path = length
                 best_score = new_score
-            
-        best_path = self.path_planner.astar(
-            maze=self._path_planner_representation,
-            origin=self._origin,
-            start=np.array([self._from_relative_to_matrix(self._agent_position)]),
-            end=np.array([best_point]))
-        # TODO somewhere if best_score = 0 always we should set the exploring sensor to 0?
+
+        # Avoid stuck behavior
+        if best_point is not None:
+            best_path = self.path_planner.astar(
+                maze=self._path_planner_representation,
+                origin=self.origin,
+                start=np.array([self._from_relative_to_matrix(self._agent_position)]),
+                end=np.array([best_point]))
+            # TODO somewhere if best_score = 0 always we should set the exploring sensor to 0?
+        else:
+            # TODO this will be used as a flag to avoid the agent to get stuck when there is no best point (map has been fully discovered)
+            # Map fully discovered
+            best_path = -1
+
         return best_path
 
 
@@ -603,7 +619,7 @@ def main():
     my_map = GridMap('Agent1', 5)
     my_map._representation = np.loadtxt(open("../../utils/generatedMaps/00/partial.csv", "rb"), delimiter=",")
     my_map._update_distances()
-    my_map._origin = np.array([4, 14], dtype=np.int)
+    my_map.origin = np.array([4, 14], dtype=np.int)
     my_map._agent_position = np.array([0, 0], dtype=np.int)
 
     start_time = time.time()

@@ -36,11 +36,14 @@ def load_map_data():
     file_paths = glob.glob(os.path.join(commons_path, "generatedMaps/tmp_maps/*.txt"))
     for file in file_paths:
         agent_name = file[file.rindex('/')+1:].split('.')[0]
+        '''
         if agent_name in ('agentA1', 'agentA2'):
             print(agent_name)
             agent_map = np.loadtxt(open(file, "rb"), delimiter=",", dtype=int)
             map_data.update({agent_name: agent_map})
-
+        '''
+        agent_map = np.loadtxt(open(file, "rb"), delimiter=",", dtype=int)
+        map_data.update({agent_name: agent_map})
     return map_data
 
 
