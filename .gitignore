@@ -1,6 +1,7 @@
 # example map csvs
 commons/generatedMaps/
 utils/generatedMaps/
+data/generatedMaps/
 
 devel/
 logs/
