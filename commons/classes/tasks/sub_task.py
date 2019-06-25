@@ -48,7 +48,7 @@ class SubTask:
 
         # if submit is True, the Agent completing this subtask, has to submit the parent task, else agent detaches
         # after connect
-        self.submit_task = False
+        self.submit_behaviour = False
 
         # ToDo decide on which behaviours are needed based on who are the other agents completing the parent task
         # self.required_behaviours = [list_of_behaviours from above]
