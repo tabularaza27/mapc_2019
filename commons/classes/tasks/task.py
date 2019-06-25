@@ -2,6 +2,7 @@
 
 from sub_task import SubTask
 
+
 class Task:
     """This class represents one single task in the massim environment.
 
@@ -9,6 +10,7 @@ class Task:
     is a subtask, that needs to be completed by an agent. When all sub tasks are marked complete, the task is complete.
 
     """
+
     def __init__(self, task_percept):
         """
         Args:
@@ -40,7 +42,10 @@ class Task:
 
 
         """
+        # task is complete, when all sub tasks are complete
         self.complete = False
+        # task is auctioned if all sub tasks are auctioned and assigned to an agent
+        self.auctioned = False
         self.expired = False
 
         self.task_percept = task_percept
@@ -53,7 +58,8 @@ class Task:
 
     def _decompose_task(self):
         """Decomposes the tasks into sub tasks, based on the requirements in the task percept"""
-        self.sub_tasks = [SubTask(task_requirement=requirement, parent_task_name=self.name) for requirement in self.task_percept.requirements]
+        self.sub_tasks = [SubTask(task_requirement=requirement, parent_task_name=self.name) for requirement in
+                          self.task_percept.requirements]
 
     def check_sub_task_completness(self):
         """Checks if all subtasks are complete, if so marks whole task as complete"""
@@ -64,5 +70,30 @@ class Task:
             self.mark_task_complete()
             return True
 
+    def check_auctioning(self):
+        """Checks if all sub tasks have been auctioned and assigned to an agent, if so marks task as complete"""
+        sub_tasks_auctioned = [sub_task.assigned_agent for sub_task in self.sub_tasks]
+        if None in sub_tasks_auctioned:
+            return False
+        else:
+            self.mark_task_auctioned()
+            self.delegate_submit_behaviour()
+            return True
+
+    def delegate_submit_behaviour(self):
+        """delegates the submit behaviour of the task to the agent with the lowest id
+
+        ToDo: This heuristic should be replaced by a more sophisticated approach later
+        """
+        # ToDo implement this in a cleaner way
+        sub_task_agents = [sub_task.assigned_agent for sub_task in self.sub_tasks]
+        submit_agent = min(sub_task_agents)
+        for sub_task in self.sub_tasks:
+            if sub_task.assigned_agent == submit_agent:
+                sub_task.submit_behaviour = True
+
     def mark_task_complete(self):
         self.complete = True
+
+    def mark_task_auctioned(self):
+        self.auctioned = True

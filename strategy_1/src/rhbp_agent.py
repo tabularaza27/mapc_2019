@@ -7,11 +7,9 @@ from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, 
 from behaviour_components.managers import Manager
 from behaviour_components.condition_elements import Effect
 
-
 from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
-
 
 import global_variables
 
@@ -26,6 +24,7 @@ from collections import OrderedDict
 
 import random
 import numpy as np
+
 
 class RhbpAgent(object):
     """
@@ -56,12 +55,12 @@ class RhbpAgent(object):
         # auction structure
 
         self.bids = {}
-        self.number_of_agents = 5  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 10  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
         # agent attributes
-        self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5) # TODO change to get the vision
+        self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5)  # TODO change to get the vision
         self.map_messages_buffer = []
 
         # representation of tasks
@@ -150,30 +149,34 @@ class RhbpAgent(object):
 
         self.perception_provider.update_perception(request_action_msg=msg)
 
+        ### breakpoint after 30 steps to debug task subdivision every 30 steps
+        if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
+            rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
+
         self._received_action_response = False
 
         ###### UPDATE AND SYNCHRONIZATION ######
 
         # update map
         self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
-        #best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
-        #rospy.logdebug("Best point: " + str(best_point))
-        #rospy.logdebug("Best path: " + str(best_path))
-        #rospy.logdebug("Current high score: " + str(current_high_score))
+        # best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
+        # rospy.logdebug("Best point: " + str(best_point))
+        # rospy.logdebug("Best path: " + str(best_path))
+        # rospy.logdebug("Current high score: " + str(current_high_score))
 
         # update tasks
-        self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks, simulation_step=self.perception_provider.simulation_step)
-        #rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
+        self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
+                                  simulation_step=self.perception_provider.simulation_step)
+        rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
-        '''
         for task_name, task_object in self.tasks.iteritems():
-            #TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
-            
+            # TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
+
             rospy.logdebug("-- Analyizing: " + task_name)
             assigned = []
-            
+
             for sub in task_object.sub_tasks:
-                if (sub.assigned_agent == None): 
+                if (sub.assigned_agent == None):
                     subtask_id = sub.sub_task_name
                     rospy.logdebug("---- Bid needed for " + subtask_id)
 
@@ -181,24 +184,24 @@ class RhbpAgent(object):
                     if (self._agent_name in assigned):
                         bid_value = 9999
                     else:
-                        bid_value = random.randint(1, 100) #TODO: calculate the bid value
+                        bid_value = random.randint(1, 100)  # TODO: calculate the bid value
 
-                    self._communication.send_bid(self._pub_auction,subtask_id, bid_value) 
+                    self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
 
                     # wait until the bid is done
                     while subtask_id not in self.bids:
                         pass
-                    
+
                     while self.bids[subtask_id]["done"] == None:
                         pass
-                    
+
                     rospy.logdebug("------ DONE: " + str(self.bids[subtask_id]["done"]))
                     sub.assigned_agent = self.bids[subtask_id]["done"]
 
                     assigned.append(sub.assigned_agent)
 
-                    del self.bids[sub.sub_task_name] #free memory 
-        '''
+                    del self.bids[sub.sub_task_name]  # free memory
+
         ########################################
 
         # process the maps in the buffer
@@ -230,12 +233,12 @@ class RhbpAgent(object):
 
             self.map_messages_buffer.remove(msg)
 
-
         # send the map if perceive the goal
         if self.local_map.goal_area_fully_discovered:
             map = self.local_map._representation
             top_left_corner = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-            self._communication.send_map(self._pub_map, map.tostring(), top_left_corner[0], top_left_corner[1], map.shape[0], map.shape[1])  # lm_x and lm_y to get
+            self._communication.send_map(self._pub_map, map.tostring(), top_left_corner[0], top_left_corner[1],
+                                         map.shape[0], map.shape[1])  # lm_x and lm_y to get
 
         '''
         # send personal message test
@@ -254,8 +257,6 @@ class RhbpAgent(object):
             self.time_to_bid = False
             rospy.loginfo(self._agent_name + " ha biddato")
         '''
-
-        
 
         # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
         while not self._received_action_response and rospy.get_rostime() < deadline:
@@ -277,7 +278,7 @@ class RhbpAgent(object):
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
 
     def _callback_map(self, msg):
-        self.map_messages_buffer.append(msg)            
+        self.map_messages_buffer.append(msg)
 
     def _callback_agents(self, msg):
         msg_id = msg.message_id
@@ -296,17 +297,17 @@ class RhbpAgent(object):
         task_id = msg.task_id
         task_bid_value = msg.bid_value
 
-        if (not task_id in self.bids):
+        if task_id not in self.bids:
             self.bids[task_id] = OrderedDict()
             self.bids[task_id]["done"] = None
 
-        if (self.bids[task_id]["done"] == None):
-            if (not msg_from in self.bids[task_id]):
+        if self.bids[task_id]["done"] is None:
+            if msg_from not in self.bids[task_id]:
                 self.bids[task_id][msg_from] = task_bid_value
 
             if len(self.bids[task_id]) == self.number_of_agents + 1:  # count the done
                 ordered_task = OrderedDict(sorted(self.bids[task_id].items(), key=lambda x: (x[1], x[0])))
-                
+
                 '''
 
                 This in case we want to extend it to the possibility of more than one agent assigned to a sub task
@@ -343,7 +344,7 @@ class RhbpAgent(object):
         # Exploration
         exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(exploration_move)
-        #exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
+        # exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
 
         """
         # Random Move/Exploration
@@ -378,6 +379,7 @@ class RhbpAgent(object):
                                  planner_prefix=self._agent_name)
         self.goals.append(dispense_goal)
         """
+
 
 if __name__ == '__main__':
     try:

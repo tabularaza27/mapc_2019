@@ -7,6 +7,7 @@ import random
 import os
 
 from helpers import get_data_location
+from map_live_plotting import cleanup
 from grid_path_planner import GridPathPlanner
 
 import global_variables
@@ -94,7 +95,10 @@ class GridMap():
         #### DEBUG ####
         if global_variables.DEBUG_MODE:
             self.PLOT_MAP = True
-            
+
+        # delete old live plotting files
+        cleanup()
+
         # create plot every x steps
         self.PLOT_FREQUENCY = 1
         self.live_plotting = global_variables.LIVE_PLOTTING
@@ -203,7 +207,7 @@ class GridMap():
         self._update_distances()
 
         # write data to file, used for live plotting plotting
-        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0: #and self.agent_name in ('agentA1', 'agentA2'):
+        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0:
             self._write_data_to_file()
 
         self.STEP += 1
@@ -217,7 +221,7 @@ class GridMap():
         dist_shape = self._representation.shape
         self._distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
         #print(self._distances.shape)
-        #print(self.origin)
+        #print(self._origin)
         #print(self._agent_position)
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         queue = deque([(agent_in_matrix, 0)])

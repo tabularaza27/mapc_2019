@@ -1,6 +1,7 @@
 """Live Plotting Functionalities.
 See https://matplotlib.org/3.1.0/gallery/images_contours_and_fields/multi_image.html#sphx-glr-gallery-images-contours-and-fields-multi-image-py for details on plotting multiple images
 """
+from __future__ import division
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -12,15 +13,11 @@ import glob
 from helpers import get_data_location
 
 
-def cleanup(agent_name):
-    """Deletes old map files
-
-    Args:
-        agent_name (str): name of agent, e.g. agentA1
-    """
+def cleanup():
+    """Deletes old map files"""
     data_path = get_data_location()
-    file_path = os.path.join(data_path,'generatedMaps/tmp_maps/{}.txt'.format(agent_name))
-    if os.path.isfile(file_path):
+    file_paths = glob.glob(os.path.join(data_path,"generatedMaps/tmp_maps/*.txt"))
+    for file_path in file_paths:
         os.remove(file_path)
 
 
@@ -35,31 +32,27 @@ def load_map_data():
     file_paths = glob.glob(os.path.join(data_path,"generatedMaps/tmp_maps/*.txt"))
     for file in file_paths:
         agent_name = file[file.rindex('/')+1:].split('.')[0]
-        '''
-        if agent_name in ('agentA1', 'agentA2'):
-            print(agent_name)
-            agent_map = np.loadtxt(open(file, "rb"), delimiter=",", dtype=int)
-            map_data.update({agent_name: agent_map})
-        '''
         agent_map = np.loadtxt(open(file, "rb"), delimiter=",", dtype=int)
         map_data.update({agent_name: agent_map})
+
     return map_data
 
 
-def live_plotting():
-    """
+def live_plotting(no_agents=10):
+    """Plots Maps of Agents from data/generatedMaps/tmp_maps and updates them automatically
 
-    Returns:
-
+    Args:
+        no_agents (int): number of agents to be plotted
     """
 
     map_data = load_map_data()
-    no_agents = len(map_data.keys())
+    if not no_agents:
+        no_agents = len(map_data.keys())
 
-    n_rows = 1
-    n_columns = no_agents
-
+    n_columns = 2
+    n_rows = int(np.ceil(no_agents / n_columns))
     fig, axs = plt.subplots(n_rows, n_columns)
+
     cmap = 'cool'
 
     # initialize maps
@@ -69,15 +62,25 @@ def live_plotting():
         axs.set_title(map_data.keys()[0])
     else:
         i = 0
+        j = 0
+        k = 1
         for agent, data in map_data.iteritems():
+            if k > no_agents:
+                break
             try:
-                images.append(axs[i].imshow(data, cmap=cmap))
+                images.append(axs[i][j].imshow(data, cmap=cmap))
+
+                axs[i][j].set_title(agent)
+                # axs[i].label_counter()
+                if j == 0:
+                    j += 1
+                else:
+                    i += 1
+                    j = 0
+                k += 1
             except TypeError:
                 continue
-            axs[i].set_title(agent)
-            # axs[i].label_counter()
-            i += 1
-    print(images)
+
     # Find the min and max of all colors for use in setting the color scale.
     vmin = min(image.get_array().min() for image in images)
     vmax = max(image.get_array().max() for image in images)
@@ -91,15 +94,23 @@ def live_plotting():
         if no_agents == 1:
             images[0] = axs.imshow(map_data.values()[0], cmap=cmap, vmin=vmin, vmax=vmax)
         else:
+            i = 0
+            j = 0
             for index, image in enumerate(images):
                 try:
-                    images[index] = axs[index].imshow(map_data.values()[index], cmap=cmap, vmin=vmin, vmax=vmax)
+                    images[index] = axs[i][j].imshow(map_data.values()[index], cmap=cmap, vmin=vmin, vmax=vmax)
+
+                    if j == 0:
+                        j += 1
+                    else:
+                        i += 1
+                        j = 0
                 except TypeError:
                     # empty np array was loaded, probably because it was written to it at that moment
                     continue
 
 
-    ani = animation.FuncAnimation(fig, animate, interval=100)
+    ani = animation.FuncAnimation(fig, animate, interval=2000)
     plt.show()
 
 if __name__ == '__main__':
