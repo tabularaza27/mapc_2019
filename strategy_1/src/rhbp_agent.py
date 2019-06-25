@@ -163,8 +163,9 @@ class RhbpAgent(object):
 
         # update tasks
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks, simulation_step=self.perception_provider.simulation_step)
-        rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
+        #rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
+        '''
         for task_name, task_object in self.tasks.iteritems():
             #TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
             
@@ -197,7 +198,7 @@ class RhbpAgent(object):
                     assigned.append(sub.assigned_agent)
 
                     del self.bids[sub.sub_task_name] #free memory 
-
+        '''
         ########################################
 
         # process the maps in the buffer
@@ -212,32 +213,21 @@ class RhbpAgent(object):
             map_columns = msg.columns
 
             if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
-                #rospy.loginfo(self._agent_name + " received map from " + map_from + " | map value: " + map_value)
-
                 # map received
-                map = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
-                rospy.logdebug(map)
-                map_received = np.copy(map)
-                #map = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
+                maps = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
+                rospy.logdebug(maps)
+                map_received = np.copy(maps)
                 # landmark received
-                #lm = [map_lm_y,map_lm_x]
-                # try tupple
-                #lm_received = [map_lm_y, map_lm_x]
                 lm_received = (map_lm_y, map_lm_x)
                 # own landmark
-                #lm2 = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
                 lm_own = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
                 # do map merge
-                # merged_map = mapMerge(map_received, self.local_map._representation, lm_received, lm_own)
                 # Added new origin to function
                 origin_own = np.copy(self.local_map.origin)
                 merged_map, merged_origin = mapMerge(map_received, self.local_map._representation, lm_received, lm_own, origin_own)
                 self.local_map._representation = np.copy(merged_map)
                 self.local_map.origin = np.copy(merged_origin)
-                #rospy.logdebug('MAPPA MERGED')
-                #rospy.logdebug(str(merged_map))
 
-            
             self.map_messages_buffer.remove(msg)
 
 

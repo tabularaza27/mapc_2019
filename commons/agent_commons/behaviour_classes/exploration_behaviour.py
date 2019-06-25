@@ -34,8 +34,11 @@ class ExplorationBehaviour(BehaviourBase):
 
     def do_step(self):
         path_id, direction = self.rhbp_agent.local_map.get_exploration_move(self.exploration_path_id)
-        self.exploration_path_id = path_id
-        params = [KeyValue(key="direction", value=direction)]
-        rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
-        action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
-                              params=params)
+        # TODO add the iddle behavior through the behavioral network activation
+        if direction is not None:
+            self.exploration_path_id = path_id
+            params = [KeyValue(key="direction", value=direction)]
+            rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
+                                  params=params)
+

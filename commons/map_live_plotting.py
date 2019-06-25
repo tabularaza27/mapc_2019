@@ -99,7 +99,7 @@ def live_plotting():
                     continue
 
 
-    ani = animation.FuncAnimation(fig, animate, interval=2000)
+    ani = animation.FuncAnimation(fig, animate, interval=100)
     plt.show()
 
 if __name__ == '__main__':

@@ -96,7 +96,7 @@ class GridMap():
             self.PLOT_MAP = True
             
         # create plot every x steps
-        self.PLOT_FREQUENCY = 4
+        self.PLOT_FREQUENCY = 1
         self.live_plotting = global_variables.LIVE_PLOTTING
 
 
@@ -240,41 +240,40 @@ class GridMap():
             path_id = self._save_path(best_path)
         else:
             best_path = self.paths[path_id]
-        good_direction = False
-        direction = None
 
         # Check if the map has been fully discovered
+        # TODO HERE IS THE PROBLEM, CHECK
         # TODO add better behavior when map is fully discovered
-        if best_path != -1:
-            while not good_direction and best_path != None:
-                direction = self.path_planner.next_move_direction(
-                    self._agent_position,
-                    self.paths[path_id])
-                # check possible collision and end of the path
+        if best_path != -1 and best_path is not None:
+            #while not good_direction and best_path != None:
+            #if not good_direction: #and best_path is not None:
+            direction = self.path_planner.next_move_direction(
+                self._agent_position,
+                self.paths[path_id])
+            # Calculate next cell value if position  of the agent is not unknown
+            if direction != 'unknown position':
                 next_cell = self._from_relative_to_matrix(self._agent_position) \
                             + global_variables.movements[direction]
-                if direction == 'end' or direction == 'unknown position' or not GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation)):
-                    self._remove_path(path_id)
-                    best_path = path_creation_function()
-                    path_id = self._save_path(best_path)
-                else:
-                    good_direction = True
+                walkable_cell = GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation))
+            else:
+                # if position is unknown we want to recalculate path
+                # walkable_cell = False
+                self._remove_path(path_id)
+                # path_creation_function() here has the same values than in the beginning?
+                best_path = path_creation_function()
+                path_id = self._save_path(best_path)
+            # Check if agent has reached the end or the next cell is blocked
+            if direction == 'end' or not walkable_cell:
+                self._remove_path(path_id)
+                # path_creation_function() here has the same values than in the beginning?
+                best_path = path_creation_function()
+                path_id = self._save_path(best_path)
         # Map discovered
         else:
-            rospy.loginfo("map discovered completely")
-            direction = 'end'
-            path_id = None
-
-        if best_path == None:
-            #TODO what should we do when there is no path to the point? rethink the best point?
-            path_id = None
             direction = None
-            rospy.logdebug("THERE IS NO PATH TO THE POINT!! ")
-        # Check unkonwn position
-        if best_path == 'unknown position':
-            rospy.logdebug("UNKNOWN POSITION!!!!!")
-        rospy.logdebug("Best path: " + str(self.paths[path_id]))
-        rospy.logdebug("direction: " + direction)
+            path_id = None
+            rospy.loginfo(str(self.agent_name) + ":   MAP DISCOVERED COMPLETED!")
+
         return path_id, direction
 
     def get_exploration_move(self, path_id):
@@ -351,7 +350,8 @@ class GridMap():
 
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         if move is not None:
-            self._representation[agent_in_matrix[0]][agent_in_matrix[1]] = 0 # ??
+            # Delete previous position of agent in map
+            self._representation[agent_in_matrix[0]][agent_in_matrix[1]] = 0
             move_array = global_variables.movements[move]
             self._agent_position = self._agent_position + move_array
             agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
@@ -361,7 +361,7 @@ class GridMap():
                 self._expand_map(move)
 
             agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
-            self._representation[agent_in_matrix[0]][agent_in_matrix[1]] = -4
+            self._representation[agent_in_matrix[0]][agent_in_matrix[1]] = global_variables.AGENT_CELL
 
         else:
             pass

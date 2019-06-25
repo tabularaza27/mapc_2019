@@ -27,10 +27,10 @@ def mapMerge(m1, m2, lm1, lm2, origin):
         right_columns_to_add = 0
 
     # Comment out
-    print(str(top_rows_to_add))
-    print(str(bottom_rows_to_add))
-    print(str(left_columns_to_add))
-    print(str(right_columns_to_add))
+    # print(str(top_rows_to_add))
+    # print(str(bottom_rows_to_add))
+    # print(str(left_columns_to_add))
+    # print(str(right_columns_to_add))
 
     # Fill extra columns and rows with -1
     fill_top = np.full((top_rows_to_add, m2.shape[1]), -1)
@@ -53,12 +53,12 @@ def mapMerge(m1, m2, lm1, lm2, origin):
     # get new coordinates of origin
     new_origin = [origin[0] + top_rows_to_add, origin[1] + left_columns_to_add]
 
-    print(lm1)
-    print(lm2)
+    # print(lm1)
+    # print(lm2)
     shift = sum_tuple(lm2, lm1, minus=True)
-    print("shift: " + str(shift))
-    print ("SHAAAAPEEEEEEEEEEEEE M1!!!!!!!!!!!!!!!!!!!!!" + str(m1.shape))
-    print ("SHAAAAPEEEEEEEEEEEEE M2!!!!!!!!!!!!!!!!!!!!!" + str(m2.shape))
+    # print("shift: " + str(shift))
+    # print ("SHAAAAPEEEEEEEEEEEEE M1!!!!!!!!!!!!!!!!!!!!!" + str(m1.shape))
+    # print ("SHAAAAPEEEEEEEEEEEEE M2!!!!!!!!!!!!!!!!!!!!!" + str(m2.shape))
 
 
     #showSingleMap(m2)
@@ -76,6 +76,7 @@ def mapMerge(m1, m2, lm1, lm2, origin):
 
     return m2, new_origin
     #showSingleMap(m2)
+
     """
     if (top_rows_to_add == 0):
         i_m2_zeroval = int(pos_landmark_m2[0] - pos_landmark_m1[0])
