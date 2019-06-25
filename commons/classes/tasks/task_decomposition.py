@@ -7,6 +7,7 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
     """updates task representation based on new percept.
 
     * adds tasks, that are new
+    * marks tasks that are fully auctioned ( all subtasks are assigned to an agent ). Task is ready to be executed
     * mark expired tasks as expired
     * marks complete tasks as complete
 
@@ -28,10 +29,18 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
     # mark expired tasks & mark complete tasks
     # ToDo implement way so that completed and expired tasks don't get looped through again every time
     for task_name, task_object in new_tasks.iteritems():
-        # mark expired tasks
-        if task_object.deadline > simulation_step:
+        # skip expired and complete tasks
+        if task_object.expired or task_object.complete:
+            continue
+        # check if task is expired and mark it if that is true
+        elif task_object.deadline < simulation_step:
             task_object.expired = True
-        # mark complete tasks
+        # check if task has been fully auctioned and mark it, if true.
+        # When the task is auctioned the submit behaviour can be delegated to the agent fulfilling a sub task
+        # The execution of the task can now start
+        elif not task_object.auctioned:
+            task_object.check_auctioning()
+        # check if task is complete and mark it if its true
         elif not task_object.complete:
             task_object.check_sub_task_completness()
 
