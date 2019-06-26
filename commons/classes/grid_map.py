@@ -138,7 +138,9 @@ class GridMap():
 
         # update goals
         for goal in perception.goals:
-
+            # to activate the goal area discovering if the agent spawn in the middle of it
+            if(self.STEP == 0):
+                self._start_discovering_goal_area = True
             # add to local map
             pos = np.array([goal.pos.y, goal.pos.x]) + self._agent_position
             matrix_pos = self._from_relative_to_matrix(pos)
