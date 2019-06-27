@@ -174,7 +174,14 @@ class GridMap():
             # add to state variable as dict
             # {pos: {x: 3, y: 3}, type: 'b1'}
             dispenser.pos = pos
-            if dispenser not in self._dispensers:
+            equal = False
+
+            for d in self._dispensers:
+                if np.array_equal(d.pos,dispenser.pos):
+                    equal = True
+                    break
+            
+            if not equal:
                 self._dispensers.append(dispenser)
 
         # Update temporary map used by path_planner to avoid obstacles

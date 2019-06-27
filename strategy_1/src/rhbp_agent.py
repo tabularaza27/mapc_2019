@@ -55,7 +55,7 @@ class RhbpAgent(object):
         # auction structure
 
         self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 1 # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -65,6 +65,7 @@ class RhbpAgent(object):
 
         # representation of tasks
         self.tasks = {}
+        self.assigned_tasks = [] # personal for the agent
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -87,6 +88,42 @@ class RhbpAgent(object):
         self._pub_auction = self._communication.start_auction(self._callback_auction)
 
         self._received_action_response = False
+
+    
+    def calculateSubTaskBid(self, subtask):
+        bid_value = -1
+
+        if self.local_map.goal_area_fully_discovered:
+            required_type = subtask.type
+
+            # find the closest dispenser
+            min_dist = 9999
+            pos = [[-1,-1]]
+
+            for dispenser in self.local_map._dispensers:
+                if dispenser.type == required_type: # check if the type is the one we need
+                    pos_matrix = self.local_map._from_relative_to_matrix(dispenser.pos)
+                    dist = self.local_map._distances[pos_matrix[0],pos_matrix[1]]
+
+                    if dist < min_dist: # see if the distance is minimum and save it
+                        min_dist = dist
+                        pos[0] = pos_matrix
+            
+
+            if min_dist != 9999: # the distance to the closer dispenser has been calculated
+                # add the distance to the goal
+                landmark = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+                end = [[landmark[0],landmark[1]]]
+                path = self.local_map.path_planner.astar(
+                    maze=self.local_map._path_planner_representation,
+                    origin=self.local_map.origin,
+                    start=np.array(pos, dtype=np.int),
+                    end=np.array(end, dtype=np.int))
+
+                bid_value = len(path) + min_dist # distance from agent to dispenser + dispenser to goal
+
+        return bid_value
+
 
     def _sim_start_callback(self, msg):
         """
@@ -179,12 +216,19 @@ class RhbpAgent(object):
                 if (sub.assigned_agent == None):
                     subtask_id = sub.sub_task_name
                     rospy.logdebug("---- Bid needed for " + subtask_id)
-
+                    
                     # check if the agent is already assigned to some subtasks of the same parent 
                     if (self._agent_name in assigned):
                         bid_value = 9999
                     else:
-                        bid_value = random.randint(1, 100)  # TODO: calculate the bid value
+                        # first calculate the already assigned sub tasks
+                        bid_value = 0
+                        for t in self.assigned_tasks:
+                            bid_value +=  self.calculateSubTaskBid(t)
+
+                        # add the current
+
+                        bid_value +=  self.calculateSubTaskBid(sub)
 
                     self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
 
@@ -195,12 +239,26 @@ class RhbpAgent(object):
                     while self.bids[subtask_id]["done"] == None:
                         pass
 
-                    rospy.logdebug("------ DONE: " + str(self.bids[subtask_id]["done"]))
-                    sub.assigned_agent = self.bids[subtask_id]["done"]
+                    if self.bids[subtask_id]["done"] != "-1": # was a valid one
+                        rospy.logdebug("------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
+                        sub.assigned_agent = self.bids[subtask_id]["done"]
 
-                    assigned.append(sub.assigned_agent)
+                        assigned.append(sub.assigned_agent)
+
+                        if sub.assigned_agent == self._agent_name:
+                            self.assigned_tasks.append(sub)
+                    else:
+                        rospy.logdebug("------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
 
                     del self.bids[sub.sub_task_name]  # free memory
+            
+            if not task_object.auctioned: # if not all the subtasks were fully auctioned, reset all the subtasks 
+                if len(assigned) < len(task_object.sub_tasks):
+                    rospy.logdebug("--------- NEED TO REMOVE: " + str(task_object.auctioned))
+                    for sub in task_object.sub_tasks:
+                        sub.agent_assigned = None
+                        if sub in self.assigned_tasks:
+                            self.assigned_tasks.remove(sub)
 
         ########################################
 
@@ -246,16 +304,6 @@ class RhbpAgent(object):
             self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
 
         self._received_action_response = False
-
-        # send bid 
-        if self.time_to_bid:
-            task_to_bid = "task1"
-            if (self._agent_name == "agentA1" or self._agent_name == "agentA2"):
-                self._communication.send_bid(self._pub_auction, task_to_bid, 10)
-            else:
-                self._communication.send_bid(self._pub_auction, task_to_bid, random.randint(1, 100))
-            self.time_to_bid = False
-            rospy.loginfo(self._agent_name + " ha biddato")
         '''
 
         # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
@@ -331,8 +379,11 @@ class RhbpAgent(object):
                 i = 0
                 for key, value in ordered_task.items():
                     if (i > 0):  # skip done
-                        self.bids[task_id]["done"] = key
-                        break
+                        if (value == -1):
+                            self.bids[task_id]["done"] = "-1"
+                        else:
+                            self.bids[task_id]["done"] = key
+                            break
 
                     i += 1
 
