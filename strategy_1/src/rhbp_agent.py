@@ -239,7 +239,7 @@ class RhbpAgent(object):
                     while self.bids[subtask_id]["done"] == None:
                         pass
 
-                    if self.bids[subtask_id]["done"] != "-1": # was a valid one
+                    if self.bids[subtask_id]["done"] != "invalid": # was a valid one
                         rospy.logdebug("------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
                         sub.assigned_agent = self.bids[subtask_id]["done"]
 
@@ -380,7 +380,7 @@ class RhbpAgent(object):
                 for key, value in ordered_task.items():
                     if (i > 0):  # skip done
                         if (value == -1):
-                            self.bids[task_id]["done"] = "-1"
+                            self.bids[task_id]["done"] = "invalid"
                         else:
                             self.bids[task_id]["done"] = key
                             break
