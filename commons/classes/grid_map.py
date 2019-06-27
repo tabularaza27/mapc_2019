@@ -173,6 +173,7 @@ class GridMap():
 
             # add to state variable as dict
             # {pos: {x: 3, y: 3}, type: 'b1'}
+            dispenser.pos = pos
             if dispenser not in self._dispensers:
                 self._dispensers.append(dispenser)
 
