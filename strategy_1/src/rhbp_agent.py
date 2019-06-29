@@ -93,7 +93,7 @@ class RhbpAgent(object):
         self._received_action_response = False
 
     
-    def calculateSubTaskBid(self, subtask):
+    def calculate_subtask_bid(self, subtask):
         bid_value = -1
 
         if self.local_map.goal_area_fully_discovered:
@@ -214,11 +214,11 @@ class RhbpAgent(object):
                         # first calculate the already assigned sub tasks
                         bid_value = 0
                         for t in self.assigned_tasks:
-                            bid_value +=  self.calculateSubTaskBid(t)
+                            bid_value +=  self.calculate_subtask_bid(t)
 
                         # add the current
 
-                        bid_value +=  self.calculateSubTaskBid(sub)
+                        bid_value +=  self.calculate_subtask_bid(sub)
 
                     self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
 
