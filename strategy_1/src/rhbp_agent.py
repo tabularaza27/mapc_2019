@@ -1,29 +1,31 @@
 #!/usr/bin/env python2
-
+import random
+import numpy as np
+from collections import OrderedDict
 import rospy
-import os
-from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, Bye
 
+from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, Bye
 from behaviour_components.managers import Manager
 from behaviour_components.condition_elements import Effect
-
-from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBehaviour
-from agent_commons.providers import PerceptionProvider
-from agent_commons.agent_utils import get_bridge_topic_prefix
+from behaviour_components.conditions import Condition
 
 import global_variables
 
+from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBehaviour
+from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDispenserBehaviour
+from agent_commons.providers import PerceptionProvider
+from agent_commons.agent_utils import get_bridge_topic_prefix
+
+
+
 from classes.grid_map import GridMap
 from classes.tasks.task_decomposition import update_tasks
-
 from classes.communications import Communication
-
 from classes.map_merge import mapMerge
 
-from collections import OrderedDict
 
-import random
-import numpy as np
+
+
 
 
 class RhbpAgent(object):
@@ -53,7 +55,6 @@ class RhbpAgent(object):
         self.perception_provider = PerceptionProvider()
 
         # auction structure
-
         self.bids = {}
         self.number_of_agents = 1 # TODO: check if there's a way to get it automatically
 
@@ -66,6 +67,8 @@ class RhbpAgent(object):
         # representation of tasks
         self.tasks = {}
         self.assigned_tasks = [] # personal for the agent
+
+
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -397,6 +400,12 @@ class RhbpAgent(object):
         self.behaviours.append(exploration_move)
         # exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
 
+        # Move to Dispenser
+        move_to_dispenser = MoveToDispenserBehaviour()
+        self.behaviours.append(move_to_dispenser)
+        move_to_dispenser.add_precondition(
+            Condition()
+        )
         """
         # Random Move/Exploration
         random_move = RandomMove(name="random_move", agent_name=self._agent_name)

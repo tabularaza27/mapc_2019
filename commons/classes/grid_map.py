@@ -52,8 +52,8 @@ class GridMap():
     GOAL_CELL = -3
     AGENT_CELL = -4
     ENTITY_CELL = -5
-    BLOCK_CELL_STARTING_NUMBER = 101
-    DISPENSER_STARTING_NUMBER = 1
+    BLOCK_CELL_STARTING_NUMBER = 100
+    DISPENSER_STARTING_NUMBER = 10
 
     def __init__(self, agent_name, agent_vision):
         """
@@ -82,6 +82,10 @@ class GridMap():
         self._goal_areas = []
         self._agents = []
         self._temporary_obstacles = []
+
+        # the list of attached blocks
+        # {type:'b1', pos:[y,x], subtask_id:None}
+        self._attached_blocks = []
 
         # goal area discovery
         self.goal_area_fully_discovered = False
@@ -115,6 +119,11 @@ class GridMap():
         Returns: void
 
         """
+        # TODO CHECK IF THIS IS WORKING, create tests for rotate function
+        if agent.last_action == "rotate" and agent.last_action_result == "success":
+            for block in self._attached_blocks:
+                block.rotate(rotate_direction=agent.last_action_params[0])
+
         # if last action was move update agent position and expand map size if sight is out of bounds
         if agent.last_action == "move" and agent.last_action_result == "success":
             self._update_agent_position(move=agent.last_action_params[0])
@@ -174,14 +183,11 @@ class GridMap():
             # add to state variable as dict
             # {pos: {x: 3, y: 3}, type: 'b1'}
             dispenser.pos = pos
-            equal = False
-
+            flag_equal = False
             for d in self._dispensers:
-                if np.array_equal(d.pos,dispenser.pos):
-                    equal = True
-                    break
-            
-            if not equal:
+                if np.array_equal(d.pos, dispenser.pos):
+                    flag_equal = True
+            if not flag_equal:
                 self._dispensers.append(dispenser)
 
         # Update temporary map used by path_planner to avoid obstacles
@@ -247,7 +253,7 @@ class GridMap():
                             if GridPathPlanner.is_walkable(cell_value):
                                 queue.append((new_pos, dist+1))
 
-    def get_move_direction(self, path_id, path_creation_function):
+    def get_move_direction(self, path_id, path_creation_function, parameters):
         if not self.paths.has_key(path_id):
             # TODO do we need only the path?
             best_path = path_creation_function()
@@ -292,6 +298,22 @@ class GridMap():
 
     def get_exploration_move(self, path_id):
         return self.get_move_direction(path_id, self._get_point_to_explore)
+
+    def get_go_to_dispenser_move(self, path_id, subtask):
+        parameters = {}
+        parameters["destination"] = subtask.closest_dispenser_position
+        return self.get_move_direction(path_id, self._get_point_close_to_dispenser, parameters)
+
+    def is_close_to_dispenser(self, type):
+        for direction in global_variables.moving_directions:
+            close_cell_matrix = self._from_relative_to_matrix(self._agent_position + direction)
+            dispenser_type = self.get_dispenser_type(
+                self._representation[close_cell_matrix[0], close_cell_matrix[1]]
+            )
+            if dispenser_type == type:
+                return True
+        return False
+
 
     ### PRIVATE METHODS ###
     def _get_value_of_cell(self, coord, maze=None):
@@ -482,6 +504,12 @@ class GridMap():
 
         self.goal_top_left = self._from_matrix_to_relative(np.array([top, left]))
 
+    def _get_point_close_to_dispenser(self):
+        a=1
+        # TODO DEFINE THIS FUNCTION
+        # USE CLOSEST DISPENSER SAVED BY PIETRO'S BID
+        # TODO ASK ALVARO ABOUT GENERALIZATION OF GET_MOVE_DIRECTION_FUNCTION
+
     def _get_point_to_explore(self):
         """Calculates point that is most suited for exploring and path to it
 
@@ -626,6 +654,11 @@ class GridMap():
             return True
         return False
 
+    def get_dispenser_type(self, cell_value):
+        if  self.DISPENSER_STARTING_NUMBER <= cell_value < self.BLOCK_CELL_STARTING_NUMBER:
+            return cell_value - self.DISPENSER_STARTING_NUMBER
+        else:
+            return -1
 
 def main():
     import time
