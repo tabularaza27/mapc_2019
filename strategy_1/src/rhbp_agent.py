@@ -105,7 +105,7 @@ class RhbpAgent(object):
                     pos_matrix = self.local_map._from_relative_to_matrix(dispenser.pos)
                     dist = self.local_map._distances[pos_matrix[0],pos_matrix[1]]
 
-                    if dist < min_dist: # see if the distance is minimum and save it
+                    if dist < min_dist and dist != -1: # see if the distance is minimum and save it
                         min_dist = dist
                         pos[0] = pos_matrix
             
@@ -113,14 +113,18 @@ class RhbpAgent(object):
             if min_dist != 9999: # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
                 landmark = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-                end = [[landmark[0],landmark[1]]]
+                end = [[landmark[0], landmark[1]]]
                 path = self.local_map.path_planner.astar(
                     maze=self.local_map._path_planner_representation,
                     origin=self.local_map.origin,
                     start=np.array(pos, dtype=np.int),
                     end=np.array(end, dtype=np.int))
 
-                bid_value = len(path) + min_dist # distance from agent to dispenser + dispenser to goal
+                if path is not None:
+                    bid_value = len(path) + min_dist # distance from agent to dispenser + dispenser to goal
+                    print(self._agent_name + ": " + str(bid_value))
+                else:
+                    print(self._agent_name + ": No bid")
 
         return bid_value
 
@@ -192,15 +196,16 @@ class RhbpAgent(object):
 
         self._received_action_response = False
 
-        ###### UPDATE AND SYNCHRONIZATION ######
-
+        # ###### UPDATE AND SYNCHRONIZATION ######
+        #
         # update map
         self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
-        # best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
-        # rospy.logdebug("Best point: " + str(best_point))
-        # rospy.logdebug("Best path: " + str(best_path))
-        # rospy.logdebug("Current high score: " + str(current_high_score))
+        # # best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
+        # # rospy.logdebug("Best point: " + str(best_point))
+        # # rospy.logdebug("Best path: " + str(best_path))
+        # # rospy.logdebug("Current high score: " + str(current_high_score))
 
+        """
         # update tasks
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
                                   simulation_step=self.perception_provider.simulation_step)
@@ -261,6 +266,7 @@ class RhbpAgent(object):
                             self.assigned_tasks.remove(sub)
 
         ########################################
+        """
 
         # process the maps in the buffer
 

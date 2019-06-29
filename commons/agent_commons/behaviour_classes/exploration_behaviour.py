@@ -41,4 +41,7 @@ class ExplorationBehaviour(BehaviourBase):
             rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
             action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
                                   params=params)
+        else:
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
+                                  params=[KeyValue(key="direction", value='INVALID')])
 

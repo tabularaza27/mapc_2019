@@ -256,37 +256,60 @@ class GridMap():
             best_path = self.paths[path_id]
 
         # Check if the map has been fully discovered
-        # TODO HERE IS THE PROBLEM, CHECK
-        # TODO add better behavior when map is fully discovered
+        valid_direction = False
+        # Number of times you may try find a valid direction
+        try_counter = 0
+        max_trials = 1000
+        # Compute next direction if map is not fully discovered (path = -1)
         if best_path != -1 and best_path is not None:
-            #while not good_direction and best_path != None:
-            #if not good_direction: #and best_path is not None:
-            direction = self.path_planner.next_move_direction(
-                self._agent_position,
-                self.paths[path_id])
-            # Calculate next cell value if position  of the agent is not unknown
-            if direction != 'unknown position':
-                next_cell = self._from_relative_to_matrix(self._agent_position) \
-                            + global_variables.movements[direction]
-                walkable_cell = GridPathPlanner.is_walkable(self._get_value_of_cell(next_cell, self._path_planner_representation))
-            else:
-                # if position is unknown we want to recalculate path
-                # walkable_cell = False
-                self._remove_path(path_id)
-                # path_creation_function() here has the same values than in the beginning?
-                best_path = path_creation_function()
-                path_id = self._save_path(best_path)
-            # Check if agent has reached the end or the next cell is blocked
-            if direction == 'end' or not walkable_cell:
-                self._remove_path(path_id)
-                # path_creation_function() here has the same values than in the beginning?
-                best_path = path_creation_function()
-                path_id = self._save_path(best_path)
+            while not valid_direction and best_path is not None or not try_counter < max_trials:
+                # this point is never reached
+                if best_path == 'invalid end':
+                    print ("invalid end")
+                # increase counter
+                try_counter += 1
+                # Compute direction
+                direction = self.path_planner.next_move_direction(
+                    self._agent_position,
+                    self.paths[path_id])
+                if direction is not None:
+                    # Calculate next cell value if position  of the agent is not unknown
+                    if direction != 'unknown position':
+                        next_cell_matrix = self._from_relative_to_matrix(self._agent_position) \
+                                    + global_variables.movements[direction]
+                        # Check if next_cell is out of bounds (synchronization problem?) # TODO out of bounds error in get_value_of_cell just after merging the map, this does not solve the problem idky
+                        if next_cell_matrix[0] < self._path_planner_representation.shape[0] - 1 \
+                                or next_cell_matrix[1] < self._path_planner_representation.shape[1] - 1:
+                            walkable_cell = GridPathPlanner.is_walkable \
+                                (self._get_value_of_cell(next_cell_matrix, self._path_planner_representation))
+                        else:  # out of bounds
+                            walkable_cell = False
+                        # Check if the next_cell is still inside the path (unknown position error)
+                        next_cell_rel = self._from_matrix_to_relative(next_cell_matrix)
+                        if not (next_cell_rel == best_path).any():
+                            walkable_cell = False
+                    else:
+                        # if position is unknown we want to recalculate path
+                        walkable_cell = False
+                    # Check if agent has reached the end or the next cell is blocked
+                    if direction == 'end' or not walkable_cell:
+                        self._remove_path(path_id)
+                        # Recalculate path
+                        best_path = path_creation_function()
+                        path_id = self._save_path(best_path)
+                    else:
+                        # direction is valid
+                        valid_direction = True
+            # Set direction to none if run out of tries
+            if not try_counter < max_trials:
+                direction = None
+
         # Map discovered
         else:
             direction = None
             path_id = None
-            rospy.loginfo(str(self.agent_name) + ":   MAP DISCOVERED COMPLETED!")
+            print (best_path)
+            rospy.loginfo(str(self.agent_name) + ":   MAP DISCOVERED COMPLETED! or... wait, I am lost :(")
 
         return path_id, direction
 
@@ -524,12 +547,15 @@ class GridMap():
             else:
                 i += 1
         goal_area_in_border = False
+        interesting_points = []
         for point in possible_points:
             unknown_count = float(self._get_unknown_amount(point))
             if self._get_value_of_cell(point) == global_variables.GOAL_CELL:
                 unknown_count *= 10000
                 goal_area_in_border = True
-            unknown_counts.append(unknown_count)
+            if unknown_count > 0:
+                interesting_points.append(point)
+                unknown_counts.append(unknown_count)
 
         # DISCOVERING GOAL AREA
         # TODO IF THE AGENT IS BORN IN THE GOAL AREA THIS IS NOT WORKING
@@ -544,13 +570,13 @@ class GridMap():
         best_point = None
         best_score = -1
         #print ("points:" + str(possible_points))
-        for i in range(len(possible_points)):
+        for i in range(len(interesting_points)):
             #print(point)
             #print(path)
-            length = self._distances[possible_points[i][0],possible_points[i][1]]
+            length = self._distances[interesting_points[i][0],interesting_points[i][1]]
             if length == 0:
                 lenght = 100
-            new_score = unknown_counts[i]/(length+10)
+            new_score = unknown_counts[i]/(length)
             #print (length)
             update_new_highscore = False
             if new_score > best_score:
@@ -562,7 +588,7 @@ class GridMap():
                 else:
                     update_new_highscore = True
             if update_new_highscore:
-                best_point = possible_points[i]
+                best_point = interesting_points[i]
                 shortest_path = length
                 best_score = new_score
 

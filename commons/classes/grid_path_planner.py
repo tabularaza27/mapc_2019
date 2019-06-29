@@ -41,7 +41,7 @@ class GridPathPlanner():
             end_pos = maze[element[0]][element[1]]
             if not GridPathPlanner.is_walkable(end_pos):
                 print ("invalid End point")
-                return
+                return 'invalid end'
 
         # Create start and end node
         start_node = self.Node(None, start)
@@ -311,6 +311,9 @@ class GridPathPlanner():
                     'unknown translation' - translation is not valid
 
         """
+        # Check is path is None
+        if path is None:
+            return None
 
         # Index of actual position in path
         for index, node in enumerate(path):
