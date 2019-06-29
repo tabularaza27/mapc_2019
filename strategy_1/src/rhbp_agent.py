@@ -100,31 +100,18 @@ class RhbpAgent(object):
             required_type = subtask.type
 
             # find the closest dispenser
-            min_dist = 9999
-            pos = [[-1,-1]]
+            pos = None
+            pos, min_dist = self.local_map.get_closest_dispenser_position(required_type)
 
-            for dispenser in self.local_map._dispensers:
-                if dispenser.type == required_type: # check if the type is the one we need
-                    pos_matrix = self.local_map._from_relative_to_matrix(dispenser.pos)
-                    dist = self.local_map._distances[pos_matrix[0],pos_matrix[1]]
-
-                    if dist < min_dist: # see if the distance is minimum and save it
-                        min_dist = dist
-                        pos[0] = pos_matrix
-            
-
-            if min_dist != 9999: # the distance to the closer dispenser has been calculated
+            if pos is not None: # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
-                landmark = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-                end = [[landmark[0],landmark[1]]]
-                path = self.local_map.path_planner.astar(
-                    maze=self.local_map._path_planner_representation,
-                    origin=self.local_map.origin,
-                    start=np.array(pos, dtype=np.int),
-                    end=np.array(end, dtype=np.int))
+                meeting_point = self.local_map.goal_top_left
+                end = [[meeting_point[0],meeting_point[1]]]
+                distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
 
-                bid_value = len(path) + min_dist # distance from agent to dispenser + dispenser to goal
+                bid_value = distance + min_dist # distance from agent to dispenser + dispenser to goal
 
+            #TODO SAVE PATH IN THE SUBTASK
         return bid_value
 
 

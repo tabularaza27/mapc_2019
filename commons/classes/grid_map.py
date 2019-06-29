@@ -504,11 +504,68 @@ class GridMap():
 
         self.goal_top_left = self._from_matrix_to_relative(np.array([top, left]))
 
-    def _get_point_close_to_dispenser(self):
+    def _get_point_close_to_dispenser(self, dispenser_pos):
         a=1
-        # TODO DEFINE THIS FUNCTION
-        # USE CLOSEST DISPENSER SAVED BY PIETRO'S BID
         # TODO ASK ALVARO ABOUT GENERALIZATION OF GET_MOVE_DIRECTION_FUNCTION
+
+
+    def get_closest_dispenser_position(self, required_type):
+        """
+        Function that gets the closest dispenser position of the required_type
+        Args:
+            required_type(str): the type of the dispenser needed
+
+        Returns(tuple): (position,distance), (None,9999) if didn't find a valid dispenser
+        """
+        min_dist = 9999
+        pos = None
+        for dispenser in self._dispensers:
+            if dispenser.type == required_type:  # check if the type is the one we need
+                pos_matrix = self._from_relative_to_matrix(dispenser.pos)
+                dist = self._distances[pos_matrix[0], pos_matrix[1]]
+
+                if dist < min_dist:  # see if the distance is minimum and save it
+                    min_dist = dist
+                    pos = pos_matrix
+        if pos is not None:
+            return self._from_matrix_to_relative(pos), min_dist
+        else:
+            return None, min_dist
+
+    def get_distance_and_path(self, a, b, return_path=False):
+        """
+        Function that returns the distance and path from a point to another
+        Args:
+            a: first point in relative coordinates
+            b: second point in relative coordinates
+            return_path(bool): if the path is needed
+
+        Returns:
+
+        """
+        b_matrix = self._from_relative_to_matrix(b)
+        a_matrix = self._from_relative_to_matrix(a)
+        dist = -1
+
+        if self._distances[a_matrix[0],a_matrix[1]] == 0:
+            dist = self._distances[b_matrix[0],b_matrix[1]]
+        elif self._distances[b_matrix[0],b_matrix[1]]:
+            dist = self._distances[a_matrix[0],a_matrix[1]]
+
+        if dist != -1 or return_path:
+            path = self.path_planner.astar(
+                maze=self._path_planner_representation,
+                origin=self.origin,
+                start=np.array([a_matrix]),
+                end=np.array([b_matrix]))
+            if path is not None:
+                dist = len(path)
+                if not return_path:
+                    path = None
+            return dist, path
+        else:
+            return dist, None
+
 
     def _get_point_to_explore(self):
         """Calculates point that is most suited for exploring and path to it
