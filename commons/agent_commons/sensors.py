@@ -15,12 +15,30 @@ class SensorManager():
 
         self.rhbp_agent = rhbp_agent
 
-        # sensors for move to dispenser
+        # sensors for move to dispenser & dispense behaviour
         self.assigned_task_list_empty = Sensor(name="assigned_task_list_empty", initial_value=True)
 
-        self.attached_to_block = Sensor(name="attached_to_block", initial_value=False)
+        self.attached_to_block = Sensor(name="attached_to_block", initial_value=False) # for current subtask
 
         self.at_the_dispenser = Sensor(name="at_the_dispenser", initial_value=False)
+
+        # sensors for attach behaviour
+
+        self.next_to_block = Sensor(name="next_to_block", initial_value=False) # that has the type of the current task
+
+        self.next_to_block_with_free_attach_slot = Sensor(name="next_to_block_with_free_attach_slot", initial_value=False)
+
+        self.all_positions_attached = Sensor(name="all_positions_attached", initial_value=False) # True if agent is attached to block in all directions
+
+        # sensors for go_to_meet behaviour
+
+        self.at_meeting_point = Sensor(name="at_meeting_point", initial_value=False)
+
+        # sensors for connect behaviour
+
+        # sensors for detach behaviour
+
+        # sensors for submit behaviour
 
     def update_sensors(self):
         """updates sensor values"""
@@ -50,3 +68,6 @@ class SensorManager():
 
         # check if the agent is 1 step away from the dispenser
         self.at_the_dispenser.update(self.rhbp_agent.local_map.is_close_to_dispenser(current_subtask.type))
+
+        # check if the agent is 1 step away from a block of the type of the current task
+        self.next_to_block.update(self.rhbp_agent.local_map.is_close_to_block(current_subtask.type))
