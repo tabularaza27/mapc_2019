@@ -32,7 +32,7 @@ class GridPathPlanner():
             end (np.array): ending position in the map of the object compose by the agent and all the blocks attached to it
 
         Returns:
-            list: path in map coordinates
+            list: list of map coordinates representing the path from start to end
 
         """
 

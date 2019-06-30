@@ -16,16 +16,10 @@ from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDi
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 
-
-
 from classes.grid_map import GridMap
 from classes.tasks.task_decomposition import update_tasks
 from classes.communications import Communication
 from classes.map_merge import mapMerge
-
-
-
-
 
 
 class RhbpAgent(object):
@@ -56,7 +50,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 1 # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 1  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -66,9 +60,7 @@ class RhbpAgent(object):
 
         # representation of tasks
         self.tasks = {}
-        self.assigned_tasks = [] # personal for the agent
-
-
+        self.assigned_tasks = []  # personal for the agent
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -92,8 +84,18 @@ class RhbpAgent(object):
 
         self._received_action_response = False
 
-    
     def calculate_subtask_bid(self, subtask):
+        """calculate bid value for a subtask based on the distance from the agent to the closest dispenser and the
+        distance from that this dispenser to the meeting point ( for now that is always the goal area )
+
+        If the agent has not discovered the goal area, he places an invalid bid of -1
+
+        Args:
+            subtask (SubTask): subtask object
+
+        Returns:
+            int: bid value of agent for the task
+        """
         bid_value = -1
 
         if self.local_map.goal_area_fully_discovered:
@@ -103,17 +105,16 @@ class RhbpAgent(object):
             pos = None
             pos, min_dist = self.local_map.get_closest_dispenser_position(required_type)
 
-            if pos is not None: # the distance to the closer dispenser has been calculated
+            if pos is not None:  # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
                 meeting_point = self.local_map.goal_top_left
-                end = [[meeting_point[0],meeting_point[1]]]
+                end = [[meeting_point[0], meeting_point[1]]]
                 distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
 
-                bid_value = distance + min_dist # distance from agent to dispenser + dispenser to goal
+                bid_value = distance + min_dist  # distance from agent to dispenser + dispenser to goal
 
-            #TODO SAVE PATH IN THE SUBTASK
+            # TODO SAVE PATH IN THE SUBTASK
         return bid_value
-
 
     def _sim_start_callback(self, msg):
         """
@@ -196,6 +197,8 @@ class RhbpAgent(object):
                                   simulation_step=self.perception_provider.simulation_step)
         rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
+        # task auctioning
+        # ToDo extract auction logic in separate function in order to declutter this method
         for task_name, task_object in self.tasks.iteritems():
             # TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
 
@@ -206,7 +209,7 @@ class RhbpAgent(object):
                 if (sub.assigned_agent == None):
                     subtask_id = sub.sub_task_name
                     rospy.logdebug("---- Bid needed for " + subtask_id)
-                    
+
                     # check if the agent is already assigned to some subtasks of the same parent 
                     if (self._agent_name in assigned):
                         bid_value = 9999
@@ -214,11 +217,11 @@ class RhbpAgent(object):
                         # first calculate the already assigned sub tasks
                         bid_value = 0
                         for t in self.assigned_tasks:
-                            bid_value +=  self.calculate_subtask_bid(t)
+                            bid_value += self.calculate_subtask_bid(t)
 
                         # add the current
 
-                        bid_value +=  self.calculate_subtask_bid(sub)
+                        bid_value += self.calculate_subtask_bid(sub)
 
                     self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
 
@@ -229,8 +232,9 @@ class RhbpAgent(object):
                     while self.bids[subtask_id]["done"] == None:
                         pass
 
-                    if self.bids[subtask_id]["done"] != "invalid": # was a valid one
-                        rospy.logdebug("------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
+                    if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
+                        rospy.logdebug(
+                            "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
                         sub.assigned_agent = self.bids[subtask_id]["done"]
 
                         assigned.append(sub.assigned_agent)
@@ -238,11 +242,13 @@ class RhbpAgent(object):
                         if sub.assigned_agent == self._agent_name:
                             self.assigned_tasks.append(sub)
                     else:
-                        rospy.logdebug("------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
+                        rospy.logdebug(
+                            "------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
+                                bid_value))
 
                     del self.bids[sub.sub_task_name]  # free memory
-            
-            if not task_object.auctioned: # if not all the subtasks were fully auctioned, reset all the subtasks 
+
+            if not task_object.auctioned:  # if not all the subtasks were fully auctioned, reset all the subtasks
                 if len(assigned) < len(task_object.sub_tasks):
                     rospy.logdebug("--------- NEED TO REMOVE: " + str(task_object.auctioned))
                     for sub in task_object.sub_tasks:
@@ -252,6 +258,8 @@ class RhbpAgent(object):
 
         ########################################
 
+        # map merging
+        # ToDo extract map merging logic in separate function in order to declutter this method
         # process the maps in the buffer
 
         for msg in self.map_messages_buffer[:]:
@@ -275,7 +283,8 @@ class RhbpAgent(object):
                 # do map merge
                 # Added new origin to function
                 origin_own = np.copy(self.local_map.origin)
-                merged_map, merged_origin = mapMerge(map_received, self.local_map._representation, lm_received, lm_own, origin_own)
+                merged_map, merged_origin = mapMerge(map_received, self.local_map._representation, lm_received, lm_own,
+                                                     origin_own)
                 self.local_map._representation = np.copy(merged_map)
                 self.local_map.origin = np.copy(merged_origin)
 

@@ -11,19 +11,19 @@ from agent_commons.agent_utils import get_bridge_topic_prefix
 
 
 class MoveToDispenserBehaviour(BehaviourBase):
-    """
-        Move in randomly chosen directions
-        """
 
     def __init__(self, name, agent_name, rhbp_agent, **kwargs):
+        """Move to Dispenser
+
+        Args:
+            name (str): name of the behaviour
+            agent_name (str): name of the agent for determining the correct topic prefix
+            rhbp_agent (RhbpAgent): the agent owner of the behaviour
+            **kwargs: more optional parameter that are passed to the base class
         """
-        :param name: name of the behaviour
-        :param agent_name: name of the agent for determining the correct topic prefix
-        :param rhbp_agent(RhbpAgent): the agent owner of the behaviour
-        :param kwargs: more optional parameter that are passed to the base class
-        """
-        super(MoveToDispenserBehaviour, self).__init__(name=name, requires_execution_steps=True, planner_prefix=agent_name,
-                                                   **kwargs)
+        super(MoveToDispenserBehaviour, self).__init__(name=name, requires_execution_steps=True,
+                                                       planner_prefix=agent_name,
+                                                       **kwargs)
 
         self._agent_name = agent_name
 
