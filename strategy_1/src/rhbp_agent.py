@@ -221,13 +221,12 @@ class RhbpAgent(object):
             required_type = subtask.type
 
             # find the closest dispenser
-            pos = None
             pos, min_dist = self.local_map.get_closest_dispenser_position(required_type)
 
             if pos is not None:  # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
                 meeting_point = self.local_map.goal_top_left
-                end = [[meeting_point[0], meeting_point[1]]]
+                end = np.array([meeting_point[0], meeting_point[1]], dtype=int)
                 distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
 
                 bid_value = distance + min_dist  # distance from agent to dispenser + dispenser to goal
