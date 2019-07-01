@@ -50,6 +50,12 @@ class SubTask:
         # after connect
         self.submit_behaviour = False
 
+        # data necessary for task completion
+        path_to_dispenser_id = None
+        closest_dispenser_position = None
+        meeting_point = None
+
+
         # ToDo decide on which behaviours are needed based on who are the other agents completing the parent task
         # self.required_behaviours = [list_of_behaviours from above]
         # next step required
