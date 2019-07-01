@@ -60,7 +60,7 @@ class RhbpAgent(object):
 
         # representation of tasks
         self.tasks = {}
-        self.assigned_tasks = []  # personal for the agent
+        self.assigned_tasks = []  # personal for the agent. the task at index 0 is the task the agent is currently executing
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
