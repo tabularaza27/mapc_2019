@@ -243,7 +243,7 @@ class GridMap():
                             if GridPathPlanner.is_walkable(cell_value):
                                 queue.append((new_pos, dist + 1))
 
-    def get_move_direction(self, path_id, path_creation_function, parameters):
+    def get_move_direction(self, path_id, path_creation_function, parameters=None):
         if not self.paths.has_key(path_id):
             # TODO do we need only the path?
             best_path = path_creation_function()

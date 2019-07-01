@@ -50,7 +50,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 1  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -83,6 +83,125 @@ class RhbpAgent(object):
         self._pub_auction = self._communication.start_auction(self._callback_auction)
 
         self._received_action_response = False
+
+    def task_auctioning(self):
+        """ Communicate the bids and assign the subtasks to the agents """
+        for task_name, task_object in self.tasks.iteritems():
+            # TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
+
+            rospy.logdebug("-- Analyizing: " + task_name)
+            assigned = []
+
+            for sub in task_object.sub_tasks:
+                if (sub.assigned_agent == None):
+                    subtask_id = sub.sub_task_name
+                    rospy.logdebug("---- Bid needed for " + subtask_id)
+
+                    # check if the agent is already assigned to some subtasks of the same parent
+                    if (self._agent_name in assigned):
+                        bid_value = 9999
+                    else:
+                        # first calculate the already assigned sub tasks
+                        bid_value = 0
+                        for t in self.assigned_tasks:
+                            bid_value += self.calculate_subtask_bid(t)
+
+                        # add the current
+
+                        bid_value += self.calculate_subtask_bid(sub)
+
+                    self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
+
+                    # wait until the bid is done
+                    while subtask_id not in self.bids:
+                        pass
+
+                    while self.bids[subtask_id]["done"] == None:
+                        pass
+
+                    if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
+                        rospy.logdebug(
+                            "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
+                        sub.assigned_agent = self.bids[subtask_id]["done"]
+
+                        assigned.append(sub.assigned_agent)
+
+                        if sub.assigned_agent == self._agent_name:
+                            self.assigned_tasks.append(sub)
+                    else:
+                        rospy.logdebug(
+                            "------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
+                                bid_value))
+
+                    del self.bids[sub.sub_task_name]  # free memory
+
+            if not task_object.auctioned:  # if not all the subtasks were fully auctioned, reset all the subtasks
+                if len(assigned) < len(task_object.sub_tasks):
+                    rospy.logdebug("--------- NEED TO REMOVE: " + str(task_object.auctioned))
+                    for sub in task_object.sub_tasks:
+                        sub.agent_assigned = None
+                        if sub in self.assigned_tasks:
+                            self.assigned_tasks.remove(sub)
+
+    def map_merge(self):
+        """ Merges the maps received from the other agents that discovered the goal area and this agent did too"""
+        # process the maps in the buffer
+        for msg in self.map_messages_buffer[:]:
+            msg_id = msg.message_id
+            map_from = msg.agent_id
+            map_value = msg.map
+            map_lm_x = msg.lm_x
+            map_lm_y = msg.lm_y
+            map_rows = msg.rows
+            map_columns = msg.columns
+
+            if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
+                # map received
+                maps = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
+                rospy.logdebug(maps)
+                map_received = np.copy(maps)
+                # landmark received
+                lm_received = (map_lm_y, map_lm_x)
+                # own landmark
+                lm_own = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+                # do map merge
+                # Added new origin to function
+                origin_own = np.copy(self.local_map.origin)
+                merged_map, merged_origin = mapMerge(map_received, self.local_map._representation, lm_received, lm_own,
+                                                     origin_own)
+                self.local_map._representation = np.copy(merged_map)
+                self.local_map.origin = np.copy(merged_origin)
+
+            self.map_messages_buffer.remove(msg)
+
+    def publish_map(self):
+        map = self.local_map._representation
+        top_left_corner = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
+        self._communication.send_map(self._pub_map, map.tostring(), top_left_corner[0], top_left_corner[1],
+                                     map.shape[0], map.shape[1])  # lm_x and lm_y to get
+
+    def start_rhbp_reasoning(self, start_time, deadline):
+        self._received_action_response = False
+
+        # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
+        while not self._received_action_response and rospy.get_rostime() < deadline:
+            # wait until this agent is completely initialised
+            if self._sim_started:  # we at least wait our max time to get our agent initialised
+
+                # action send is finally triggered by a selected behaviour
+                self._manager.step(guarantee_decision=True)
+            else:
+                rospy.sleep(0.1)
+
+        if self._received_action_response:  # One behaviour replied with a decision
+            duration = rospy.get_rostime() - start_time
+            rospy.logdebug("%s: Decision-making duration %f", self._agent_name, duration.to_sec())
+
+        elif not self._sim_started:  # Agent was not initialised in time
+            rospy.logwarn("%s idle_action(): sim not yet started", self._agent_name)
+        else:  # Our decision-making has taken too long
+            rospy.logwarn("%s: Decision-making timeout", self._agent_name)
+
 
     def calculate_subtask_bid(self, subtask):
         """calculate bid value for a subtask based on the distance from the agent to the closest dispenser and the
@@ -160,6 +279,7 @@ class RhbpAgent(object):
         rospy.loginfo("Simulation finished")
         rospy.signal_shutdown('Shutting down {}  - Simulation server closed'.format(self._agent_name))
 
+
     def _action_request_callback(self, msg):
         """
         here we just trigger the decision-making and planning
@@ -181,7 +301,6 @@ class RhbpAgent(object):
         if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
             rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
 
-        self._received_action_response = False
 
         ###### UPDATE AND SYNCHRONIZATION ######
 
@@ -198,131 +317,22 @@ class RhbpAgent(object):
         rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
         # task auctioning
-        # ToDo extract auction logic in separate function in order to declutter this method
-        for task_name, task_object in self.tasks.iteritems():
-            # TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
-
-            rospy.logdebug("-- Analyizing: " + task_name)
-            assigned = []
-
-            for sub in task_object.sub_tasks:
-                if (sub.assigned_agent == None):
-                    subtask_id = sub.sub_task_name
-                    rospy.logdebug("---- Bid needed for " + subtask_id)
-
-                    # check if the agent is already assigned to some subtasks of the same parent 
-                    if (self._agent_name in assigned):
-                        bid_value = 9999
-                    else:
-                        # first calculate the already assigned sub tasks
-                        bid_value = 0
-                        for t in self.assigned_tasks:
-                            bid_value += self.calculate_subtask_bid(t)
-
-                        # add the current
-
-                        bid_value += self.calculate_subtask_bid(sub)
-
-                    self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
-
-                    # wait until the bid is done
-                    while subtask_id not in self.bids:
-                        pass
-
-                    while self.bids[subtask_id]["done"] == None:
-                        pass
-
-                    if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
-                        rospy.logdebug(
-                            "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
-                        sub.assigned_agent = self.bids[subtask_id]["done"]
-
-                        assigned.append(sub.assigned_agent)
-
-                        if sub.assigned_agent == self._agent_name:
-                            self.assigned_tasks.append(sub)
-                    else:
-                        rospy.logdebug(
-                            "------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
-                                bid_value))
-
-                    del self.bids[sub.sub_task_name]  # free memory
-
-            if not task_object.auctioned:  # if not all the subtasks were fully auctioned, reset all the subtasks
-                if len(assigned) < len(task_object.sub_tasks):
-                    rospy.logdebug("--------- NEED TO REMOVE: " + str(task_object.auctioned))
-                    for sub in task_object.sub_tasks:
-                        sub.agent_assigned = None
-                        if sub in self.assigned_tasks:
-                            self.assigned_tasks.remove(sub)
-
-        ########################################
+        self.task_auctioning()
 
         # map merging
-        # ToDo extract map merging logic in separate function in order to declutter this method
-        # process the maps in the buffer
-
-        for msg in self.map_messages_buffer[:]:
-            msg_id = msg.message_id
-            map_from = msg.agent_id
-            map_value = msg.map
-            map_lm_x = msg.lm_x
-            map_lm_y = msg.lm_y
-            map_rows = msg.rows
-            map_columns = msg.columns
-
-            if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
-                # map received
-                maps = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
-                rospy.logdebug(maps)
-                map_received = np.copy(maps)
-                # landmark received
-                lm_received = (map_lm_y, map_lm_x)
-                # own landmark
-                lm_own = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-                # do map merge
-                # Added new origin to function
-                origin_own = np.copy(self.local_map.origin)
-                merged_map, merged_origin = mapMerge(map_received, self.local_map._representation, lm_received, lm_own,
-                                                     origin_own)
-                self.local_map._representation = np.copy(merged_map)
-                self.local_map.origin = np.copy(merged_origin)
-
-            self.map_messages_buffer.remove(msg)
+        self.map_merge()
 
         # send the map if perceive the goal
         if self.local_map.goal_area_fully_discovered:
-            map = self.local_map._representation
-            top_left_corner = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-            self._communication.send_map(self._pub_map, map.tostring(), top_left_corner[0], top_left_corner[1],
-                                         map.shape[0], map.shape[1])  # lm_x and lm_y to get
+            self.publish_map()
 
         '''
         # send personal message test
         if self._agent_name == "agentA1":
             self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
 
-        self._received_action_response = False
         '''
-
-        # self._received_action_response is set to True if a generic action response was received(send by any behaviour)
-        while not self._received_action_response and rospy.get_rostime() < deadline:
-            # wait until this agent is completely initialised
-            if self._sim_started:  # we at least wait our max time to get our agent initialised
-
-                # action send is finally triggered by a selected behaviour
-                self._manager.step(guarantee_decision=True)
-            else:
-                rospy.sleep(0.1)
-
-        if self._received_action_response:  # One behaviour replied with a decision
-            duration = rospy.get_rostime() - start_time
-            rospy.logdebug("%s: Decision-making duration %f", self._agent_name, duration.to_sec())
-
-        elif not self._sim_started:  # Agent was not initialised in time
-            rospy.logwarn("%s idle_action(): sim not yet started", self._agent_name)
-        else:  # Our decision-making has taken too long
-            rospy.logwarn("%s: Decision-making timeout", self._agent_name)
+        self.start_rhbp_reasoning(start_time, deadline)
 
     def _callback_map(self, msg):
         self.map_messages_buffer.append(msg)
@@ -396,13 +406,14 @@ class RhbpAgent(object):
         self.behaviours.append(exploration_move)
         # exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
 
+        """
         # Move to Dispenser
         move_to_dispenser = MoveToDispenserBehaviour()
         self.behaviours.append(move_to_dispenser)
         move_to_dispenser.add_precondition(
             Condition()
         )
-        """
+        
         # Random Move/Exploration
         random_move = RandomMove(name="random_move", agent_name=self._agent_name)
         self.behaviours.append(random_move)
