@@ -530,21 +530,21 @@ class GridMap():
         Returns:
             tuple: (distance (int), path (list))
         """
-        b_matrix = self._from_relative_to_matrix(b)
-        a_matrix = self._from_relative_to_matrix(a)
+        b_matrix_representation = self._from_relative_to_matrix(b)
+        a_matrix_representation = self._from_relative_to_matrix(a)
         dist = -1
 
-        if self._distances[a_matrix[0], a_matrix[1]] == 0:
-            dist = self._distances[b_matrix[0], b_matrix[1]]
-        elif self._distances[b_matrix[0], b_matrix[1]]:
-            dist = self._distances[a_matrix[0], a_matrix[1]]
+        if self._distances[a_matrix_representation[0], a_matrix_representation[1]] == 0:
+            dist = self._distances[b_matrix_representation[0], b_matrix_representation[1]]
+        elif self._distances[b_matrix_representation[0], b_matrix_representation[1]]:
+            dist = self._distances[a_matrix_representation[0], a_matrix_representation[1]]
 
         if dist != -1 or return_path:
             path = self.path_planner.astar(
                 maze=self._path_planner_representation,
                 origin=self.origin,
-                start=np.array([a_matrix]),
-                end=np.array([b_matrix]))
+                start=np.array([a_matrix_representation]),
+                end=np.array([b_matrix_representation]))
             if path is not None:
                 dist = len(path)
                 if not return_path:
