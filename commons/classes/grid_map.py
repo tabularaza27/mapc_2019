@@ -120,8 +120,9 @@ class GridMap():
         # if last action was move update agent position and expand map size if sight is out of bounds
         if agent.last_action == "move" and agent.last_action_result == "success":
             self._update_agent_position(move=agent.last_action_params[0])
+
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
-        self._representation[agent_in_matrix[0], agent_in_matrix[1]] = 0
+        self._representation[agent_in_matrix[0], agent_in_matrix[1]] = global_variables.AGENT_CELL
         # update empty cells (all cells that are in vision range, get overwritten below if they are occupied)
         for j in range(-self.agent_vision, self.agent_vision + 1):
             for i in range(-self.agent_vision, self.agent_vision + 1):
