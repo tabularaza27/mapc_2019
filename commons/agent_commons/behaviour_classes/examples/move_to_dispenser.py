@@ -4,11 +4,11 @@ import rospy
 from behaviour_components.behaviours import BehaviourBase
 from diagnostic_msgs.msg import KeyValue
 from mapc_ros_bridge.msg import GenericAction
-from generic_action_behaviour import action_generic_simple
+from agent_commons.behaviour_classes.generic_action_behaviour import action_generic_simple
 
 from agent_commons.agent_utils import get_bridge_topic_prefix, pos_to_direction
 
-
+###################### EXAMPLE CLASS ########################
 class MoveToDispenser(BehaviourBase):
     """
     Move to closest dispenser nearby

@@ -56,9 +56,7 @@ class GridMap():
     DISPENSER_STARTING_NUMBER = 10
 
     def __init__(self, agent_name, agent_vision):
-        """
-        Initialization of the map. The agent is at the center of an unknown map
-        """
+        """initialization of the map. The agent is at the center of an unknown map"""
         self.agent_name = agent_name
         self.data_directory = self._get_data_directory()
 
@@ -110,13 +108,9 @@ class GridMap():
     ### PUBLIC METHODS ###
     def update_map(self, agent, perception):
         """Update the map according to the movement of the agent and the new perception.
-
         Args:
             agent (dict): info about agent. dict is received from the percept
             perception (rhbp.perception_provider): the new perception of the agent
-
-        Returns: void
-
         """
         # TODO CHECK IF THIS IS WORKING, create tests for rotate function
         if agent.last_action == "rotate" and agent.last_action_result == "success":
@@ -219,11 +213,7 @@ class GridMap():
         self.STEP += 1
 
     def _update_distances(self):
-        """
-        Update the matrix of distances from the agent
-        Returns: void
-
-        """
+        """update the matrix of distances from the agent"""
         dist_shape = self._representation.shape
         self._distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
         # print(self._distances.shape)
@@ -244,19 +234,20 @@ class GridMap():
                                 queue.append((new_pos, dist + 1))
 
     def get_move_direction(self, path_id, path_creation_function, parameters=None):
-        """
-        Get n,s,e,w to move the agent along the path.
+        """get n,s,e,w to move the agent along the path.
         If the path is ended, or invalid, it generate a new path using path_creation_function
         Args:
             path_id: the id of the path the agent wants to move along to
             path_creation_function: the function that generate the path if the direction is invalid
             parameters: additional parameters needed by the path_creation_function
 
-        Returns(str): n,s,e or w, None if not possible
+        Returns(tuple): path_id, direction
+            path_id(int): the id of the path used to move
+            direction(str): n,s,e or w, None if not possible
         """
         if not self.paths.has_key(path_id):
             # TODO do we need only the path?
-            best_path = path_creation_function()
+            best_path = path_creation_function(parameters)
             path_id = self._save_path(best_path)
         else:
             best_path = self.paths[path_id]
@@ -301,7 +292,7 @@ class GridMap():
                     if direction == 'end' or not walkable_cell:
                         self._remove_path(path_id)
                         # Recalculate path
-                        best_path = path_creation_function()
+                        best_path = path_creation_function(parameters)
                         path_id = self._save_path(best_path)
                     else:
                         # direction is valid
@@ -309,7 +300,7 @@ class GridMap():
             # Set direction to none if run out of tries
             if not try_counter < max_trials:
                 direction = None
-        #TODO DELETE THIS WHEN WE ADD THE SENSOR FOR MAP EXPLORATION COMPLETED
+        # TODO DELETE THIS WHEN WE ADD THE SENSOR FOR MAP EXPLORATION COMPLETED
         # Map discovered
         else:
             direction = None
@@ -320,49 +311,69 @@ class GridMap():
         return path_id, direction
 
     def get_exploration_move(self, path_id):
-        return self.get_move_direction(path_id, self._get_point_to_explore)
+        """get the move direction for the exploration behaviour
+        Args:
+            path_id: the path_id saved for exploration
 
-    def get_go_to_dispenser_move(self, path_id, subtask):
-        parameters = {}
-        parameters["destination"] = subtask.closest_dispenser_position
-        return self.get_move_direction(path_id, self._get_point_close_to_dispenser, parameters)
+        Returns: n,s,e or w or None
+        """
+        return self.get_move_direction(path_id, self._get_path_to_explore)
 
-    def is_close_to_dispenser(self, type):
+    def get_go_to_dispenser_move(self, subtask):
+        """get the move direction for the go_to_dispenser behaviour
+        Args:
+            subtask(): the subtask needed to recompute the path to the closest dispenser if needed
+
+        Returns:n,s,e or w or None
+        """
+        parameters = dict()
+        parameters["dispenser_pos"] = subtask.closest_dispenser_position
+        return self.get_move_direction(subtask._path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
+
+    def is_close_to_dispenser(self, dispenser_type):
+        """check if the agent is one step away from a dispenser of a certain type
+        Args:
+            dispenser_type(str): the type of the dispenser
+
+        Returns: True if the dispenser is 1 step away, False otherwise
+
+        """
         for direction in global_variables.moving_directions:
             close_cell_matrix = self._from_relative_to_matrix(self._agent_position + direction)
-            dispenser_type = self.get_dispenser_type(
+            cell_value = self.get_dispenser_type(
                 self._representation[close_cell_matrix[0], close_cell_matrix[1]]
             )
-            if dispenser_type == type:
+            if cell_value == dispenser_type:
                 return True
         return False
 
     ### PRIVATE METHODS ###
     def _get_value_of_cell(self, coord, maze=None):
+        """get the value of the cell in a map=matrix
+        Args:
+            coord(np.array): the matrix coordinates
+            maze: the maze to use. It is set to the representation by default
+
+        Returns:
+
+        """
         if maze is None:
             maze = self._representation
         return maze[coord[0], coord[1]]
 
     def _remove_path(self, path_id):
+        """ Remove a path from the dictionary of paths"""
         if self.paths.has_key(path_id):
             del self.paths[path_id]
 
     def _save_path(self, path, path_id=-1):
+        """ Save the path into the dictionary of paths and return the id"""
         if path_id == -1:
             path_id = random.randint(1, 9999999)
             while self.paths.has_key(path_id):
                 path_id = random.randint(1, 9999999)
         self.paths[path_id] = path
         return path_id
-
-    def _clear_map_from_temporary_obstacles(self):  # TODO IMPROVE THIS FUNCTION TO ONLY CHECK THE DIAMOND VISION
-        for i in range(self._representation.shape[0]):
-            for j in range(self._representation.shape[1]):
-                cell_value = self._representation[i, j]
-                if cell_value == -4 \
-                        or cell_value == -5 \
-                        or cell_value >= self.BLOCK_CELL_STARTING_NUMBER:
-                    self._representation
 
     def _from_relative_to_matrix(self, relative_coord):
         """translates the coordinate with respect to the origin of the map to the
@@ -427,13 +438,10 @@ class GridMap():
     def _expand_map(self, direction):
         """Expands map in given direction with vector of unknowns
 
-        Adds row / column to numpy array
+        Adds rows / columns to numpy array
 
         Args:
             direction (str): {'n', 'e', 's', 'w'} direction in which the map should be expanded
-
-        Returns: void
-
         """
         assert direction in ['n', 'e', 's',
                              'w'], "Expansion direction needs to be 'n','e','s','w'. '{}' was provided".format(
@@ -525,32 +533,6 @@ class GridMap():
 
         self.goal_top_left = self._from_matrix_to_relative(np.array([top, left]))
 
-    def _get_point_close_to_dispenser(self, dispenser_pos):
-        a = 1
-        # TODO ASK ALVARO ABOUT GENERALIZATION OF GET_MOVE_DIRECTION_FUNCTION
-
-    def get_closest_dispenser_position(self, required_type):
-        """get the closest dispenser position of the required_type
-        Args:
-            required_type(str): the type of the dispenser needed
-
-        Returns(tuple): (position,distance), (None,9999) if didn't find a valid dispenser
-        """
-        min_dist = 9999
-        pos = None
-        for dispenser in self._dispensers:
-            if dispenser.type == required_type:  # check if the type is the one we need
-                pos_matrix = self._from_relative_to_matrix(dispenser.pos)
-                dist = self._distances[pos_matrix[0], pos_matrix[1]]
-
-                if dist < min_dist:  # see if the distance is minimum and save it
-                    min_dist = dist
-                    pos = pos_matrix
-        if pos is not None:
-            return self._from_matrix_to_relative(pos), min_dist
-        else:
-            return None, min_dist
-
     def get_distance_and_path(self, a, b, return_path=False):
         """returns the distance and path from a point to another
 
@@ -585,7 +567,7 @@ class GridMap():
         else:
             return dist, None
 
-    def _get_point_to_explore(self):
+    def _get_path_to_explore(self, params=None):
         """Calculates point that is most suited for exploring and path to it
 
         Args:
@@ -686,6 +668,48 @@ class GridMap():
 
         return best_path
 
+    ### GO TO DISPENSER FUNCTIONS ###
+    def _get_path_to_reach_dispenser(self, parameters):
+        """ Get path from agent to the dispenser """
+        # TODO add attached blocks to the agent position
+        # TODO delete last point in the path, not needed, we need to move 1 step away from dispenser
+        if 'dispenser_pos' not in parameters:
+            return None
+        else:
+            dispenser_pos = parameters['dispenser_position']
+        agent_pos = [self._from_relative_to_matrix(self._agent_position)]
+        dispenser_pos_in_matrix = [self._from_relative_to_matrix(dispenser_pos)]
+        path = self.path_planner.astar(
+            maze=self._path_planner_representation,
+            origin=self.origin,
+            start=np.array(agent_pos),
+            end=np.array(dispenser_pos_in_matrix)
+        )
+        # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
+        return path
+
+    def get_closest_dispenser_position(self, required_type):
+        """get the closest dispenser position (in relative coord) of the required_type
+        Args:
+            required_type(str): the type of the dispenser needed
+
+        Returns(tuple): (position,distance), (None,9999) if didn't find a valid dispenser
+        """
+        min_dist = 9999
+        pos = None
+        for dispenser in self._dispensers:
+            if dispenser.type == required_type:  # check if the type is the one we need
+                pos_matrix = self._from_relative_to_matrix(dispenser.pos)
+                dist = self._distances[pos_matrix[0], pos_matrix[1]]
+
+                if dist < min_dist:  # see if the distance is minimum and save it
+                    min_dist = dist
+                    pos = pos_matrix
+        if pos is not None:
+            return self._from_matrix_to_relative(pos), min_dist
+        else:
+            return None, min_dist
+
     ### static methods ###
 
     @staticmethod
@@ -726,7 +750,7 @@ def main():
     my_map._agent_position = np.array([0, 0], dtype=np.int)
 
     start_time = time.time()
-    best_path = my_map._get_point_to_explore()
+    best_path = my_map._get_path_to_explore()
     print ("---%s seconds ---" % (time.time() - start_time))
     # print ("Best point:" + str(best_point))
     print ("Best path:" + str(best_path))

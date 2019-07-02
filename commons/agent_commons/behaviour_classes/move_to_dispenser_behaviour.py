@@ -1,6 +1,5 @@
 from __future__ import division  # force floating point division when using plain /
 import rospy
-import random
 
 from behaviour_components.behaviours import BehaviourBase
 from diagnostic_msgs.msg import KeyValue
@@ -33,9 +32,10 @@ class MoveToDispenserBehaviour(BehaviourBase):
         self.rhbp_agent = rhbp_agent
 
     def do_step(self):
-        path_id, direction = self.rhbp_agent.local_map.AAAAAAAAAAAAAAAAAA(PATH_ID_IN_THE_SUBTASKS)
+        active_subtask = self.rhbp_agent.assigned_tasks[0]  # type: SubTask
+        path_id, direction = self.rhbp_agent.local_map.get_go_to_dispenser_move(active_subtask)
         if direction is not None:
-            PATH_ID_IN_THE_SUBTASKS = path_id
+            active_subtask.set_path_to_dispenser_id(path_id)
             params = [KeyValue(key="direction", value=direction)]
             rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
             action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,

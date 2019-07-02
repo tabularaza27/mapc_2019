@@ -66,8 +66,8 @@ class SensorManager():
                     tmp_attached = True
             self.attached_to_block.update(tmp_attached)
 
-        # check if the agent is 1 step away from the dispenser
-        self.at_the_dispenser.update(self.rhbp_agent.local_map.is_close_to_dispenser(current_subtask.type))
+            # check if the agent is 1 step away from the dispenser
+            self.at_the_dispenser.update(self.rhbp_agent.local_map.is_close_to_dispenser(current_subtask.type))
 
-        # check if the agent is 1 step away from a block of the type of the current task
-        self.next_to_block.update(self.rhbp_agent.local_map.is_close_to_block(current_subtask.type))
+            # check if the agent is 1 step away from a block of the type of the current task
+            self.next_to_block.update(self.rhbp_agent.local_map.is_close_to_block(current_subtask.type))

@@ -8,6 +8,8 @@ from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, 
 from behaviour_components.managers import Manager
 from behaviour_components.condition_elements import Effect
 from behaviour_components.conditions import Condition
+from behaviour_components.activators import BooleanActivator, GreedyActivator
+from behaviour_components.goals import GoalBase
 
 import global_variables
 
@@ -15,6 +17,7 @@ from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBeh
 from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDispenserBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
+from agent_commons.sensor_manager import SensorManager
 
 from classes.grid_map import GridMap
 from classes.tasks.task_decomposition import update_tasks
@@ -57,6 +60,9 @@ class RhbpAgent(object):
         # agent attributes
         self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5)  # TODO change to get the vision
         self.map_messages_buffer = []
+
+        # instantiate the sensor manager passing a reference to this agent
+        self.sensor_manager = SensorManager(self)
 
         # representation of tasks
         self.tasks = {}
@@ -115,7 +121,8 @@ class RhbpAgent(object):
                     # wait until the bid is done
                     while subtask_id not in self.bids:
                         pass
-
+                    # TODO AGENTS GET STUCK IN THIS WHILE
+                    # ???
                     while self.bids[subtask_id]["done"] == None:
                         pass
 
@@ -225,13 +232,17 @@ class RhbpAgent(object):
 
             if pos is not None:  # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
-                meeting_point = self.local_map.goal_top_left
+                meeting_point = self.local_map.goal_top_left # TODO change the meeting point with communication
                 end = np.array([meeting_point[0], meeting_point[1]], dtype=int)
                 distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
 
                 bid_value = distance + min_dist  # distance from agent to dispenser + dispenser to goal
 
-            # TODO SAVE PATH IN THE SUBTASK
+                # TODO save task parameters dinamically every step to set sensors
+                subtask.set_closest_dispenser_position(pos)
+                subtask.set_meeting_point(meeting_point)
+                path_id = self.local_map._save_path(path)
+                subtask.set_path_to_dispenser_id(path_id)
         return bid_value
 
     def _sim_start_callback(self, msg):
@@ -331,6 +342,9 @@ class RhbpAgent(object):
             self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
 
         '''
+        # update the sensors before starting the rhbp reasoning
+        self.sensor_manager.update_sensors()
+
         self.start_rhbp_reasoning(start_time, deadline)
 
     def _callback_map(self, msg):
@@ -403,10 +417,37 @@ class RhbpAgent(object):
         # Exploration
         exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(exploration_move)
-        # exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
+        exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
+        exploration_move.add_effect(Effect(self.sensor_manager.assigned_task_list_empty.name, indicator=True))
 
-        """
         # Move to Dispenser
+        move_to_dispenser = MoveToDispenserBehaviour(name="move_to_dispenser", agent_name=self._agent_name,rhbp_agent=self)
+        self.behaviours.append(move_to_dispenser)
+        # assigned to a task precondition
+        move_to_dispenser.add_precondition(
+            Condition(self.sensor_manager.assigned_task_list_empty,
+                      BooleanActivator(desiredValue=False))
+        )
+        # block not attached precondition
+        move_to_dispenser.add_precondition(
+            Condition(self.sensor_manager.attached_to_block,
+                      BooleanActivator(desiredValue=False))
+        )
+        # not at the dispenser precondition
+        move_to_dispenser.add_precondition(
+            Condition(self.sensor_manager.at_the_dispenser,
+                      BooleanActivator(desiredValue=False))
+        )
+        move_to_dispenser.add_effect(Effect(self.sensor_manager.at_the_dispenser.name, indicator=True))
+
+        # Our simple goal is to create more and more blocks
+        dispense_goal = GoalBase("dispensing", permanent=True,
+                                 conditions=[
+                                     Condition(self.sensor_manager.at_the_dispenser, GreedyActivator())],
+                                 planner_prefix=self._agent_name)
+        self.goals.append(dispense_goal)
+        """
+        
         move_to_dispenser = MoveToDispenserBehaviour()
         self.behaviours.append(move_to_dispenser)
         move_to_dispenser.add_precondition(
