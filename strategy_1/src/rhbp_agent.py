@@ -314,12 +314,13 @@ class RhbpAgent(object):
         ###### UPDATE AND SYNCHRONIZATION ######
 
         # update map
-        self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
+        #self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
         # best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
         # rospy.logdebug("Best point: " + str(best_point))
         # rospy.logdebug("Best path: " + str(best_path))
         # rospy.logdebug("Current high score: " + str(current_high_score))
 
+        """
         # update tasks
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
                                   simulation_step=self.perception_provider.simulation_step)
@@ -327,9 +328,11 @@ class RhbpAgent(object):
 
         # task auctioning
         self.task_auctioning()
+        """
 
         # map merging
         self.map_merge()
+        self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
         self.local_map._update_distances()
 
         # send the map if perceive the goal

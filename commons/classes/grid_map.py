@@ -685,6 +685,7 @@ class GridMap():
 
         return best_path
 
+
     ### GO TO DISPENSER FUNCTIONS ###
     def _get_path_to_reach_dispenser(self, parameters):
         """ Get path from agent to the dispenser """
@@ -726,6 +727,9 @@ class GridMap():
             return self._from_matrix_to_relative(pos), min_dist
         else:
             return None, min_dist
+
+    def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
+        return
 
     ### static methods ###
 
