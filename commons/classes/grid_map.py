@@ -245,6 +245,16 @@ class GridMap():
                                 queue.append((new_pos, dist + 1))
 
     def get_move_direction(self, path_id, path_creation_function, parameters=None):
+        """
+        Get n,s,e,w to move the agent along the path.
+        If the path is ended, or invalid, it generate a new path using path_creation_function
+        Args:
+            path_id: the id of the path the agent wants to move along to
+            path_creation_function: the function that generate the path if the direction is invalid
+            parameters: additional parameters needed by the path_creation_function
+
+        Returns(str): n,s,e or w, None if not possible
+        """
         if not self.paths.has_key(path_id):
             # TODO do we need only the path?
             best_path = path_creation_function()
@@ -300,7 +310,7 @@ class GridMap():
             # Set direction to none if run out of tries
             if not try_counter < max_trials:
                 direction = None
-
+        #TODO DELETE THIS WHEN WE ADD THE SENSOR FOR MAP EXPLORATION COMPLETED
         # Map discovered
         else:
             direction = None
