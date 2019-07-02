@@ -255,7 +255,7 @@ class GridPathPlanner():
 
         Args:
             actual_pos (np.array): position of the agent + blocks at the moment
-            path (np.array): path to follow by the agent
+            path (list or -1): path to follow by the agent
 
         Returns:
             string: ( 'n', 's', 'e', 'w', 'ccw', 'cw' ) - Next move or rotate direction
@@ -263,6 +263,7 @@ class GridPathPlanner():
                     'unknown position' - position is not included in path
                     'unknown rotation' - rotation is not valid
                     'unknown translation' - translation is not valid
+                    None - No move
 
         """
         same_position = False
@@ -273,17 +274,20 @@ class GridPathPlanner():
             return None
 
         # Check if path is not just the agent position
-        length = len(path)
-        if length > 1:
-            # Index of actual position in path
-            for index, node in enumerate(path):
-                if (node == actual_pos).all():
-                    path_index = index
-                    break   # get out
-                else:
-                    path_index = -1
+        if path != -1:  # Map fully discovered
+            length = len(path)
+            if length > 1:
+                # Index of actual position in path
+                for index, node in enumerate(path):
+                    if (node == actual_pos).all():
+                        path_index = index
+                        break   # get out
+                    else:
+                        path_index = -1
+            else:
+                same_position = True
         else:
-            same_position = True
+            return None     # No move
 
         # Check if position doesn't exist in path
         if path_index == -1:

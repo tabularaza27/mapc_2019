@@ -687,6 +687,8 @@ class GridMap():
 
         return best_path
 
+    def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
+        return
     ### static methods ###
 
     @staticmethod
