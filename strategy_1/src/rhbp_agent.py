@@ -94,61 +94,60 @@ class RhbpAgent(object):
         """ Communicate the bids and assign the subtasks to the agents """
         for task_name, task_object in self.tasks.iteritems():
             # TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
+            if len(task_object.sub_tasks) <= self.number_of_agents:
+                rospy.logdebug("-- Analyizing: " + task_name)
+                assigned = []
 
-            rospy.logdebug("-- Analyizing: " + task_name)
-            assigned = []
+                for sub in task_object.sub_tasks:
+                    if sub.assigned_agent == None:
+                        subtask_id = sub.sub_task_name
+                        rospy.logdebug("---- Bid needed for " + subtask_id)
 
-            for sub in task_object.sub_tasks:
-                if (sub.assigned_agent == None):
-                    subtask_id = sub.sub_task_name
-                    rospy.logdebug("---- Bid needed for " + subtask_id)
+                        # check if the agent is already assigned to some subtasks of the same parent
+                        if self._agent_name in assigned:
+                            bid_value = 9999
+                        else:
+                            # first calculate the already assigned sub tasks
+                            bid_value = 0
+                            for t in self.assigned_tasks:
+                                bid_value += self.calculate_subtask_bid(t)
 
-                    # check if the agent is already assigned to some subtasks of the same parent
-                    if (self._agent_name in assigned):
-                        bid_value = 9999
-                    else:
-                        # first calculate the already assigned sub tasks
-                        bid_value = 0
-                        for t in self.assigned_tasks:
-                            bid_value += self.calculate_subtask_bid(t)
+                            # add the current
+                            bid_value += self.calculate_subtask_bid(sub)
 
-                        # add the current
+                        self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
 
-                        bid_value += self.calculate_subtask_bid(sub)
+                        # wait until the bid is done
+                        while subtask_id not in self.bids:
+                            pass
+                        # TODO AGENTS GET STUCK IN THIS WHILE
+                        # ???
+                        while self.bids[subtask_id]["done"] == None:
+                           pass
 
-                    self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
+                        if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
+                            rospy.logdebug(
+                                "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
+                            sub.assigned_agent = self.bids[subtask_id]["done"]
 
-                    # wait until the bid is done
-                    while subtask_id not in self.bids:
-                        pass
-                    # TODO AGENTS GET STUCK IN THIS WHILE
-                    # ???
-                    while self.bids[subtask_id]["done"] == None:
-                        pass
+                            assigned.append(sub.assigned_agent)
 
-                    if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
-                        rospy.logdebug(
-                            "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
-                        sub.assigned_agent = self.bids[subtask_id]["done"]
+                            if sub.assigned_agent == self._agent_name:
+                                self.assigned_tasks.append(sub)
+                        else:
+                            rospy.logdebug(
+                                "------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
+                                    bid_value))
 
-                        assigned.append(sub.assigned_agent)
+                        del self.bids[sub.sub_task_name]  # free memory
 
-                        if sub.assigned_agent == self._agent_name:
-                            self.assigned_tasks.append(sub)
-                    else:
-                        rospy.logdebug(
-                            "------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
-                                bid_value))
-
-                    del self.bids[sub.sub_task_name]  # free memory
-
-            if not task_object.auctioned:  # if not all the subtasks were fully auctioned, reset all the subtasks
-                if len(assigned) < len(task_object.sub_tasks):
-                    rospy.logdebug("--------- NEED TO REMOVE: " + str(task_object.auctioned))
-                    for sub in task_object.sub_tasks:
-                        sub.agent_assigned = None
-                        if sub in self.assigned_tasks:
-                            self.assigned_tasks.remove(sub)
+                if not task_object.auctioned:  # if not all the subtasks were fully auctioned, reset all the subtasks
+                    if len(assigned) < len(task_object.sub_tasks):
+                        rospy.logdebug("--------- NEED TO REMOVE: " + str(task_object.auctioned))
+                        for sub in task_object.sub_tasks:
+                            sub.agent_assigned = None
+                            if sub in self.assigned_tasks:
+                                self.assigned_tasks.remove(sub)
 
     def map_merge(self):
         """ Merges the maps received from the other agents that discovered the goal area and this agent did too"""

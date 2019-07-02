@@ -229,8 +229,8 @@ class GridMap():
                 for direction in global_variables.moving_directions:  # ADD ALSO ROTATIONS?
                     new_pos = direction + pos
                     if GridMap.coord_inside_matrix(new_pos, dist_shape):
-                        if self._distances[new_pos[0], new_pos[1]] == -1:
-                            cell_value = self._path_planner_representation[new_pos[0], new_pos[1]]
+                        if self._get_value_of_cell(new_pos,self._distances) == GridMap.UNKNOWN_CELL:
+                            cell_value = self._get_value_of_cell(new_pos, self._path_planner_representation)
                             if GridPathPlanner.is_walkable(cell_value):
                                 queue.append((new_pos, dist + 1))
 
@@ -328,7 +328,7 @@ class GridMap():
         Returns:n,s,e or w or None
         """
         parameters = dict()
-        parameters["dispenser_pos"] = subtask.closest_dispenser_position
+        parameters["dispenser_pos"] = subtask._closest_dispenser_position
         return self.get_move_direction(subtask._path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
 
     def is_close_to_dispenser(self, dispenser_type):
@@ -693,7 +693,7 @@ class GridMap():
         if 'dispenser_pos' not in parameters:
             return None
         else:
-            dispenser_pos = parameters['dispenser_position']
+            dispenser_pos = parameters['dispenser_pos']
         agent_pos = [self._from_relative_to_matrix(self._agent_position)]
         dispenser_pos_in_matrix = [self._from_relative_to_matrix(dispenser_pos)]
         path = self.path_planner.astar(
