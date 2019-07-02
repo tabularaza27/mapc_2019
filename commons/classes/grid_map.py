@@ -341,10 +341,26 @@ class GridMap():
         """
         for direction in global_variables.moving_directions:
             close_cell_matrix = self._from_relative_to_matrix(self._agent_position + direction)
-            cell_value = self.get_dispenser_type(
-                self._representation[close_cell_matrix[0], close_cell_matrix[1]]
+            dispenser_value = GridMap.get_dispenser_type(
+                self._get_value_of_cell(close_cell_matrix)
             )
-            if cell_value == dispenser_type:
+            if dispenser_value == dispenser_type:
+                return True
+        return False
+
+    def is_close_to_block(self, block_type):
+        """check if the agent is one step away from a dispenser of a certain type
+        Args:
+            block_type(str): the type of the dispenser
+
+        Returns: True if the dispenser is 1 step away, False otherwise
+        """
+        for direction in global_variables.moving_directions:
+            close_cell_matrix = self._from_relative_to_matrix(self._agent_position + direction)
+            block_value = GridMap.get_block_type(
+                self._get_value_of_cell(close_cell_matrix)
+            )
+            if block_value == block_type:
                 return True
         return False
 
@@ -729,14 +745,21 @@ class GridMap():
 
     @staticmethod
     def coord_inside_matrix(coord, shape):
-        if coord[0] >= 0 and coord[0] < shape[0] \
-                and coord[1] >= 0 and coord[1] < shape[1]:
+        if 0 <= coord[0] < shape[0] \
+                and 0 <= coord[1] < shape[1]:
             return True
         return False
 
-    def get_dispenser_type(self, cell_value):
-        if self.DISPENSER_STARTING_NUMBER <= cell_value < self.BLOCK_CELL_STARTING_NUMBER:
-            return cell_value - self.DISPENSER_STARTING_NUMBER
+    @staticmethod
+    def get_dispenser_type(cell_value):
+        if GridMap.DISPENSER_STARTING_NUMBER <= cell_value < GridMap.BLOCK_CELL_STARTING_NUMBER:
+            return cell_value - GridMap.DISPENSER_STARTING_NUMBER
+        else:
+            return -1
+    @staticmethod
+    def get_block_type(cell_value):
+        if cell_value >= GridMap.BLOCK_CELL_STARTING_NUMBER:
+            return cell_value - GridMap.DISPENSER_STARTING_NUMBER
         else:
             return -1
 
