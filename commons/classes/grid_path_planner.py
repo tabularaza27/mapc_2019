@@ -255,7 +255,7 @@ class GridPathPlanner():
 
         Args:
             actual_pos (np.array): position of the agent + blocks at the moment
-            path (list): path to follow by the agent
+            path (np.array): path to follow by the agent
 
         Returns:
             string: ( 'n', 's', 'e', 'w', 'ccw', 'cw' ) - Next move or rotate direction
@@ -273,7 +273,8 @@ class GridPathPlanner():
             return None
 
         # Check if path is not just the agent position
-        if len(path) > 1:
+        length = len(path)
+        if length > 1:
             # Index of actual position in path
             for index, node in enumerate(path):
                 if (node == actual_pos).all():
@@ -290,7 +291,7 @@ class GridPathPlanner():
             return next_action
 
         # Check if the end has been reached
-        if path_index == len(path) - 1 or same_position:
+        if path_index == length - 1 or same_position:
             next_action = 'end'
             return next_action
 
