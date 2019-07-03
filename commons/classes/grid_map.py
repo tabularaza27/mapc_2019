@@ -112,6 +112,9 @@ class GridMap():
         if agent.last_action == "move" and agent.last_action_result == "success":
             self._update_agent_position(move=agent.last_action_params[0])
 
+        # TODO 1 if last action == 'attach' and result = 'success' then save the attached block
+        # TODO 2 if last action == 'connect' and result = 'success' then save the attached block
+
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         self._representation[agent_in_matrix[0], agent_in_matrix[1]] = global_variables.AGENT_CELL
         # update empty cells (all cells that are in vision range, get overwritten below if they are occupied)
@@ -754,13 +757,13 @@ class GridMap():
     @staticmethod
     def get_dispenser_type(cell_value):
         if global_variables.DISPENSER_STARTING_NUMBER <= cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
-            return cell_value - global_variables.DISPENSER_STARTING_NUMBER
+            return "b{}".format(cell_value - global_variables.DISPENSER_STARTING_NUMBER)
         else:
             return -1
     @staticmethod
     def get_block_type(cell_value):
         if cell_value >= global_variables.BLOCK_CELL_STARTING_NUMBER:
-            return cell_value - global_variables.DISPENSER_STARTING_NUMBER
+            return "b{}".format(cell_value - global_variables.DISPENSER_STARTING_NUMBER)
         else:
             return -1
 
