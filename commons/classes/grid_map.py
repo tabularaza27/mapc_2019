@@ -331,37 +331,42 @@ class GridMap():
         parameters["dispenser_pos"] = subtask._closest_dispenser_position
         return self.get_move_direction(subtask._path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
 
-    def is_close_to_dispenser(self, dispenser_type):
+    def get_direction_to_close_dispenser(self, dispenser_type):
         """check if the agent is one step away from a dispenser of a certain type
         Args:
             dispenser_type(str): the type of the dispenser
 
-        Returns: True if the dispenser is 1 step away, False otherwise
+        Returns: The direction of the dispenser that is 1 step away, False otherwise
 
         """
-        for direction in global_variables.moving_directions:
-            close_cell_matrix = self._from_relative_to_matrix(self._agent_position + direction)
-            dispenser_value = GridMap.get_dispenser_type(
-                self._get_value_of_cell(close_cell_matrix)
-            )
-            if dispenser_value == dispenser_type:
-                return True
+        for direction in global_variables.movements:
+            if direction != 'end':
+                close_cell_matrix = self._from_relative_to_matrix(
+                    self._agent_position + global_variables.movements[direction]
+                )
+                dispenser_value = GridMap.get_dispenser_type(
+                    self._get_value_of_cell(close_cell_matrix)
+                )
+                if dispenser_value == dispenser_type:
+                    return direction
         return False
 
-    def is_close_to_block(self, block_type):
+    def get_direction_to_close_block(self, block_type):
         """check if the agent is one step away from a dispenser of a certain type
         Args:
             block_type(str): the type of the dispenser
 
-        Returns: True if the dispenser is 1 step away, False otherwise
+        Returns:The direction of the dispenser that is 1 step away, False otherwise
         """
-        for direction in global_variables.moving_directions:
-            close_cell_matrix = self._from_relative_to_matrix(self._agent_position + direction)
+        for direction in global_variables.movements:
+            close_cell_matrix = self._from_relative_to_matrix(
+                self._agent_position + global_variables.movements[direction]
+            )
             block_value = GridMap.get_block_type(
                 self._get_value_of_cell(close_cell_matrix)
             )
             if block_value == block_type:
-                return True
+                return direction
         return False
 
     ### PRIVATE METHODS ###

@@ -11,6 +11,7 @@ movements = {
     'e': np.array([0, 1]),
     'end': np.array([0, 0])
 }
+string_directions = ['n', 's', 'w', 'e']
 
 # Cells values
 EMPTY_CELL = 0

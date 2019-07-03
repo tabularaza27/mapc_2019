@@ -15,6 +15,7 @@ import global_variables
 
 from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBehaviour
 from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDispenserBehaviour
+from agent_commons.behaviour_classes.dispense_behaviour import DispenseBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
@@ -451,6 +452,7 @@ class RhbpAgent(object):
         )
         move_to_dispenser.add_effect(Effect(self.sensor_manager.at_the_dispenser.name, indicator=True))
 
+        """
         # Our simple goal is to create more and more blocks
         dispense_goal = GoalBase("dispensing", permanent=True,
                                  conditions=[
@@ -458,7 +460,36 @@ class RhbpAgent(object):
                                  planner_prefix=self._agent_name)
         self.goals.append(dispense_goal)
         """
+
+        # Requeste  block - Dispense
+        dispense = DispenseBehaviour(name="dispense", agent_name=self._agent_name,
+                                                     rhbp_agent=self)
+        self.behaviours.append(dispense)
+        # assigned to a task precondition
+        dispense.add_precondition(
+            Condition(self.sensor_manager.assigned_task_list_empty,
+                      BooleanActivator(desiredValue=False))
+        )
+        # block not attached precondition
+        dispense.add_precondition(
+            Condition(self.sensor_manager.attached_to_block,
+                      BooleanActivator(desiredValue=False))
+        )
+        # not at the dispenser precondition
+        dispense.add_precondition(
+            Condition(self.sensor_manager.at_the_dispenser,
+                      BooleanActivator(desiredValue=True))
+        )
+        dispense.add_effect(Effect(self.sensor_manager.attached_to_block.name, indicator=True))
         
+        # Our simple goal is to create more and more blocks
+        dispense_goal = GoalBase("dispensing", permanent=True,
+                                 conditions=[
+                                     Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
+                                 planner_prefix=self._agent_name)
+        self.goals.append(dispense_goal)
+        """
+        HERE
         move_to_dispenser = MoveToDispenserBehaviour()
         self.behaviours.append(move_to_dispenser)
         move_to_dispenser.add_precondition(
