@@ -1,0 +1,57 @@
+{
+  "server" : {
+  "tournamentMode" : "round-robin",
+  "teamsPerMatch" : 1,
+  "teamSize" : 2,
+  "launch" : "key",
+  "port" : 12300,
+  "backlog" : 10000,
+  "agentTimeout" : 500,
+  "resultPath" : "results",
+  "logLevel" : "normal",
+  "logPath" : "logs",
+  "replayPath" : "replays",
+  "maxPacketLength" : 65536
+},
+
+  "manual-mode" : [
+    ["A", "B"],
+    ["B", "C"],
+    ["A", "C"]
+  ],
+
+  "match" : [
+    {
+      "steps" : 1000,
+      "randomFail" : 1,
+      "entities" : [{"standard" : 2}],
+      "grid" : {
+        "height" : 20,
+        "width" : 20,
+        "file" : "conf/maps/test.bmp"
+      },
+      "setup": "conf/setup/custom.txt",
+      "attachLimit" : 10,
+      "blockTypes" : [1, 2],
+      "dispensers" : [2, 3],
+      "tasks" : {
+        "size" : [1, 1],
+        "duration" : [100, 200],
+        "probability" : 0.00
+      }
+    }
+  ],
+
+  "teams" : {
+        "A": [
+      [
+        "agentA1",
+        "1"
+      ],
+      [
+        "agentA2",
+        "1"
+      ]
+    ]
+  }
+}
