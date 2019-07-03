@@ -687,8 +687,103 @@ class GridMap():
 
         return best_path
 
-    def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
+    def get_common_meeting_point(self, agent_ids):
+        """Compute a *meeting point for performing a connection between several agents
+        *meeting point (MP):
+            distance(A1) to dispenser + distance(A1) to MP = distance(A1) to dispenser + distance(A1) to MP
+            A1 - First agent with the lowest total distance ( distance to dispenser + distance to MP)
+            A2 - Second agent with the lowest total distance ( distance to dispenser + distance to MP)
+
+            Dictionary[agent_ids]{
+                distance_to_dispenser (int)
+                dispenser_position (np.array)
+                block_position (np.array)
+                }
+
+        Args:
+            agent_ids (string): agent names associated to a subtask
+        Returns:
+            common_meeting_point (np.array): common meeting point position for agent and blocks attached
+        """
+        
+        lowest_dist = 10000
+        #agent_name = []
+        dist_to_dispenser = []
+        dispenser_position = []
+        # For each agent
+        # save dispensers and distances to lists
+        # TODO check the order received when integrating it in the rhbp (first should be agent1?)
+        for key, value in agent_ids.items():
+            # it goes from the last element of the dictionary
+            dist_to_dispenser.insert(0, value[0])
+            dispenser_position.insert(0, value[1])
+        # calculate distance matrix for each dispenser
+        # TODO dont calculate twice distance d1-d2 and d2-d1 (how?)
+        for i, disp_i in enumerate(dispenser_position):
+            dist_matrix = self.distance_matrix(disp_i)
+            # get the distance from each pair of dispenser
+            for j, disp_j in enumerate(dispenser_position):
+                if i != j:
+                    dist = self._get_value_of_cell(disp_j, dist_matrix) + dist_to_dispenser[i]
+                    if dist < lowest_dist:
+                        lowest_dist = dist  # lowest distance
+                        first_agent = i    # first couple of closest agents
+                        second_agent = j    # second couple of closest agents
+
+        # Calculate a path from first (closest agent) dispenser to second (second closest agent) dispenser
+        path = self.path_planner.astar(self._path_planner_representation, self.origin, \
+                                     np.array([dispenser_position[first_agent]]), \
+                                     np.array([dispenser_position[second_agent]]))
+        # Meeting point = (distance between dispenser + distance agent2 to dispenser)/2 - distance agent1 to dispenser
+        meet_index = int((lowest_dist + dist_to_dispenser[second_agent])/2 - dist_to_dispenser[first_agent])
+        common_meeting_point = path[meet_index]     # in relative
+        # Transform into matrix notation
+        common_meeting_point = self._from_relative_to_matrix(common_meeting_point)
+
+        return common_meeting_point
+
+    def meeting_position(self, common_meet_point, submit_agent):
+        """It returns a position for the agent and blocks attached around the common meeting point (for connecting)
+
+        Args:
+            common_meet_point (np.array): Common meeting point for several agents to connect
+
+        Returns:
+            meeting_position (np.array): Position of the agent and blocks attached around the meeting point.
+
+        """
+
         return
+
+    def distance_matrix(self, start_point):
+        """Calculate a distances matrix between a starting point and everywhere else
+
+        Args:
+            start_point (np.array): starting point (in the same coordinates as the dispenser position)
+
+        Returns:
+            distance_matrix (np.array): distances matrix from starting point
+        """
+        dist_shape = self._path_planner_representation.shape
+        distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
+        #start_point_matrix = self._from_relative_to_matrix(start_point)
+        # Dispenser are already in matrix notations
+        start_point_matrix = start_point
+        queue = deque([(start_point_matrix, 0)])
+        while len(queue) > 0:
+            pos, dist = queue.popleft()
+            if distances[pos[0], pos[1]] == -1:  # to avoid infinite loop
+                distances[pos[0], pos[1]] = dist
+                for direction in global_variables.moving_directions:
+                    new_pos = direction + pos
+                    if self.coord_inside_matrix(new_pos, dist_shape):
+                        if distances[new_pos[0], new_pos[1]] == -1:
+                            cell_value = self._path_planner_representation[new_pos[0], new_pos[1]]
+                            if GridPathPlanner.is_walkable(cell_value):
+                                queue.append((new_pos, dist + 1))
+        return distances
+
+
     ### static methods ###
 
     @staticmethod
@@ -720,6 +815,7 @@ class GridMap():
 
 
 def main():
+    """
     import time
 
     my_map = GridMap('Agent1', 5)
@@ -734,6 +830,10 @@ def main():
     # print ("Best point:" + str(best_point))
     print ("Best path:" + str(best_path))
     # print ("Current high score:" + str(current_high_score))
+    """
+
+
+
 
 
 if __name__ == '__main__':

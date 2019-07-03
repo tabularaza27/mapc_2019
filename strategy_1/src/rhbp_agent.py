@@ -310,7 +310,6 @@ class RhbpAgent(object):
         # rospy.logdebug("Best path: " + str(best_path))
         # rospy.logdebug("Current high score: " + str(current_high_score))
 
-        """
         # update tasks
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
                                   simulation_step=self.perception_provider.simulation_step)
@@ -318,7 +317,6 @@ class RhbpAgent(object):
 
         # task auctioning
         self.task_auctioning()
-        """
 
         # map merging
         self.map_merge()
