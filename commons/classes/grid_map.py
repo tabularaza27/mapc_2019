@@ -687,7 +687,7 @@ class GridMap():
 
         return best_path
 
-    def get_common_meeting_point(self, agent_ids):
+    def get_common_meeting_point(self, task):
         """Compute a *meeting point for performing a connection between several agents
         *meeting point (MP):
             distance(A1) to dispenser + distance(A1) to MP = distance(A1) to dispenser + distance(A1) to MP
@@ -707,9 +707,12 @@ class GridMap():
         """
         
         lowest_dist = 10000
-        #agent_name = []
+        assigned_agent = []
         dist_to_dispenser = []
         dispenser_position = []
+
+
+
         # For each agent
         # save dispensers and distances to lists
         # TODO check the order received when integrating it in the rhbp (first should be agent1?)
@@ -717,6 +720,16 @@ class GridMap():
             # it goes from the last element of the dictionary
             dist_to_dispenser.insert(0, value[0])
             dispenser_position.insert(0, value[1])
+
+        for sub in task.sub_tasks:
+            assigned_agent.append(sub.assigned_agent)
+            # block_position = sub.position
+
+
+
+
+
+
         # calculate distance matrix for each dispenser
         # TODO dont calculate twice distance d1-d2 and d2-d1 (how?)
         for i, disp_i in enumerate(dispenser_position):

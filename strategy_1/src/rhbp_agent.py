@@ -21,6 +21,8 @@ from classes.tasks.task_decomposition import update_tasks
 from classes.communications import Communication
 from classes.map_merge import mapMerge
 
+import pickle
+
 
 class RhbpAgent(object):
     """
@@ -50,7 +52,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 10  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -333,7 +335,15 @@ class RhbpAgent(object):
             self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
 
         '''
+        # eliminate
+        # som = SOM_CLASS()
+        fileObject = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/dumped_class.dat", "wb")
+        pickle.dump(self.tasks, fileObject)
+        fileObject.close()
+
         self.start_rhbp_reasoning(start_time, deadline)
+
+
 
     def _callback_map(self, msg):
         self.map_messages_buffer.append(msg)
@@ -447,6 +457,11 @@ class RhbpAgent(object):
                                  planner_prefix=self._agent_name)
         self.goals.append(dispense_goal)
         """
+        # TODO meeting thing
+        # if self.assigned_tasks is not None:
+        #     task = self.assigned_tasks[self.assigned_tasks[0].parent_task_name]
+
+
 
 
 if __name__ == '__main__':
