@@ -1,6 +1,0 @@
-# simple setup file for testing
-move 7 3 agentA1
-move 4 2 agentA2
-add 2 3 dispenser b0
-add 2 9 dispenser b1
-create task task0 1000 -1,0,b0
