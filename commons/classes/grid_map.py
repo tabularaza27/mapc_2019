@@ -46,15 +46,6 @@ class GridMap():
     # counter variable
     STEP = 0
 
-    EMPTY_CELL = 0
-    UNKNOWN_CELL = -1
-    WALL_CELL = -2
-    GOAL_CELL = -3
-    AGENT_CELL = -4
-    ENTITY_CELL = -5
-    BLOCK_CELL_STARTING_NUMBER = 100
-    DISPENSER_STARTING_NUMBER = 10
-
     def __init__(self, agent_name, agent_vision):
         """initialization of the map. The agent is at the center of an unknown map"""
         self.agent_name = agent_name
@@ -229,7 +220,7 @@ class GridMap():
                 for direction in global_variables.moving_directions:  # ADD ALSO ROTATIONS?
                     new_pos = direction + pos
                     if GridMap.coord_inside_matrix(new_pos, dist_shape):
-                        if self._get_value_of_cell(new_pos,self._distances) == GridMap.UNKNOWN_CELL:
+                        if self._get_value_of_cell(new_pos,self._distances) == global_variables.UNKNOWN_CELL:
                             cell_value = self._get_value_of_cell(new_pos, self._path_planner_representation)
                             if GridPathPlanner.is_walkable(cell_value):
                                 queue.append((new_pos, dist + 1))
@@ -522,7 +513,7 @@ class GridMap():
                     if not GridMap.coord_inside_matrix(cell, self._representation.shape):
                         unknown_count += 1
                     else:
-                        if self._representation[cell[0], cell[1]] == self.UNKNOWN_CELL:
+                        if self._representation[cell[0], cell[1]] == global_variables.UNKNOWN_CELL:
                             unknown_count += 1
 
         return unknown_count
@@ -762,14 +753,14 @@ class GridMap():
 
     @staticmethod
     def get_dispenser_type(cell_value):
-        if GridMap.DISPENSER_STARTING_NUMBER <= cell_value < GridMap.BLOCK_CELL_STARTING_NUMBER:
-            return cell_value - GridMap.DISPENSER_STARTING_NUMBER
+        if global_variables.DISPENSER_STARTING_NUMBER <= cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
+            return cell_value - global_variables.DISPENSER_STARTING_NUMBER
         else:
             return -1
     @staticmethod
     def get_block_type(cell_value):
-        if cell_value >= GridMap.BLOCK_CELL_STARTING_NUMBER:
-            return cell_value - GridMap.DISPENSER_STARTING_NUMBER
+        if cell_value >= global_variables.BLOCK_CELL_STARTING_NUMBER:
+            return cell_value - global_variables.DISPENSER_STARTING_NUMBER
         else:
             return -1
 
