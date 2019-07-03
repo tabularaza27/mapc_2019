@@ -75,6 +75,8 @@ class Task:
         sub_tasks_auctioned = [sub_task.assigned_agent for sub_task in self.sub_tasks]
         if None in sub_tasks_auctioned:
             return False
+        elif 'invalid' in sub_tasks_auctioned:
+            return False
         else:
             self.mark_task_auctioned()
             self.delegate_submit_behaviour()

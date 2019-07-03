@@ -93,17 +93,19 @@ class RhbpAgent(object):
 
     def task_auctioning(self):
         """ Communicate the bids and assign the subtasks to the agents """
+        to_delete_tasks = []
         for task_name, task_object in self.tasks.iteritems():
+
             # TODO: possible optimization to free memory -> while we cycle all the tasks, check for if complete and if yes remove from the task list?
             if len(task_object.sub_tasks) <= self.number_of_agents:
-                rospy.logdebug("-- Analyizing: " + task_name)
+                rospy.loginfo("-- Analyizing: " + task_name)
                 assigned = []
-
+                # STEP 1: WAIT FOR BID OF ALL SUBTASKS
                 for sub in task_object.sub_tasks:
                     # TODO DO IT EVERY_TIME FOR ROBUSTNESS OR CHECK IF ALL THE OTHERS AGREED
                     if sub.assigned_agent == None:
                         subtask_id = sub.sub_task_name
-                        rospy.logdebug("---- Bid needed for " + subtask_id)
+                        rospy.loginfo("---- Bid needed for " + subtask_id)
 
                         # check if the agent is already assigned to some subtasks of the same parent
                         if self._agent_name in assigned:
@@ -120,6 +122,7 @@ class RhbpAgent(object):
                         self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
 
                         # wait until the bid is done
+
                         while subtask_id not in self.bids:
                             pass
                         # TODO AGENTS GET STUCK IN THIS WHILE
@@ -132,7 +135,7 @@ class RhbpAgent(object):
                             current_time += 0.05
 
                         if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
-                            rospy.logdebug(
+                            rospy.loginfo(
                                 "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
                             sub.assigned_agent = self.bids[subtask_id]["done"]
 
@@ -141,19 +144,25 @@ class RhbpAgent(object):
                             if sub.assigned_agent == self._agent_name:
                                 self.assigned_tasks.append(sub)
                         else:
-                            rospy.logdebug(
+                            rospy.loginfo(
                                 "------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
                                     bid_value))
 
                         del self.bids[sub.sub_task_name]  # free memory
+                # STEP 2: ELIMINATE NOT FULLY AUCTIONED TASKS
+                fully_auctioned = task_object.check_auctioning()
+                if not fully_auctioned:
+                    rospy.loginfo("--------- NEED TO REMOVE: " + str(task_object.auctioned))
+                    # delete the task
+                    to_delete_tasks.append(task_name)
 
-                if not task_object.auctioned:  # if not all the subtasks were fully auctioned, reset all the subtasks
-                    if len(assigned) < len(task_object.sub_tasks):
-                        rospy.logdebug("--------- NEED TO REMOVE: " + str(task_object.auctioned))
-                        for sub in task_object.sub_tasks:
-                            sub.agent_assigned = None
-                            if sub in self.assigned_tasks:
-                                self.assigned_tasks.remove(sub)
+                    # delete all the subtasks assigned
+                    for sub in task_object.sub_tasks:
+                        if sub in self.assigned_tasks:
+                            self.assigned_tasks.remove(sub)
+
+        for task_name in to_delete_tasks:
+            del self.tasks[task_name]
 
     def map_merge(self):
         """ Merges the maps received from the other agents that discovered the goal area and this agent did too"""
@@ -376,7 +385,7 @@ class RhbpAgent(object):
         msg_from = msg.agent_id
         task_id = msg.task_id
         task_bid_value = msg.bid_value
-
+        # 1 BIDDING
         if task_id not in self.bids:
             self.bids[task_id] = OrderedDict()
             self.bids[task_id]["done"] = None
@@ -488,6 +497,7 @@ class RhbpAgent(object):
                                      Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
                                  planner_prefix=self._agent_name)
         self.goals.append(dispense_goal)
+
         """
         HERE
         move_to_dispenser = MoveToDispenserBehaviour()

@@ -2,6 +2,7 @@
 See https://matplotlib.org/3.1.0/gallery/images_contours_and_fields/multi_image.html#sphx-glr-gallery-images-contours-and-fields-multi-image-py for details on plotting multiple images
 """
 from __future__ import division
+import sys
 
 from matplotlib import colors
 import matplotlib.pyplot as plt
@@ -114,7 +115,12 @@ def live_plotting(no_agents=10):
     plt.show()
 
 if __name__ == '__main__':
-    live_plotting()
+    if len(sys.argv) >1:
+        no_agents = int(sys.argv[1])
+        print("number of agents: {}".format(no_agents))
+        live_plotting(no_agents=no_agents)
+    else:
+        live_plotting()
 
 
 
