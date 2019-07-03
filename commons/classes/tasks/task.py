@@ -93,7 +93,7 @@ class Task:
         """
         submit_agent_candidates = []
         for sub_task in self.sub_tasks:
-            if abs(sub_task.position.x) + abs(sub_task.position.y) == 1:
+            if abs(sub_task.position[0]) + abs(sub_task.position[1]) == 1:
                 submit_agent_candidates.append(sub_task)
 
         if len(submit_agent_candidates) == 0:
