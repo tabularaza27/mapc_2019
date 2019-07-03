@@ -39,7 +39,7 @@ def load_map_data():
     return map_data
 
 
-def live_plotting(no_agents=10):
+def live_plotting(no_agents=None):
     """Plots Maps of Agents from data/generatedMaps/tmp_maps and updates them automatically
 
     Args:
@@ -61,6 +61,10 @@ def live_plotting(no_agents=10):
     if no_agents == 1:
         images.append(axs.imshow(map_data.values()[0], cmap=cmap))
         axs.set_title(map_data.keys()[0])
+    elif no_agents == 2:
+        for i in range(0,2):
+            images.append(axs[i].imshow(map_data.values()[0], cmap=cmap))
+            axs[i].set_title(map_data.keys()[i])
     else:
         i = 0
         j = 0
@@ -79,7 +83,8 @@ def live_plotting(no_agents=10):
                     i += 1
                     j = 0
                 k += 1
-            except TypeError:
+            except TypeError as e:
+                print(e)
                 continue
 
     # Find the min and max of all colors for use in setting the color scale.
@@ -94,6 +99,9 @@ def live_plotting(no_agents=10):
 
         if no_agents == 1:
             images[0] = axs.imshow(map_data.values()[0], cmap=cmap, vmin=vmin, vmax=vmax)
+        elif no_agents == 2:
+            for i in range(0,2):
+                images[i] = axs[i].imshow(map_data.values()[i], cmap=cmap, vmin=vmin, vmax=vmax)
         else:
             i = 0
             j = 0
@@ -122,46 +130,3 @@ if __name__ == '__main__':
     else:
         live_plotting()
 
-
-
-
-# Nr = 1
-# Nc = 1
-# fig, axs = plt.subplots()
-# cmap = 'cool'
-#
-#
-# graph_data = np.loadtxt(open("generatedMaps/tmp_maps/map.txt", "rb"), delimiter=",", dtype=int)
-# # graph_data = ((1 + 1 + 1) / 10) * np.random.rand(10, 20) * 1e-6
-#
-# images = []
-#
-# if not isinstance(axs, list):
-#     images.append(axs.imshow(graph_data, cmap=cmap))
-#     # axs.label_counter()
-# else:
-#     for i in range(Nr):
-#         for j in range(Nc):
-#             images.append(axs[i, j].matshow(graph_data, cmap=cmap))
-#             axs[i, j].label_counter
-#
-# # Find the min and max of all colors for use in setting the color scale.
-# vmin = min(image.get_array().min() for image in images)
-# vmax = max(image.get_array().max() for image in images)
-# norm = colors.Normalize(vmin=vmin, vmax=vmax)
-# for im in images:
-#     im.set_norm(norm)
-#
-# print(vmin, vmax)
-#
-#
-#
-# def animate(i):
-#     print(i)
-#     graph_data = np.loadtxt(open("generatedMaps/tmp_maps/map.txt", "rb"), delimiter=",", dtype=int)
-#     print(graph_data)
-#     for index, image in enumerate(images):
-#         images[index] = axs.imshow(graph_data, cmap=cmap,vmin=vmin,vmax=vmax)
-#
-# ani = animation.FuncAnimation(fig, animate, interval=1000)
-# plt.show()
