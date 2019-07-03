@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-import random
+import time
 import numpy as np
 from collections import OrderedDict
 import rospy
@@ -99,13 +99,14 @@ class RhbpAgent(object):
                 assigned = []
 
                 for sub in task_object.sub_tasks:
+                    # TODO DO IT EVERY_TIME FOR ROBUSTNESS OR CHECK IF ALL THE OTHERS AGREED
                     if sub.assigned_agent == None:
                         subtask_id = sub.sub_task_name
                         rospy.logdebug("---- Bid needed for " + subtask_id)
 
                         # check if the agent is already assigned to some subtasks of the same parent
                         if self._agent_name in assigned:
-                            bid_value = 9999
+                            bid_value = -1
                         else:
                             # first calculate the already assigned sub tasks
                             bid_value = 0
@@ -122,8 +123,12 @@ class RhbpAgent(object):
                             pass
                         # TODO AGENTS GET STUCK IN THIS WHILE
                         # ???
+                        current_time = 0
+                        deadline = 0.3
                         while self.bids[subtask_id]["done"] == None:
-                           pass
+                        # while self.bids[subtask_id]["done"] == None and current_time < deadline:
+                            time.sleep(0.05)
+                            current_time += 0.05
 
                         if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
                             rospy.logdebug(
@@ -320,15 +325,15 @@ class RhbpAgent(object):
         # rospy.logdebug("Best path: " + str(best_path))
         # rospy.logdebug("Current high score: " + str(current_high_score))
 
-        """
-        # update tasks
+
+        # update tasks from perception
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
                                   simulation_step=self.perception_provider.simulation_step)
         rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
         # task auctioning
         self.task_auctioning()
-        """
+
 
         # map merging
         self.map_merge()
@@ -345,6 +350,7 @@ class RhbpAgent(object):
             self._communication.send_message(self._pub_agents, "agentA2", "task", "[5,5]")
 
         '''
+
         # update the sensors before starting the rhbp reasoning
         self.sensor_manager.update_sensors()
 
@@ -379,6 +385,8 @@ class RhbpAgent(object):
                 self.bids[task_id][msg_from] = task_bid_value
 
             if len(self.bids[task_id]) == self.number_of_agents + 1:  # count the done
+                # order the dictionary first for value and than for key
+                self.bids[task_id]
                 ordered_task = OrderedDict(sorted(self.bids[task_id].items(), key=lambda x: (x[1], x[0])))
 
                 '''
@@ -401,16 +409,16 @@ class RhbpAgent(object):
                     i += 1
                 '''
 
-                i = 0
+
                 for key, value in ordered_task.items():
-                    if (i > 0):  # skip done
+                    if key != 'done':  # skip done
                         if (value == -1):
                             self.bids[task_id]["done"] = "invalid"
                         else:
                             self.bids[task_id]["done"] = key
                             break
 
-                    i += 1
+
 
     def _initialize_behaviour_model(self):
         """

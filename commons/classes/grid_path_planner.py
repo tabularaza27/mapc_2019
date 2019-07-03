@@ -274,7 +274,7 @@ class GridPathPlanner():
             return None
 
         # Check if path is not just the agent position
-        if path != -1:  # Map fully discovered
+        if path != -1 and path != 'invalid end':  # Map fully discovered
             length = len(path)
             if length > 1:
                 # Index of actual position in path

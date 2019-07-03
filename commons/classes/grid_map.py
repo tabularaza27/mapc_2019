@@ -268,7 +268,7 @@ class GridMap():
                 try_counter += 1
                 # Compute direction
                 direction = self.path_planner.next_move_direction(
-                    self._agent_position,
+                    [self._agent_position],
                     self.paths[path_id])
                 if direction is not None:
                     # Calculate next cell value if position  of the agent is not unknown
@@ -703,6 +703,7 @@ class GridMap():
             start=np.array(agent_pos),
             end=np.array(dispenser_pos_in_matrix)
         )
+        path.pop() # path.techno() because we are in Berlin
         # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
         return path
 
