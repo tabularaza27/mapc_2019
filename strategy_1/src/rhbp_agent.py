@@ -89,6 +89,8 @@ class RhbpAgent(object):
         self._pub_agents = self._communication.start_agents(self._callback_agents)
         # Auction topic
         self._pub_auction = self._communication.start_auction(self._callback_auction)
+        # Task update topic
+        self._pub_subtask_update = self._communication.start_subtask_update(self._callback_subtask_update)
 
         self._received_action_response = False
 
@@ -115,12 +117,15 @@ class RhbpAgent(object):
                             # first calculate the already assigned sub tasks
                             bid_value = 0
                             for t in self.assigned_tasks:
-                                bid_value += self.calculate_subtask_bid(t)
+                                bid_value += self.calculate_subtask_bid(t)[0]
 
                             # add the current
-                            bid_value += self.calculate_subtask_bid(sub)
+                            current = self.calculate_subtask_bid(sub)
+                            bid_value += current[0]
+                            distance_to_dispenser = current[1]
+                            closest_dispenser_position = self.local_map._from_relative_to_matrix(current[2])
 
-                        self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
+                        self._communication.send_bid(self._pub_auction, subtask_id, bid_value, distance_to_dispenser, closest_dispenser_position[0], closest_dispenser_position[1])
 
                         # wait until the bid is done
 
@@ -137,9 +142,10 @@ class RhbpAgent(object):
 
                         if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
                             rospy.loginfo(
-                                "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
-                                    bid_value))
+                                "------ DONE: " + str(self.bids[subtask_id]["done"]))
                             sub.assigned_agent = self.bids[subtask_id]["done"]
+                            sub.distance_to_dispenser = self.bids[subtask_id]["distance_to_dispenser"]
+                            sub.closest_dispenser_position = self.bids[subtask_id]["closest_dispenser_position"]
 
                             assigned.append(sub.assigned_agent)
 
@@ -151,6 +157,7 @@ class RhbpAgent(object):
                                     bid_value))
 
                         del self.bids[sub.sub_task_name]  # free memory
+
                 # STEP 2: ELIMINATE NOT FULLY AUCTIONED TASKS
                 fully_auctioned = task_object.check_auctioning()
                 if not fully_auctioned:
@@ -225,6 +232,7 @@ class RhbpAgent(object):
         else:  # Our decision-making has taken too long
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
 
+
     def calculate_subtask_bid(self, subtask):
         """calculate bid value for a subtask based on the distance from the agent to the closest dispenser and the
         distance from that this dispenser to the meeting point ( for now that is always the goal area )
@@ -238,6 +246,8 @@ class RhbpAgent(object):
             int: bid value of agent for the task
         """
         bid_value = -1
+        pos = -1
+        min_dist = -1
 
         if self.local_map.goal_area_fully_discovered:
             required_type = subtask.type
@@ -258,7 +268,8 @@ class RhbpAgent(object):
                 subtask.set_meeting_point(meeting_point)
                 path_id = self.local_map._save_path(path)
                 subtask.set_path_to_dispenser_id(path_id)
-        return bid_value
+
+        return bid_value, min_dist, pos
 
     def _sim_start_callback(self, msg):
         """
@@ -344,6 +355,11 @@ class RhbpAgent(object):
         if self.local_map.goal_area_fully_discovered:
             self.publish_map()
 
+
+
+        # test of task update
+        #self._communication.send_subtask_update(self._pub_subtask_update,"done","task0_-1_0")
+
         '''
         # send personal message test
         if self._agent_name == "agentA1":
@@ -370,21 +386,43 @@ class RhbpAgent(object):
                 self._agent_name + " received message from " + msg_from + " | id: " + msg_id + " | type: " + msg_type + " | params: " + msg_param)
             self._communication.send_message(self._pub_agents, msg_from, "received", msg_id)
 
+    def _callback_subtask_update(self, msg):
+        msg_id = msg.message_id
+        msg_from = msg.agent_id
+        command = msg.command
+        message_subtask_id = msg.task_id
+
+        if command == "done": # if gets a "done" command, then cycle all the subtasks when the task passed in the message is found then is set as complete
+            for task_name, task_object in self.tasks.iteritems():
+                for sub in task_object.sub_tasks:
+                    current_subtask_id = sub.sub_task_name
+                    if current_subtask_id == message_subtask_id:
+                        sub.complete = True
+                        break
+
+
+
     def _callback_auction(self, msg):
         msg_id = msg.message_id
         msg_from = msg.agent_id
         task_id = msg.task_id
         task_bid_value = msg.bid_value
+        distance_to_dispenser = msg.distance_to_dispenser
+        closest_dispenser_position_x = msg.closest_dispenser_position_x
+        closest_dispenser_position_y = msg.closest_dispenser_position_y
+
         # 1 BIDDING
         if task_id not in self.bids:
             self.bids[task_id] = OrderedDict()
             self.bids[task_id]["done"] = None
+            self.bids[task_id]["distance_to_dispenser"] = None
+            self.bids[task_id]["closest_dispenser_position"] = None
 
         if self.bids[task_id]["done"] is None:
             if msg_from not in self.bids[task_id]:
                 self.bids[task_id][msg_from] = task_bid_value
 
-            if len(self.bids[task_id]) == self.number_of_agents + 1:  # count the done
+            if len(self.bids[task_id]) == self.number_of_agents + 3:  # count the done, distance_to_dispenser, closeset_dispenser_position
                 # order the dictionary first for value and than for key
                 self.bids[task_id]
                 ordered_task = OrderedDict(sorted(self.bids[task_id].items(), key=lambda x: (x[1], x[0])))
@@ -410,11 +448,13 @@ class RhbpAgent(object):
                 '''
 
                 for key, value in ordered_task.items():
-                    if key != 'done':  # skip done
+                    if key != 'done' and key != 'distance_to_dispenser' and key != 'closest_dispenser_position':  # skip done
                         if (value == -1):
                             self.bids[task_id]["done"] = "invalid"
                         else:
                             self.bids[task_id]["done"] = key
+                            self.bids[task_id]["distance_to_dispenser"] = distance_to_dispenser
+                            self.bids[task_id]["closest_dispenser_position"] = [closest_dispenser_position_x,closest_dispenser_position_y]
                             break
 
     def _initialize_behaviour_model(self):
