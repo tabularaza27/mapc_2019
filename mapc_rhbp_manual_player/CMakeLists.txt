@@ -50,6 +50,7 @@ add_message_files(
   general_communication.msg
   personal_communication.msg
   auction_communication.msg
+  subtask_update_communication.msg
 )
 
 ## Generate services in the 'srv' folder

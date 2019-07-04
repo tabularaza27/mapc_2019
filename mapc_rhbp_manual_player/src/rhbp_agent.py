@@ -174,7 +174,7 @@ class RhbpAgent(object):
         '''
 
         # update map
-        self.local_map.update_map(agent=msg.agent,perception=self.perception_provider)
+        self.local_map.update_map(perception=self.perception_provider)
 
         rospy.logdebug('Updated Map')
 

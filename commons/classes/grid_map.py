@@ -9,6 +9,7 @@ import os
 from helpers import get_data_location
 from map_live_plotting import cleanup
 from grid_path_planner import GridPathPlanner
+from block import Block
 
 import global_variables
 import rospy  # for debug logs
@@ -29,17 +30,6 @@ class GridMap():
 
     MAP SPECIFICATION
     Matrix of integers. Each value has the following meaning:
-
-    # -1: unknown cell
-    # -2: wall, obstacle
-    # -3: goal area
-    # -4: current agent
-    # -5: other agents
-
-    # enemy entity agent ??necessary??temporary??
-    # ally entity agent ??necessary??temporary??
-    # 10,11,12,13,14,...: dispenser of type 0,1,2,3,4,...
-    # 100,101,102,103,104,...: block of type 0,1,2,3,4,...
 
     author: Alessandro
     """
@@ -73,7 +63,7 @@ class GridMap():
         self._temporary_obstacles = []
 
         # the list of attached blocks
-        # {type:'b1', pos:[y,x], subtask_id:None}
+        # attached blocks are objects of class Block
         self._attached_blocks = []
 
         # goal area discovery
@@ -97,23 +87,35 @@ class GridMap():
         self.live_plotting = global_variables.LIVE_PLOTTING
 
     ### PUBLIC METHODS ###
-    def update_map(self, agent, perception):
+    def update_map(self, perception):
         """Update the map according to the movement of the agent and the new perception.
         Args:
-            agent (dict): info about agent. dict is received from the percept
             perception (rhbp.perception_provider): the new perception of the agent
         """
         # TODO CHECK IF THIS IS WORKING, create tests for rotate function
-        if agent.last_action == "rotate" and agent.last_action_result == "success":
+        if perception.agent.last_action == "rotate" and perception.agent.last_action_result == "success":
             for block in self._attached_blocks:
-                block.rotate(rotate_direction=agent.last_action_params[0])
+                block.rotate(rotate_direction=perception.agent.last_action_params[0])
 
-        # if last action was move update agent position and expand map size if sight is out of bounds
-        if agent.last_action == "move" and agent.last_action_result == "success":
-            self._update_agent_position(move=agent.last_action_params[0])
+        # if last action was `move` update agent position and expand map size if sight is out of bounds
+        if perception.agent.last_action == "move" and perception.agent.last_action_result == "success":
+            self._update_agent_position(move=perception.agent.last_action_params[0])
 
-        # TODO 1 if last action == 'attach' and result = 'success' then save the attached block
-        # TODO 2 if last action == 'connect' and result = 'success' then save the attached block
+        # if last action was `attach` update the attached_blocks list and update
+        if perception.agent.last_action == "attach" and perception.agent.last_action_result == "success":
+            attach_direction = perception.agent.last_action_params[0]
+            relative_block_position = global_variables.MOVEMENTS["w"]
+            # find out type of block that was attached
+            block_type = None
+            for block in perception.blocks:
+                if block.pos.x == relative_block_position[1] and block.pos.y == relative_block_position[0]:
+                    block_type = block.type
+
+            attached_block = Block(block_type=block_type, position=relative_block_position)
+            self._attached_blocks.append(attached_block)
+            rospy.loginfo('{} attached to block of type {} in direction {}'.format(self.agent_name, block_type, attach_direction))
+
+        # TODO if last action == 'connect' and result = 'success' then save the attached block
 
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         self._representation[agent_in_matrix[0], agent_in_matrix[1]] = global_variables.AGENT_CELL
@@ -147,8 +149,6 @@ class GridMap():
             # if not self._goal_areas.__contains__(pos):
             # self._goal_areas.append(pos)
 
-        # TODO COPY IN MAZE_MAP AND PUT BLOCKS(NOT ATTACHED) AND ENTITIES
-
         # update dispensers
         for dispenser in perception.dispensers:
             pos = (dispenser.pos.y, dispenser.pos.x) + self._agent_position
@@ -175,11 +175,11 @@ class GridMap():
         self._path_planner_representation[matrix_pos[0]][matrix_pos[1]] = global_variables.AGENT_CELL
 
         # update blocks
+        # todo take blocks attached to the agent into account --> alvaro
         for block in perception.blocks:
             pos = np.array([block.pos.y, block.pos.x]) + self._agent_position
             matrix_pos = self._from_relative_to_matrix(pos)
             # first index --> y value, second  --> x value
-
             self._path_planner_representation[matrix_pos[0]][
                 matrix_pos[1]] = global_variables.BLOCK_CELL_STARTING_NUMBER
 
@@ -220,7 +220,7 @@ class GridMap():
             pos, dist = queue.popleft()
             if self._distances[pos[0], pos[1]] == -1:  # to avoid infinite loop
                 self._distances[pos[0], pos[1]] = dist
-                for direction in global_variables.moving_directions:  # ADD ALSO ROTATIONS?
+                for direction in global_variables.MOVING_DIRECTIONS:  # ADD ALSO ROTATIONS?
                     new_pos = direction + pos
                     if GridMap.coord_inside_matrix(new_pos, dist_shape):
                         if self._get_value_of_cell(new_pos,self._distances) == global_variables.UNKNOWN_CELL:
@@ -268,7 +268,7 @@ class GridMap():
                     # Calculate next cell value if position  of the agent is not unknown
                     if direction != 'unknown position':
                         next_cell_matrix = self._from_relative_to_matrix(self._agent_position) \
-                                    + global_variables.movements[direction]
+                                    + global_variables.MOVEMENTS[direction]
                         # Check if next_cell is out of bounds (synchronization problem?) # TODO out of bounds error in get_value_of_cell just after merging the map, this does not solve the problem idky
                         if next_cell_matrix[0] < self._path_planner_representation.shape[0] - 1 \
                                 or next_cell_matrix[1] < self._path_planner_representation.shape[1] - 1:
@@ -344,10 +344,10 @@ class GridMap():
         Returns: The direction of the dispenser that is 1 step away, False otherwise
 
         """
-        for direction in global_variables.movements:
+        for direction in global_variables.MOVEMENTS:
             if direction != 'end':
                 close_cell_matrix = self._from_relative_to_matrix(
-                    self._agent_position + global_variables.movements[direction]
+                    self._agent_position + global_variables.MOVEMENTS[direction]
                 )
                 dispenser_value = GridMap.get_dispenser_type(
                     self._get_value_of_cell(close_cell_matrix)
@@ -357,21 +357,24 @@ class GridMap():
         return False
 
     def get_direction_to_close_block(self, block_type):
-        """check if the agent is one step away from a dispenser of a certain type
-        Args:
-            block_type(str): the type of the dispenser
+        """check if agent is one step away from a block of a certain type
 
-        Returns:The direction of the dispenser that is 1 step away, False otherwise
+        Args:
+            block_type(str): the type of the block
+
+        Returns:
+            str: The direction of the block that is 1 step away, False otherwise
         """
-        for direction in global_variables.movements:
+        for direction in global_variables.MOVEMENTS:
             close_cell_matrix = self._from_relative_to_matrix(
-                self._agent_position + global_variables.movements[direction]
+                self._agent_position + global_variables.MOVEMENTS[direction]
             )
             block_value = GridMap.get_block_type(
-                self._get_value_of_cell(close_cell_matrix)
+                self._get_value_of_cell(close_cell_matrix, maze=self._path_planner_representation)
             )
             if block_value == block_type:
                 return direction
+
         return False
 
     ### PRIVATE METHODS ###
@@ -460,7 +463,7 @@ class GridMap():
         if move is not None:
             # Delete previous position of agent in map
             self._representation[agent_in_matrix[0]][agent_in_matrix[1]] = 0
-            move_array = global_variables.movements[move]
+            move_array = global_variables.MOVEMENTS[move]
             self._agent_position = self._agent_position + move_array
             agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
             if (agent_in_matrix <= self.agent_vision).any() \
@@ -628,7 +631,7 @@ class GridMap():
         unknown_counts = []
         for y, x in np.ndindex(self._distances.shape):
             if self._distances[y][x] == -1:
-                for direction in global_variables.moving_directions:
+                for direction in global_variables.MOVING_DIRECTIONS:
                     cell_coord = np.array([y + direction[0], x + direction[1]])
                     # Make sure in range
                     if GridMap.coord_inside_matrix(cell_coord, self._distances.shape):
@@ -802,13 +805,14 @@ class GridMap():
         if global_variables.DISPENSER_STARTING_NUMBER <= cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
             return "b{}".format(cell_value - global_variables.DISPENSER_STARTING_NUMBER)
         else:
-            return -1
+            return False
+
     @staticmethod
     def get_block_type(cell_value):
         if cell_value >= global_variables.BLOCK_CELL_STARTING_NUMBER:
-            return "b{}".format(cell_value - global_variables.DISPENSER_STARTING_NUMBER)
+            return "b{}".format(cell_value - global_variables.BLOCK_CELL_STARTING_NUMBER)
         else:
-            return -1
+            return False
 
 
 def main():

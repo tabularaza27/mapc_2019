@@ -5,6 +5,8 @@ class Block:
     def __init__(self, block_type, position, subtask_id=None):
         """Representation of a block attached to an agent
 
+        ToDo: _subtask_id is never used so far, should be implemented in the future when updateing attached blocks
+
         Args:
             block_type(str): string b1,b2,...
             position(np.array): coordinates [y,x] relative to the agent position

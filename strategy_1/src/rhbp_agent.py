@@ -16,6 +16,7 @@ import global_variables
 from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBehaviour
 from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDispenserBehaviour
 from agent_commons.behaviour_classes.dispense_behaviour import DispenseBehaviour
+from agent_commons.behaviour_classes.attach_behaviour import AttachBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
@@ -54,7 +55,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 2   # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -88,6 +89,8 @@ class RhbpAgent(object):
         self._pub_agents = self._communication.start_agents(self._callback_agents)
         # Auction topic
         self._pub_auction = self._communication.start_auction(self._callback_auction)
+        # Task update topic
+        self._pub_subtask_update = self._communication.start_subtask_update(self._callback_subtask_update)
 
         self._received_action_response = False
 
@@ -114,12 +117,15 @@ class RhbpAgent(object):
                             # first calculate the already assigned sub tasks
                             bid_value = 0
                             for t in self.assigned_tasks:
-                                bid_value += self.calculate_subtask_bid(t)
+                                bid_value += self.calculate_subtask_bid(t)[0]
 
                             # add the current
-                            bid_value += self.calculate_subtask_bid(sub)
+                            current = self.calculate_subtask_bid(sub)
+                            bid_value += current[0]
+                            distance_to_dispenser = current[1]
+                            closest_dispenser_position = self.local_map._from_relative_to_matrix(current[2])
 
-                        self._communication.send_bid(self._pub_auction, subtask_id, bid_value)
+                        self._communication.send_bid(self._pub_auction, subtask_id, bid_value, distance_to_dispenser, closest_dispenser_position[0], closest_dispenser_position[1])
 
                         # wait until the bid is done
 
@@ -130,14 +136,16 @@ class RhbpAgent(object):
                         current_time = 0
                         deadline = 0.3
                         while self.bids[subtask_id]["done"] == None:
-                        # while self.bids[subtask_id]["done"] == None and current_time < deadline:
+                            # while self.bids[subtask_id]["done"] == None and current_time < deadline:
                             time.sleep(0.05)
                             current_time += 0.05
 
                         if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
                             rospy.loginfo(
-                                "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
+                                "------ DONE: " + str(self.bids[subtask_id]["done"]))
                             sub.assigned_agent = self.bids[subtask_id]["done"]
+                            sub.distance_to_dispenser = self.bids[subtask_id]["distance_to_dispenser"]
+                            sub.closest_dispenser_position = self.bids[subtask_id]["closest_dispenser_position"]
 
                             assigned.append(sub.assigned_agent)
 
@@ -149,6 +157,7 @@ class RhbpAgent(object):
                                     bid_value))
 
                         del self.bids[sub.sub_task_name]  # free memory
+
                 # STEP 2: ELIMINATE NOT FULLY AUCTIONED TASKS
                 fully_auctioned = task_object.check_auctioning()
                 if not fully_auctioned:
@@ -237,6 +246,8 @@ class RhbpAgent(object):
             int: bid value of agent for the task
         """
         bid_value = -1
+        pos = -1
+        min_dist = -1
 
         if self.local_map.goal_area_fully_discovered:
             required_type = subtask.type
@@ -246,7 +257,7 @@ class RhbpAgent(object):
 
             if pos is not None:  # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
-                meeting_point = self.local_map.goal_top_left # TODO change the meeting point with communication
+                meeting_point = self.local_map.goal_top_left  # TODO change the meeting point with communication
                 end = np.array([meeting_point[0], meeting_point[1]], dtype=int)
                 distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
 
@@ -257,7 +268,8 @@ class RhbpAgent(object):
                 subtask.set_meeting_point(meeting_point)
                 path_id = self.local_map._save_path(path)
                 subtask.set_path_to_dispenser_id(path_id)
-        return bid_value
+
+        return bid_value, min_dist, pos
 
     def _sim_start_callback(self, msg):
         """
@@ -303,7 +315,6 @@ class RhbpAgent(object):
         rospy.loginfo("Simulation finished")
         rospy.signal_shutdown('Shutting down {}  - Simulation server closed'.format(self._agent_name))
 
-
     def _action_request_callback(self, msg):
         """
         here we just trigger the decision-making and planning
@@ -325,16 +336,7 @@ class RhbpAgent(object):
         if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
             rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
 
-
         ###### UPDATE AND SYNCHRONIZATION ######
-
-        # update map
-        #self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
-        # best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
-        # rospy.logdebug("Best point: " + str(best_point))
-        # rospy.logdebug("Best path: " + str(best_path))
-        # rospy.logdebug("Current high score: " + str(current_high_score))
-
 
         # update tasks from perception
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
@@ -344,15 +346,19 @@ class RhbpAgent(object):
         # task auctioning
         self.task_auctioning()
 
-
         # map merging
         self.map_merge()
-        self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
+        self.local_map.update_map(perception=self.perception_provider)
         self.local_map._update_distances()
 
         # send the map if perceive the goal
         if self.local_map.goal_area_fully_discovered:
             self.publish_map()
+
+
+
+        # test of task update
+        #self._communication.send_subtask_update(self._pub_subtask_update,"done","task0_-1_0")
 
         '''
         # send personal message test
@@ -380,21 +386,43 @@ class RhbpAgent(object):
                 self._agent_name + " received message from " + msg_from + " | id: " + msg_id + " | type: " + msg_type + " | params: " + msg_param)
             self._communication.send_message(self._pub_agents, msg_from, "received", msg_id)
 
+    def _callback_subtask_update(self, msg):
+        msg_id = msg.message_id
+        msg_from = msg.agent_id
+        command = msg.command
+        message_subtask_id = msg.task_id
+
+        if command == "done": # if gets a "done" command, then cycle all the subtasks when the task passed in the message is found then is set as complete
+            for task_name, task_object in self.tasks.iteritems():
+                for sub in task_object.sub_tasks:
+                    current_subtask_id = sub.sub_task_name
+                    if current_subtask_id == message_subtask_id:
+                        sub.complete = True
+                        break
+
+
+
     def _callback_auction(self, msg):
         msg_id = msg.message_id
         msg_from = msg.agent_id
         task_id = msg.task_id
         task_bid_value = msg.bid_value
+        distance_to_dispenser = msg.distance_to_dispenser
+        closest_dispenser_position_x = msg.closest_dispenser_position_x
+        closest_dispenser_position_y = msg.closest_dispenser_position_y
+
         # 1 BIDDING
         if task_id not in self.bids:
             self.bids[task_id] = OrderedDict()
             self.bids[task_id]["done"] = None
+            self.bids[task_id]["distance_to_dispenser"] = None
+            self.bids[task_id]["closest_dispenser_position"] = None
 
         if self.bids[task_id]["done"] is None:
             if msg_from not in self.bids[task_id]:
                 self.bids[task_id][msg_from] = task_bid_value
 
-            if len(self.bids[task_id]) == self.number_of_agents + 1:  # count the done
+            if len(self.bids[task_id]) == self.number_of_agents + 3:  # count the done, distance_to_dispenser, closeset_dispenser_position
                 # order the dictionary first for value and than for key
                 self.bids[task_id]
                 ordered_task = OrderedDict(sorted(self.bids[task_id].items(), key=lambda x: (x[1], x[0])))
@@ -419,30 +447,30 @@ class RhbpAgent(object):
                     i += 1
                 '''
 
-
                 for key, value in ordered_task.items():
-                    if key != 'done':  # skip done
+                    if key != 'done' and key != 'distance_to_dispenser' and key != 'closest_dispenser_position':  # skip done
                         if (value == -1):
                             self.bids[task_id]["done"] = "invalid"
                         else:
                             self.bids[task_id]["done"] = key
+                            self.bids[task_id]["distance_to_dispenser"] = distance_to_dispenser
+                            self.bids[task_id]["closest_dispenser_position"] = [closest_dispenser_position_x,closest_dispenser_position_y]
                             break
-
-
 
     def _initialize_behaviour_model(self):
         """
         This function initialises the RHBP behaviour/goal model.
         """
 
-        # Exploration
+        ### Exploration ##
         exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(exploration_move)
         exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
         exploration_move.add_effect(Effect(self.sensor_manager.assigned_task_list_empty.name, indicator=True))
 
-        # Move to Dispenser
-        move_to_dispenser = MoveToDispenserBehaviour(name="move_to_dispenser", agent_name=self._agent_name,rhbp_agent=self)
+        ### Move to Dispenser ###
+        move_to_dispenser = MoveToDispenserBehaviour(name="move_to_dispenser", agent_name=self._agent_name,
+                                                     rhbp_agent=self)
         self.behaviours.append(move_to_dispenser)
         # assigned to a task precondition
         move_to_dispenser.add_precondition(
@@ -461,18 +489,16 @@ class RhbpAgent(object):
         )
         move_to_dispenser.add_effect(Effect(self.sensor_manager.at_the_dispenser.name, indicator=True))
 
-        """
-        # Our simple goal is to create more and more blocks
-        dispense_goal = GoalBase("dispensing", permanent=True,
-                                 conditions=[
-                                     Condition(self.sensor_manager.at_the_dispenser, GreedyActivator())],
-                                 planner_prefix=self._agent_name)
-        self.goals.append(dispense_goal)
-        """
+        # # Our simple goal is to create more and more blocks
+        # dispense_goal = GoalBase("dispensing", permanent=True,
+        #                          conditions=[
+        #                              Condition(self.sensor_manager.at_the_dispenser, GreedyActivator())],
+        #                          planner_prefix=self._agent_name)
+        # self.goals.append(dispense_goal)
 
-        # Requeste  block - Dispense
+        ### Requeste  block - Dispense ###
         dispense = DispenseBehaviour(name="dispense", agent_name=self._agent_name,
-                                                     rhbp_agent=self)
+                                     rhbp_agent=self)
         self.behaviours.append(dispense)
         # assigned to a task precondition
         dispense.add_precondition(
@@ -489,15 +515,42 @@ class RhbpAgent(object):
             Condition(self.sensor_manager.at_the_dispenser,
                       BooleanActivator(desiredValue=True))
         )
-        dispense.add_effect(Effect(self.sensor_manager.attached_to_block.name, indicator=True))
-        
+        # not next to block
+        dispense.add_precondition(Condition(self.sensor_manager.next_to_block, BooleanActivator(desiredValue=False)))
+
+        # effect of dispense is that agent is next to block
+        dispense.add_effect(Effect(self.sensor_manager.next_to_block.name, indicator=True))
+
         # Our simple goal is to create more and more blocks
-        dispense_goal = GoalBase("dispensing", permanent=True,
+        # dispense_goal = GoalBase("dispensing", permanent=True,
+        #                          conditions=[
+        #                              Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
+        #                          planner_prefix=self._agent_name)
+        # self.goals.append(dispense_goal)
+
+        #### Attach to Block ###
+        attach = AttachBehaviour(name="attach", agent_name=self._agent_name, rhbp_agent=self)
+        self.behaviours.append(attach)
+
+        # Preconditions
+        # assigned to a tas
+        attach.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                          activator=BooleanActivator(desiredValue=False)))
+        # is not yet attached to a block of type of the current task
+        attach.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block, activator=BooleanActivator(desiredValue=False)))
+        # is next to a block
+        attach.add_precondition(Condition(sensor=self.sensor_manager.next_to_block, activator=BooleanActivator(desiredValue=True)))
+        # has free capacity to attach
+        attach.add_precondition(Condition(sensor=self.sensor_manager.fully_attached, activator=BooleanActivator(desiredValue=False)))
+
+        # effect of attach is that agent is attached to a block
+        attach.add_effect(Effect(self.sensor_manager.attached_to_block.name, indicator=True))
+
+        attach_goal = GoalBase("attaching", permanent=True,
                                  conditions=[
                                      Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
                                  planner_prefix=self._agent_name)
-        self.goals.append(dispense_goal)
-
+        self.goals.append(attach_goal)
         """
         HERE
         move_to_dispenser = MoveToDispenserBehaviour()
