@@ -17,6 +17,8 @@ class PerceptionProvider(object):
 
         self.simulation_step = 0
 
+        self.agent = None
+
         self.tasks = []
 
         self.goals = []
@@ -51,6 +53,8 @@ class PerceptionProvider(object):
         self._update_dispensers(request_action_msg)
 
         self._update_entities(request_action_msg)
+
+        self.agent = request_action_msg.agent
 
         self.goals = request_action_msg.goals  # TODO this could be more sophisticated and potentially extracted like above
 

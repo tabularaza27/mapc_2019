@@ -337,7 +337,7 @@ class RhbpAgent(object):
 
         # map merging
         self.map_merge()
-        self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
+        self.local_map.update_map(perception=self.perception_provider)
         self.local_map._update_distances()
 
         # send the map if perceive the goal

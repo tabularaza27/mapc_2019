@@ -87,24 +87,23 @@ class GridMap():
         self.live_plotting = global_variables.LIVE_PLOTTING
 
     ### PUBLIC METHODS ###
-    def update_map(self, agent, perception):
+    def update_map(self, perception):
         """Update the map according to the movement of the agent and the new perception.
         Args:
-            agent (dict): info about agent. dict is received from the percept
             perception (rhbp.perception_provider): the new perception of the agent
         """
         # TODO CHECK IF THIS IS WORKING, create tests for rotate function
-        if agent.last_action == "rotate" and agent.last_action_result == "success":
+        if perception.agent.last_action == "rotate" and perception.agent.last_action_result == "success":
             for block in self._attached_blocks:
-                block.rotate(rotate_direction=agent.last_action_params[0])
+                block.rotate(rotate_direction=perception.agent.last_action_params[0])
 
         # if last action was `move` update agent position and expand map size if sight is out of bounds
-        if agent.last_action == "move" and agent.last_action_result == "success":
-            self._update_agent_position(move=agent.last_action_params[0])
+        if perception.agent.last_action == "move" and perception.agent.last_action_result == "success":
+            self._update_agent_position(move=perception.agent.last_action_params[0])
 
         # if last action was `attach` update the attached_blocks list and update
-        if agent.last_action == "attach" and agent.last_action_result == "success":
-            attach_direction = agent.last_action_params[0]
+        if perception.agent.last_action == "attach" and perception.agent.last_action_result == "success":
+            attach_direction = perception.agent.last_action_params[0]
             relative_block_position = global_variables.MOVEMENTS["w"]
             # find out type of block that was attached
             block_type = None
