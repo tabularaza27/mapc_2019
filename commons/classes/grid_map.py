@@ -325,6 +325,17 @@ class GridMap():
         parameters["dispenser_pos"] = subtask._closest_dispenser_position
         return self.get_move_direction(subtask._path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
 
+    def get_meeting_point_move(self, subtask):
+        """get the move direction for the go_to_dispenser behaviour
+        Args:
+            subtask(): the subtask needed to recompute the path to the closest dispenser if needed
+
+        Returns:n,s,e or w or None
+        """
+        parameters = dict()
+        parameters["final_pos"] = subtask._meeting_point
+        return self.get_move_direction(subtask._path_to_meeting_point_id, self._get_path_to_meeting_point, parameters)
+
     def get_direction_to_close_dispenser(self, dispenser_type):
         """check if the agent is one step away from a dispenser of a certain type
         Args:
@@ -420,6 +431,18 @@ class GridMap():
         relative_coord = relative_coord - self.origin
 
         return relative_coord
+
+    def list_from_relative_to_matrix(self, relative_coord_list):
+        new_list = []
+        for coord in relative_coord_list:
+            new_list.append(self._from_relative_to_matrix(coord))
+        return new_list
+
+    def list_from_matrix_to_relative(self, matrix_coord_list):
+        new_list = []
+        for coord in matrix_coord_list:
+            new_list.append(self._from_matrix_to_relative(coord))
+        return new_list
 
     def _update_agent_position(self, move=None):
         """update agents position in map and expand grid if sight is out of bounds
@@ -727,6 +750,26 @@ class GridMap():
             return self._from_matrix_to_relative(pos), min_dist
         else:
             return None, min_dist
+
+    ### GO TO MEETING POINT FUNCTIONS ###
+
+    def _get_path_to_meeting_point(self, parameters):
+        """ Get path from agent to the dispenser """
+        if 'final_pos' not in parameters:
+            return None
+        else:
+            final_pos = parameters['final_pos']
+        agent_pos = [self._from_relative_to_matrix(self._agent_position)]
+        final_pos_in_matrix = self.list_from_matrix_to_relative(final_pos)
+        path = self.path_planner.astar(
+            maze=self._path_planner_representation,
+            origin=self.origin,
+            start=np.array(agent_pos),
+            end=np.array(final_pos_in_matrix)
+        )
+        path.pop()  # path.techno() because we are in Berlin
+        # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
+        return path
 
     def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
         return
