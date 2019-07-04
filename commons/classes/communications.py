@@ -131,7 +131,7 @@ class Communication:
             publisher.publish(msg)
             self.lock()
 
-    def send_bid(self, publisher, task_id, bid_value, distance_to_dispenser, closest_dispenser_position):
+    def send_bid(self, publisher, task_id, bid_value, distance_to_dispenser, closest_dispenser_position_x, closest_dispenser_position_y):
         """
         Send the bid through the auction communication topic
         Args:
@@ -148,7 +148,8 @@ class Communication:
         msg.task_id = task_id
         msg.bid_value = bid_value
         msg.distance_to_dispenser = distance_to_dispenser
-        msg.closest_dispenser_position = closest_dispenser_position
+        msg.closest_dispenser_position_x = closest_dispenser_position_x
+        msg.closest_dispenser_position_y = closest_dispenser_position_y
         publisher.publish(msg)
 
     def send_subtask_update(self, publisher, command, task_id):

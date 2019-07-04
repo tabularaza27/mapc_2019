@@ -122,9 +122,9 @@ class RhbpAgent(object):
                             current = self.calculate_subtask_bid(sub)
                             bid_value += current[0]
                             distance_to_dispenser = current[1]
-                            closest_dispenser_position = current[2]
+                            closest_dispenser_position = self.local_map._from_relative_to_matrix(current[2])
 
-                        self._communication.send_bid(self._pub_auction, subtask_id, bid_value, distance_to_dispenser, closest_dispenser_position)
+                        self._communication.send_bid(self._pub_auction, subtask_id, bid_value, distance_to_dispenser, closest_dispenser_position[0], closest_dispenser_position[1])
 
                         # wait until the bid is done
 
@@ -420,7 +420,8 @@ class RhbpAgent(object):
         task_id = msg.task_id
         task_bid_value = msg.bid_value
         distance_to_dispenser = msg.distance_to_dispenser
-        closest_dispenser_position = msg.closest_dispenser_position
+        closest_dispenser_position_x = msg.closest_dispenser_position_x
+        closest_dispenser_position_y = msg.closest_dispenser_position_y
 
         # 1 BIDDING
         if task_id not in self.bids:
@@ -466,7 +467,7 @@ class RhbpAgent(object):
                         else:
                             self.bids[task_id]["done"] = key
                             self.bids[task_id]["distance_to_dispenser"] = distance_to_dispenser
-                            self.bids[task_id]["closest_dispenser_position"] = closest_dispenser_position
+                            self.bids[task_id]["closest_dispenser_position"] = [closest_dispenser_position_x,closest_dispenser_position_y]
                             break
 
 
