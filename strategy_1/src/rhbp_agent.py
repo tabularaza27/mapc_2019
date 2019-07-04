@@ -16,6 +16,7 @@ import global_variables
 from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBehaviour
 from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDispenserBehaviour
 from agent_commons.behaviour_classes.dispense_behaviour import DispenseBehaviour
+from agent_commons.behaviour_classes.attach_behaviour import AttachBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
@@ -54,7 +55,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 2   # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -130,13 +131,14 @@ class RhbpAgent(object):
                         current_time = 0
                         deadline = 0.3
                         while self.bids[subtask_id]["done"] == None:
-                        # while self.bids[subtask_id]["done"] == None and current_time < deadline:
+                            # while self.bids[subtask_id]["done"] == None and current_time < deadline:
                             time.sleep(0.05)
                             current_time += 0.05
 
                         if self.bids[subtask_id]["done"] != "invalid":  # was a valid one
                             rospy.loginfo(
-                                "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(bid_value))
+                                "------ DONE: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
+                                    bid_value))
                             sub.assigned_agent = self.bids[subtask_id]["done"]
 
                             assigned.append(sub.assigned_agent)
@@ -223,7 +225,6 @@ class RhbpAgent(object):
         else:  # Our decision-making has taken too long
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
 
-
     def calculate_subtask_bid(self, subtask):
         """calculate bid value for a subtask based on the distance from the agent to the closest dispenser and the
         distance from that this dispenser to the meeting point ( for now that is always the goal area )
@@ -246,7 +247,7 @@ class RhbpAgent(object):
 
             if pos is not None:  # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
-                meeting_point = self.local_map.goal_top_left # TODO change the meeting point with communication
+                meeting_point = self.local_map.goal_top_left  # TODO change the meeting point with communication
                 end = np.array([meeting_point[0], meeting_point[1]], dtype=int)
                 distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
 
@@ -303,7 +304,6 @@ class RhbpAgent(object):
         rospy.loginfo("Simulation finished")
         rospy.signal_shutdown('Shutting down {}  - Simulation server closed'.format(self._agent_name))
 
-
     def _action_request_callback(self, msg):
         """
         here we just trigger the decision-making and planning
@@ -325,16 +325,7 @@ class RhbpAgent(object):
         if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
             rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
 
-
         ###### UPDATE AND SYNCHRONIZATION ######
-
-        # update map
-        #self.local_map.update_map(agent=msg.agent, perception=self.perception_provider)
-        # best_point, best_path, current_high_score = self.local_map.get_point_to_explore()
-        # rospy.logdebug("Best point: " + str(best_point))
-        # rospy.logdebug("Best path: " + str(best_path))
-        # rospy.logdebug("Current high score: " + str(current_high_score))
-
 
         # update tasks from perception
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
@@ -343,7 +334,6 @@ class RhbpAgent(object):
 
         # task auctioning
         self.task_auctioning()
-
 
         # map merging
         self.map_merge()
@@ -419,7 +409,6 @@ class RhbpAgent(object):
                     i += 1
                 '''
 
-
                 for key, value in ordered_task.items():
                     if key != 'done':  # skip done
                         if (value == -1):
@@ -428,21 +417,20 @@ class RhbpAgent(object):
                             self.bids[task_id]["done"] = key
                             break
 
-
-
     def _initialize_behaviour_model(self):
         """
         This function initialises the RHBP behaviour/goal model.
         """
 
-        # Exploration
+        ### Exploration ##
         exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(exploration_move)
         exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
         exploration_move.add_effect(Effect(self.sensor_manager.assigned_task_list_empty.name, indicator=True))
 
-        # Move to Dispenser
-        move_to_dispenser = MoveToDispenserBehaviour(name="move_to_dispenser", agent_name=self._agent_name,rhbp_agent=self)
+        ### Move to Dispenser ###
+        move_to_dispenser = MoveToDispenserBehaviour(name="move_to_dispenser", agent_name=self._agent_name,
+                                                     rhbp_agent=self)
         self.behaviours.append(move_to_dispenser)
         # assigned to a task precondition
         move_to_dispenser.add_precondition(
@@ -461,18 +449,16 @@ class RhbpAgent(object):
         )
         move_to_dispenser.add_effect(Effect(self.sensor_manager.at_the_dispenser.name, indicator=True))
 
-        """
-        # Our simple goal is to create more and more blocks
-        dispense_goal = GoalBase("dispensing", permanent=True,
-                                 conditions=[
-                                     Condition(self.sensor_manager.at_the_dispenser, GreedyActivator())],
-                                 planner_prefix=self._agent_name)
-        self.goals.append(dispense_goal)
-        """
+        # # Our simple goal is to create more and more blocks
+        # dispense_goal = GoalBase("dispensing", permanent=True,
+        #                          conditions=[
+        #                              Condition(self.sensor_manager.at_the_dispenser, GreedyActivator())],
+        #                          planner_prefix=self._agent_name)
+        # self.goals.append(dispense_goal)
 
-        # Requeste  block - Dispense
+        ### Requeste  block - Dispense ###
         dispense = DispenseBehaviour(name="dispense", agent_name=self._agent_name,
-                                                     rhbp_agent=self)
+                                     rhbp_agent=self)
         self.behaviours.append(dispense)
         # assigned to a task precondition
         dispense.add_precondition(
@@ -489,15 +475,42 @@ class RhbpAgent(object):
             Condition(self.sensor_manager.at_the_dispenser,
                       BooleanActivator(desiredValue=True))
         )
-        dispense.add_effect(Effect(self.sensor_manager.attached_to_block.name, indicator=True))
-        
+        # not next to block
+        dispense.add_precondition(Condition(self.sensor_manager.next_to_block, BooleanActivator(desiredValue=False)))
+
+        # effect of dispense is that agent is next to block
+        dispense.add_effect(Effect(self.sensor_manager.next_to_block.name, indicator=True))
+
         # Our simple goal is to create more and more blocks
-        dispense_goal = GoalBase("dispensing", permanent=True,
+        # dispense_goal = GoalBase("dispensing", permanent=True,
+        #                          conditions=[
+        #                              Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
+        #                          planner_prefix=self._agent_name)
+        # self.goals.append(dispense_goal)
+
+        #### Attach to Block ###
+        attach = AttachBehaviour(name="attach", agent_name=self._agent_name, rhbp_agent=self)
+        self.behaviours.append(attach)
+
+        # Preconditions
+        # assigned to a tas
+        attach.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                          activator=BooleanActivator(desiredValue=False)))
+        # is not yet attached to a block of type of the current task
+        attach.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block, activator=BooleanActivator(desiredValue=False)))
+        # is next to a block
+        attach.add_precondition(Condition(sensor=self.sensor_manager.next_to_block, activator=BooleanActivator(desiredValue=True)))
+        # has free capacity to attach
+        attach.add_precondition(Condition(sensor=self.sensor_manager.fully_attached, activator=BooleanActivator(desiredValue=False)))
+
+        # effect of attach is that agent is attached to a block
+        attach.add_effect(Effect(self.sensor_manager.attached_to_block.name, indicator=True))
+
+        attach_goal = GoalBase("attaching", permanent=True,
                                  conditions=[
                                      Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
                                  planner_prefix=self._agent_name)
-        self.goals.append(dispense_goal)
-
+        self.goals.append(attach_goal)
         """
         HERE
         move_to_dispenser = MoveToDispenserBehaviour()
