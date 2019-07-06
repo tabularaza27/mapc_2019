@@ -341,7 +341,7 @@ class GridMap():
         Returns:n,s,e or w or None
         """
         parameters = dict()
-        parameters["dispenser_pos"] = subtask.closest_dispenser_position
+        parameters["dispenser_pos"] = self._from_relative_to_matrix(subtask.closest_dispenser_position, self.goal_top_left)
         return self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
 
     def get_meeting_point_move(self, subtask):

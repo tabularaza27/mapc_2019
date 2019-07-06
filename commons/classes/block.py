@@ -22,6 +22,7 @@ class Block:
         Args:
             rotate_direction(str): cw or ccw
         """
+
         switch_sign = False
         if self._position[0] == 0:
             if rotate_direction == 'ccw':
@@ -65,6 +66,6 @@ class Block:
 
         """
         if change_sign:
-            return np.array(-position[1], -position[0])
+            return np.array([-position[1], -position[0]])
         else:
-            return np.array(position[1], position[0])
+            return np.array([position[1], position[0]])

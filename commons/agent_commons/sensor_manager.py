@@ -89,12 +89,13 @@ class SensorManager():
                 self.next_to_block.update(False)
 
             # check if agent has already attached blocks in all available slots (check unique x values)
-            occupied_slots = len({block._position[1] for block in attached_blocks})
-            if occupied_slots >= 4:
-                self.fully_attached.update(True)
-            else:
-                self.fully_attached.update(False)
-
+            # TODO refactor this function
+            #occupied_slots = len({block._position[1] for block in attached_blocks})
+            #if occupied_slots >= 4:
+            #    self.fully_attached.update(True)
+            #else:
+            #    self.fully_attached.update(False)
+            self.fully_attached.update(False)
             #check if agent is at the meeting point
             at_meeting_point = self.rhbp_agent.local_map.is_at_point(current_subtask.meeting_point)
             if at_meeting_point:

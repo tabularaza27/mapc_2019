@@ -122,11 +122,12 @@ class RhbpAgent(object):
                         current_bid, distance_to_dispenser, closest_dispenser_position = self.calculate_subtask_bid(sub)
                         bid_value += current_bid
 
+                        # transform the coordinates in relative to the top_left
                         if closest_dispenser_position is not None:
-                            closest_dispenser_position = self.local_map._from_relative_to_matrix(closest_dispenser_position)
+                            closest_dispenser_position = self.local_map._from_matrix_to_relative(closest_dispenser_position, self.local_map.goal_top_left)
                         else:
-                            closest_dispenser_position = [-1, -1]
-
+                            # invalid dispenser position
+                            closest_dispenser_position = np.array([-1000000, -1000000])
                         self._communication.send_bid(self._pub_auction, subtask_id, bid_value, distance_to_dispenser, closest_dispenser_position[0], closest_dispenser_position[1])
                 
                 # STEP 2: WAIT FOR ALL THE BIDS OR A TIMEOUT
@@ -157,7 +158,8 @@ class RhbpAgent(object):
                             sub.distance_to_dispenser = ass[ass_subtask_name]["bid"].distance_to_dispenser
                             sub.closest_dispenser_position = ass[ass_subtask_name]["bid"].closest_dispenser_position
 
-                            self.assigned_subtasks.append(sub)
+                            if self._agent_name == sub.assigned_agent:
+                                self.assigned_subtasks.append(sub)
 
                             rospy.loginfo(self._agent_name + "| ---- ALLL DONE: " + sub.sub_task_name)
                             rospy.loginfo(self._agent_name + "| -------- AGENT: " + sub.assigned_agent)
@@ -451,7 +453,7 @@ class RhbpAgent(object):
         if task_id not in self.bids:
             self.bids[task_id] = OrderedDict()
 
-        bid = Bid(task_bid_value,distance_to_dispenser,[closest_dispenser_position_y,closest_dispenser_position_x])
+        bid = Bid(task_bid_value,distance_to_dispenser,np.array([closest_dispenser_position_y,closest_dispenser_position_x]))
         self.bids[task_id][msg_from] = bid
 
 
