@@ -40,8 +40,8 @@ class GridPathPlanner():
 
         # Check if the end point is not a free cell
         for element in end:
-            end_pos = maze[element[0]][element[1]]
-            if not GridPathPlanner.is_walkable(end_pos):
+            end_pos_value = maze[element[0]][element[1]]
+            if not GridPathPlanner.is_walkable(end_pos_value):
                 print ("invalid End point")
                 return 'invalid end'
 
@@ -102,7 +102,7 @@ class GridPathPlanner():
                             > (len(maze[len(maze) - 1]) - 1) or element[1] < 0:
                         break
                     # Make sure walkable terrain
-                    elif not GridPathPlanner.is_walkable(maze[element[0], element[1]]):
+                    elif not GridPathPlanner.is_walkable(maze[element[0]][element[1]]):
                         break
                 else:
                     # Create new node
@@ -148,7 +148,7 @@ class GridPathPlanner():
             Bool: True if cell is walkable, False otherwise
 
         """
-        if cell in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL) or \
+        if cell in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL, global_variables.AGENT_CELL) or \
                 global_variables.DISPENSER_STARTING_NUMBER <= cell < global_variables.BLOCK_CELL_STARTING_NUMBER:
             return True
 
@@ -326,6 +326,14 @@ class GridPathPlanner():
                     print ("action is unknown")
                     next_action = 'unknown translation'
                     return next_action
+    @staticmethod
+    def is_valid_path(path):
+        """check if a path is valid"""
+        # TODO REFACTOR LA MADONNA!
+        if path is not None and path != -1 and path != 'invalid end':
+            return True
+        else:
+            return False
 
     def show_path(self, maze, path_matrix, length = -1, pause=1.0):
         """Generate a representation of the map with the path of the agent coloured in orange and the blocks in yellow
@@ -385,30 +393,31 @@ def main():
     """
 
     # Simple maze
-    maze = [[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
-            [-2, 2, 0, -2, 5, 0, 0, 0, 0, 0],
+    maze = np.array([[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
+            [-2, 0, 0, -2, 0, 0, 0, 0, 0, 0],
             [ 0, 0, 0, -2, 0, 0, 0, 0, 0, 0],
             [ 0, 0,-2,  0,-2,-2, 0, 0, 0, 0],
-            [ -3, 0, 0,  0, 0,-2, 0, 0, 0, 0],
+            [ 0, 0, 0,  0, 0,-2, 0, 0, 0, 0],
             [-2, 0, 0,  0, 0, 0, 0, 0,-2,-2],
             [ 0,-2, 0,  0, 0, 0, 0,-2, 0, 0],
             [ 0, 0, 0,  0,-2, 0,-2, 0,-2, 0],
             [ 0, 0, 0,  0,-2, 0,-2, 0, 0, 0],
-            [ 0, 0, 0,  0,-2, 0, 0, 0, 0, 0]]
+            [ 0, 0, 0,  0,-2, 0, 0, 0, 0, 0]])
 
 
     # Origin
     origin = [[0, 0]]
+    """
     # Single agent
     start_point = [[1, 1]]
     #end_point = [[6, 8]]
     end_point = start_point
-
     """
+
     # Agent + blocks (L shape)
     start_point = [[0, 0], [0, 1], [1, 1]]
     end_point = [[1, 5], [1, 4], [0, 4]]
-    """
+
 
     start = np.array(start_point, dtype=np.int)
     end = np.array(end_point, dtype=np.int)
@@ -439,6 +448,7 @@ def main():
     else:
         print ("There is no path")
         raw_input("Press Enter to continue...")
+
 
 
 if __name__ == '__main__':

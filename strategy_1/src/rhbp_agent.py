@@ -43,7 +43,7 @@ class RhbpAgent(object):
 
         rospy.init_node('agent_node', anonymous=True, log_level=log_level)
 
-        self._agent_name = rospy.get_param('~agent_name', 'agentA2')  # default for debugging 'agentA1'
+        self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
 
         self._agent_topic_prefix = get_bridge_topic_prefix(agent_name=self._agent_name)
 

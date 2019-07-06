@@ -9,18 +9,18 @@
     <include file="$(find mapc_ros_bridge)/launch/mapc_ros_bridge.launch">
         <arg name="agent_name" value="agentA1" />
     </include>
-
+    <!-->
     <include file="$(find strategy_1)/launch/rhbp_agent.launch">
         <arg name="agent_name" value="agentA1" />
-    </include>
+    </include> -->
 
     <include file="$(find mapc_ros_bridge)/launch/mapc_ros_bridge.launch">
         <arg name="agent_name" value="agentA2" />
     </include>
-    <!-->
+
     <include file="$(find strategy_1)/launch/rhbp_agent.launch">
         <arg name="agent_name" value="agentA2" />
-    </include> -->
+    </include>
     <!--
     <include file="$(find mapc_ros_bridge)/launch/mapc_ros_bridge.launch">
         <arg name="agent_name" value="agentA3" />
