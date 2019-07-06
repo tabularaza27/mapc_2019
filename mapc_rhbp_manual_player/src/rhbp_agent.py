@@ -15,7 +15,6 @@ from classes.communications import Communication
 
 from collections import OrderedDict
 
-import random
 import numpy as np
 
 

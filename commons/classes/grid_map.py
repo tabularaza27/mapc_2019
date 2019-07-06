@@ -4,6 +4,8 @@ import matplotlib as mpl
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
 import random
+
+
 import os
 
 from helpers import get_data_location
@@ -152,23 +154,37 @@ class GridMap():
 
         # update dispensers
         for dispenser in perception.dispensers:
-            pos = (dispenser.pos.y, dispenser.pos.x) + self._agent_position
+            pos = np.array([dispenser.pos.y, dispenser.pos.x]) + self._agent_position
             matrix_pos = self._from_relative_to_matrix(pos)
             # get dispenser type
             for i in range(9):
                 if str(i) in dispenser.type:
                     self._representation[matrix_pos[0]][matrix_pos[1]] = global_variables.DISPENSER_STARTING_NUMBER + i
+        self.update_dispsenser_list()
 
-            # add to state variable as dict
-            # {pos: [y: 3, X: 3], type: 'b1'}
-            dispenser.pos = pos
-            flag_equal = False
-            for d in self._dispensers:
-                if np.array_equal(d.pos, dispenser.pos):
-                    flag_equal = True
-            if not flag_equal:
-                self._dispensers.append(dispenser)
 
+
+
+        # write data to file, used for live plotting plotting
+        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0:
+            self._write_data_to_file()
+
+        self.STEP += 1
+
+    def update_dispsenser_list(self):
+        """update the dispensers in the dispenser_list"""
+        new_list = []
+        for y in range(self._representation.shape[0]):
+            for x in range(self._representation.shape[1]):
+                pos_matrix = np.array([y,x])
+                cell_value = self._get_value_of_cell(pos_matrix)
+                dispenser_type = self.get_dispenser_type(cell_value=cell_value)
+                if dispenser_type:
+                    pos_relative = self._from_matrix_to_relative(pos_matrix)
+                    new_list.append({'pos': pos_relative, 'type': dispenser_type})
+        self._dispensers = new_list
+
+    def _update_path_planner_representation(self, perception):
         # Update temporary map used by path_planner to avoid obstacles
         self._path_planner_representation = np.copy(self._representation)
         # add agent position
@@ -198,15 +214,6 @@ class GridMap():
                 matrix_pos[1]] = global_variables.ENTITY_CELL
 
             # rospy.logdebug("temporary map: " + str(self._path_planner_representation))
-
-        # update distances
-        self._update_distances()
-
-        # write data to file, used for live plotting plotting
-        if self.live_plotting and self.STEP % self.PLOT_FREQUENCY == 0:
-            self._write_data_to_file()
-
-        self.STEP += 1
 
     def _update_distances(self):
         """update the matrix of distances from the agent"""
@@ -499,6 +506,7 @@ class GridMap():
 
         old_map_shape = self._representation.shape
 
+        rospy.loginfo('old origin:{}'.format(self.origin))
         # this is the fastest way to add a row / column to a numpy array
         # see 'https://stackoverflow.com/questions/8486294/how-to-add-an-extra-column-to-a-numpy-array' if interested
         if direction == 'n':
@@ -515,7 +523,7 @@ class GridMap():
             helper_map = np.full((old_map_shape[0], old_map_shape[1] + 1), fill_value=global_variables.UNKNOWN_CELL)
             helper_map[:, 1:] = self._representation
             self.origin = self.origin + np.array([0, 1])
-
+        rospy.loginfo('new origin:{}'.format(self.origin))
         self._representation = helper_map
 
     def _get_data_directory(self):
@@ -525,7 +533,13 @@ class GridMap():
 
     def _write_data_to_file(self):
         """writes two dimensional np.array to .txt file named after agent and in data directory"""
-        np.savetxt(os.path.join(self.data_directory, '{}.txt'.format(self.agent_name)), self._representation, fmt='%i',
+        map_copy = np.copy(self._representation)
+        # TODO PRINT LIST OF DISPENSERS
+        map_copy[self.origin[0],self.origin[1]] = 20
+        for d in self._dispensers:
+            pos = self._from_relative_to_matrix(d['pos'])
+            map_copy[pos[0], pos[1]] = -20
+        np.savetxt(os.path.join(self.data_directory, '{}.txt'.format(self.agent_name)), map_copy, fmt='%i',
                    delimiter=',')
 
     ### EXPLORATION FUNCTIONALITIES ###
@@ -752,8 +766,8 @@ class GridMap():
         min_dist = 9999
         pos = None
         for dispenser in self._dispensers:
-            if dispenser.type == required_type:  # check if the type is the one we need
-                pos_matrix = self._from_relative_to_matrix(dispenser.pos)
+            if dispenser['type'] == required_type:  # check if the type is the one we need
+                pos_matrix = self._from_relative_to_matrix(dispenser['pos'])
                 dist = self._distances[pos_matrix[0], pos_matrix[1]]
 
                 if dist < min_dist:  # see if the distance is minimum and save it
@@ -814,6 +828,7 @@ class GridMap():
 
     @staticmethod
     def get_dispenser_type(cell_value):
+        """returns the type of the dispenser if the cell is a dispenser, False otherwise"""
         if global_variables.DISPENSER_STARTING_NUMBER <= cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
             return "b{}".format(cell_value - global_variables.DISPENSER_STARTING_NUMBER)
         else:
