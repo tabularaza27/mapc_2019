@@ -1,5 +1,6 @@
 from __future__ import division  # force floating point division when using plain /
 import rospy
+import numpy as np
 
 from behaviour_components.behaviours import BehaviourBase
 from diagnostic_msgs.msg import KeyValue
@@ -33,15 +34,27 @@ class ReachMeetingPointBehaviour(BehaviourBase):
 
     def do_step(self):
         active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
-        #temp generation of the meeting point
+        #temp generation of the meeting point [[agent_position],[block_position]]
         task_meeting_point = self.rhbp_agent.local_map.goal_top_left
-        active_subtask.meeting_point = [task_meeting_point + active_subtask.position] # this is really the block position not the agent position
-
+        if active_subtask.type == "b1":
+            active_subtask.meeting_point = np.array([task_meeting_point + np.array([0,-1]), task_meeting_point])
+        else:
+            active_subtask.meeting_point = \
+                np.array([task_meeting_point + np.array([0, 2]),
+                         task_meeting_point + np.array([0, 1])])
         path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask)
         active_subtask.path_to_meeting_point_id = path_id
 
         if direction is not None and direction is not False:
             params = [KeyValue(key="direction", value=direction)]
-            rospy.logdebug(self._agent_name + "::" + self._name + " executing move to meeting point, direction: " + str(direction))
-            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
-                                  params=params)
+            if direction == 'cw' or direction == 'ccw':
+                rospy.logdebug(
+                    self._agent_name + "::" + self._name + " executing move to meeting point, direction: " + str(
+                        direction))
+                action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_ROTATE,
+                                      params=params)
+            else:
+                params = [KeyValue(key="direction", value=direction)]
+                rospy.logdebug(self._agent_name + "::" + self._name + " executing move to meeting point, direction: " + str(direction))
+                action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
+                                      params=params)

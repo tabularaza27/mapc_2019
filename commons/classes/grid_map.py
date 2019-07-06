@@ -194,11 +194,18 @@ class GridMap():
         # update blocks
         # todo take blocks attached to the agent into account --> alvaro
         for block in perception.blocks:
-            pos = np.array([block.pos.y, block.pos.x]) + self._agent_position
-            matrix_pos = self._from_relative_to_matrix(pos)
-            # first index --> y value, second  --> x value
-            self._path_planner_representation[matrix_pos[0]][
-                matrix_pos[1]] = global_variables.BLOCK_CELL_STARTING_NUMBER
+            block_rel_to_agent = np.array([block.pos.y, block.pos.x])
+            attached = False
+            for attached_blocks in self._attached_blocks:
+                if np.array_equal(attached_blocks._position, block_rel_to_agent):
+                    attached = True
+            if not attached:
+                pos = self._from_relative_to_matrix(block_rel_to_agent, self._agent_position)
+
+                matrix_pos = self._from_relative_to_matrix(pos)
+                # first index --> y value, second  --> x value
+                self._path_planner_representation[matrix_pos[0]][
+                    matrix_pos[1]] = global_variables.BLOCK_CELL_STARTING_NUMBER + int(block.type[1])
 
         # updates entities
         for entity in perception.entities:
@@ -261,7 +268,7 @@ class GridMap():
         try_counter = 0
         max_trials = 10
         # Compute next direction if map is not fully discovered (path = -1)
-        if best_path != -1 and best_path is not None:
+        if best_path != -1 and best_path is not None and best_path != 'invalid end':
             while not valid_direction and best_path is not None and try_counter < max_trials:
                 # this point is never reached
                 if best_path == 'invalid end':
@@ -270,13 +277,17 @@ class GridMap():
                 try_counter += 1
                 # Compute direction
                 direction = self.path_planner.next_move_direction(
-                    [self._agent_position],
+                    self.get_agent_pos_and_blocks_array(),
                     self.paths[path_id])
                 if direction is not None:
                     # Calculate next cell value if position  of the agent is not unknown
                     if direction != 'unknown position':
-                        next_cell_matrix = self._from_relative_to_matrix(self._agent_position) \
-                                    + global_variables.MOVEMENTS[direction]
+                        if direction == 'cw' or direction == 'ccw':
+                            # TODO CHECK IF THE NEXT ROTATION IS POSSIBLE
+                            next_cell_matrix = self._from_relative_to_matrix(self._agent_position)
+                        else:
+                            next_cell_matrix = self._from_relative_to_matrix(self._agent_position) \
+                                        + global_variables.MOVEMENTS[direction]
                         # Check if next_cell is out of bounds (synchronization problem?) # TODO out of bounds error in get_value_of_cell just after merging the map, this does not solve the problem idky
                         if next_cell_matrix[0] < self._path_planner_representation.shape[0] - 1 \
                                 or next_cell_matrix[1] < self._path_planner_representation.shape[1] - 1:
@@ -334,7 +345,7 @@ class GridMap():
         return self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
 
     def get_meeting_point_move(self, subtask):
-        """get the move direction for the go_to_dispenser behaviour
+        """get the move direction for the go_to_meeting_point behaviour
         Args:
             subtask(): the subtask needed to recompute the path to the closest dispenser if needed
 
@@ -420,33 +431,41 @@ class GridMap():
         self.paths[path_id] = path
         return path_id
 
-    def _from_relative_to_matrix(self, relative_coord):
+    def _from_relative_to_matrix(self, relative_coord, coord=None):
         """translates the coordinate with respect to the origin of the map to the
         origin of the matrix
 
         Args:
             relative_coord: (x,y) with respect to the origin of the map
+            coord: the relative point of the coordinates
 
         Returns:
             matrix_coord: (x',y') with respect to the origin of the matrix
         """
+
         matrix_coord = np.copy(relative_coord)
-        matrix_coord = matrix_coord + self.origin
+        if coord is None:  # by default origin
+            matrix_coord = matrix_coord + self.origin
+        else:
+            matrix_coord = matrix_coord + coord
 
         return matrix_coord
 
-    def _from_matrix_to_relative(self, matrix_coord):
+    def _from_matrix_to_relative(self, matrix_coord, coord=None):
         """Reverse function of from_relative_to_matrix
 
         Args:
             matrix_coord: (x,y) with respect to the origin of the matrix
-
+            coord: the relative point of the coordinates
         Returns:
             relative_coord: (x',y') with respect to the origin of the map
         """
 
         relative_coord = np.copy(matrix_coord)
-        relative_coord = relative_coord - self.origin
+        if coord is None:
+            relative_coord = relative_coord - self.origin
+        else:
+            relative_coord = relative_coord - coord
 
         return relative_coord
 
@@ -454,13 +473,13 @@ class GridMap():
         new_list = []
         for coord in relative_coord_list:
             new_list.append(self._from_relative_to_matrix(coord))
-        return new_list
+        return np.array(new_list)
 
     def list_from_matrix_to_relative(self, matrix_coord_list):
         new_list = []
         for coord in matrix_coord_list:
             new_list.append(self._from_matrix_to_relative(coord))
-        return new_list
+        return np.array(new_list)
 
     def _update_agent_position(self, move=None):
         """update agents position in map and expand grid if sight is out of bounds
@@ -743,17 +762,18 @@ class GridMap():
         else:
             dispenser_pos = parameters['dispenser_pos']
         agent_pos = [self._from_relative_to_matrix(self._agent_position)]
-        dispenser_pos_in_matrix = [self._from_relative_to_matrix(dispenser_pos)]
-        path = self.path_planner.astar(
-            maze=self._path_planner_representation,
-            origin=self.origin,
-            start=np.array(agent_pos),
-            end=np.array(dispenser_pos_in_matrix)
-        )
-        if path is not None and not isinstance(path, str):
-            path.pop() # path.techno() because we are in Berlin
+        for direction in global_variables.MOVING_DIRECTIONS:
+            dispenser_pos_in_matrix = [self._from_relative_to_matrix(dispenser_pos+direction)]
+            path = self.path_planner.astar(
+                maze=self._path_planner_representation,
+                origin=self.origin,
+                start=np.array(agent_pos),
+                end=np.array(dispenser_pos_in_matrix)
+            )
+            if GridPathPlanner.is_valid_path(path):
+                return path
         # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
-        return path
+        return None
 
     # TODO ERROR!!!! THE DISPENSER ASSIGNED IS NOT OF THE CORRECT TYPE OR NOT THE CORRECT POSITION!
     def get_closest_dispenser_position(self, required_type):
@@ -781,27 +801,41 @@ class GridMap():
     ### GO TO MEETING POINT FUNCTIONS ###
 
     def _get_path_to_meeting_point(self, parameters):
-        """ Get path from agent to the dispenser """
+        """ Get path from agent to the dispenser
+
+        Args:
+            parameters:
+
+        """
         if 'final_pos' not in parameters:
             return None
         else:
             final_pos = parameters['final_pos']
-        agent_pos = [self._from_relative_to_matrix(self._agent_position)]
+        agent_pos = self.get_agent_pos_and_blocks_array()
+        agent_pos = self.list_from_relative_to_matrix(agent_pos)
         final_pos_in_matrix = self.list_from_relative_to_matrix(final_pos)
         # TODO THIS FINAL POS SHOULD ALREADY BE A LIST, CHANGE IT WHEN IT IS
         # TODO put in the list of the agent pos the attached blocks
         path = self.path_planner.astar(
             maze=self._path_planner_representation,
             origin=self.origin,
-            start=np.array(agent_pos),
-            end=np.array(final_pos_in_matrix)
+            start=agent_pos,
+            end=final_pos_in_matrix
         )
-        path.pop()  # path.techno() because we are in Berlin
-        # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
+
         return path
 
     def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
         return
+
+    def get_agent_pos_and_blocks_array(self):
+        list = [self._agent_position]
+        for block in self._attached_blocks:
+            # transform the coordinates of the in coordinates relative to the agent
+            block_in_relative = self._from_relative_to_matrix(block._position, self._agent_position)
+            list.append(block_in_relative)
+
+        return np.array(list)
 
     ### static methods ###
 
