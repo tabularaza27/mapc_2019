@@ -3,7 +3,7 @@
 import rospy
 import uuid
 from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, \
-    general_communication, subtask_update_communication
+general_communication, subtask_update_communication
 
 
 class Communication:
@@ -131,7 +131,7 @@ class Communication:
             publisher.publish(msg)
             self.lock()
 
-    def send_bid(self, publisher, task_id, bid_value, distance_to_dispenser, closest_dispenser_position_x, closest_dispenser_position_y):
+    def send_bid(self, publisher, task_id, bid_value, distance_to_dispenser, closest_dispenser_position_y, closest_dispenser_position_x):
         """
         Send the bid through the auction communication topic
         Args:

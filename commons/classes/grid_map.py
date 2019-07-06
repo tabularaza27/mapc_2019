@@ -103,8 +103,9 @@ class GridMap():
 
         # if last action was `attach` update the attached_blocks list and update
         if perception.agent.last_action == "attach" and perception.agent.last_action_result == "success":
+            # TODO CAN'T JUST CHECK THE ACTIVE SUBTASK?
             attach_direction = perception.agent.last_action_params[0]
-            relative_block_position = global_variables.MOVEMENTS["w"]
+            relative_block_position = global_variables.MOVEMENTS[attach_direction]
             # find out type of block that was attached
             block_type = None
             for block in perception.blocks:
@@ -154,12 +155,12 @@ class GridMap():
             pos = (dispenser.pos.y, dispenser.pos.x) + self._agent_position
             matrix_pos = self._from_relative_to_matrix(pos)
             # get dispenser type
-            for i in range(4):
+            for i in range(9):
                 if str(i) in dispenser.type:
                     self._representation[matrix_pos[0]][matrix_pos[1]] = global_variables.DISPENSER_STARTING_NUMBER + i
 
             # add to state variable as dict
-            # {pos: {x: 3, y: 3}, type: 'b1'}
+            # {pos: [y: 3, X: 3], type: 'b1'}
             dispenser.pos = pos
             flag_equal = False
             for d in self._dispensers:
@@ -251,10 +252,10 @@ class GridMap():
         valid_direction = False
         # Number of times you may try find a valid direction
         try_counter = 0
-        max_trials = 1000
+        max_trials = 10
         # Compute next direction if map is not fully discovered (path = -1)
         if best_path != -1 and best_path is not None:
-            while not valid_direction and best_path is not None or not try_counter < max_trials:
+            while not valid_direction and best_path is not None and try_counter < max_trials:
                 # this point is never reached
                 if best_path == 'invalid end':
                     print ("invalid end")
@@ -322,8 +323,8 @@ class GridMap():
         Returns:n,s,e or w or None
         """
         parameters = dict()
-        parameters["dispenser_pos"] = subtask._closest_dispenser_position
-        return self.get_move_direction(subtask._path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
+        parameters["dispenser_pos"] = subtask.closest_dispenser_position
+        return self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
 
     def get_meeting_point_move(self, subtask):
         """get the move direction for the go_to_dispenser behaviour
@@ -333,8 +334,8 @@ class GridMap():
         Returns:n,s,e or w or None
         """
         parameters = dict()
-        parameters["final_pos"] = subtask._meeting_point
-        return self.get_move_direction(subtask._path_to_meeting_point_id, self._get_path_to_meeting_point, parameters)
+        parameters["final_pos"] = subtask.meeting_point
+        return self.get_move_direction(subtask.path_to_meeting_point_id, self._get_path_to_meeting_point, parameters)
 
     def get_direction_to_close_dispenser(self, dispenser_type):
         """check if the agent is one step away from a dispenser of a certain type
@@ -376,6 +377,13 @@ class GridMap():
                 return direction
 
         return False
+
+    def is_at_point(self, relative_coord):
+        """ Check if agent is arrived in the point with coordinates=relative_coord"""
+        if np.array_equal(self._agent_position, relative_coord):
+            return True
+        else:
+            return False
 
     ### PRIVATE METHODS ###
     def _get_value_of_cell(self, coord, maze=None):
@@ -728,10 +736,12 @@ class GridMap():
             start=np.array(agent_pos),
             end=np.array(dispenser_pos_in_matrix)
         )
-        path.pop() # path.techno() because we are in Berlin
+        if path is not None and not isinstance(path, str):
+            path.pop() # path.techno() because we are in Berlin
         # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
         return path
 
+    # TODO ERROR!!!! THE DISPENSER ASSIGNED IS NOT OF THE CORRECT TYPE OR NOT THE CORRECT POSITION!
     def get_closest_dispenser_position(self, required_type):
         """get the closest dispenser position (in relative coord) of the required_type
         Args:
@@ -763,7 +773,9 @@ class GridMap():
         else:
             final_pos = parameters['final_pos']
         agent_pos = [self._from_relative_to_matrix(self._agent_position)]
-        final_pos_in_matrix = self.list_from_matrix_to_relative(final_pos)
+        final_pos_in_matrix = self.list_from_relative_to_matrix(final_pos)
+        # TODO THIS FINAL POS SHOULD ALREADY BE A LIST, CHANGE IT WHEN IT IS
+        # TODO put in the list of the agent pos the attached blocks
         path = self.path_planner.astar(
             maze=self._path_planner_representation,
             origin=self.origin,

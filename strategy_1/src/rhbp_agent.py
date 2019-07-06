@@ -17,6 +17,7 @@ from agent_commons.behaviour_classes.exploration_behaviour import ExplorationBeh
 from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDispenserBehaviour
 from agent_commons.behaviour_classes.dispense_behaviour import DispenseBehaviour
 from agent_commons.behaviour_classes.attach_behaviour import AttachBehaviour
+from agent_commons.behaviour_classes.reach_meeting_point_behaviour import ReachMeetingPointBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
@@ -68,7 +69,7 @@ class RhbpAgent(object):
 
         # representation of tasks
         self.tasks = {}
-        self.assigned_tasks = []  # personal for the agent. the task at index 0 is the task the agent is currently executing
+        self.assigned_subtasks = []  # personal for the agent. the task at index 0 is the task the agent is currently executing
 
         # subscribe to MAPC bridge core simulation topics
         rospy.Subscriber(self._agent_topic_prefix + "request_action", RequestAction, self._action_request_callback)
@@ -115,15 +116,18 @@ class RhbpAgent(object):
                             bid_value = -1
                         else:
                             # first calculate the already assigned sub tasks
+                            # TODO improve the way of summing the bid value of already assigned tasks
                             bid_value = 0
-                            for t in self.assigned_tasks:
+                            for t in self.assigned_subtasks:
                                 bid_value += self.calculate_subtask_bid(t)[0]
 
                             # add the current
-                            current = self.calculate_subtask_bid(sub)
-                            bid_value += current[0]
-                            distance_to_dispenser = current[1]
-                            closest_dispenser_position = self.local_map._from_relative_to_matrix(current[2])
+                            current_bid, distance_to_dispenser, closest_dispenser_position = self.calculate_subtask_bid(sub)
+                            bid_value += current_bid
+                            if closest_dispenser_position is not None:
+                                closest_dispenser_position = self.local_map._from_relative_to_matrix(closest_dispenser_position)
+                            else:
+                                closest_dispenser_position = [-1, -1]
 
                         self._communication.send_bid(self._pub_auction, subtask_id, bid_value, distance_to_dispenser, closest_dispenser_position[0], closest_dispenser_position[1])
 
@@ -145,12 +149,15 @@ class RhbpAgent(object):
                                 "------ DONE: " + str(self.bids[subtask_id]["done"]))
                             sub.assigned_agent = self.bids[subtask_id]["done"]
                             sub.distance_to_dispenser = self.bids[subtask_id]["distance_to_dispenser"]
-                            sub.closest_dispenser_position = self.bids[subtask_id]["closest_dispenser_position"]
+                            # TODO CHANGE THE COORDINATES OF THE DISPENSERS TO RELATIVE TO SOME FIXED POINT e.g.
+                            # relative to the top_left of the goal area
+                            # sub.closest_dispenser_position = self.bids[subtask_id]["closest_dispenser_position"]
+                            sub.closest_dispenser_position = self.local_map._from_matrix_to_relative(self.bids[subtask_id]["closest_dispenser_position"])
 
                             assigned.append(sub.assigned_agent)
 
                             if sub.assigned_agent == self._agent_name:
-                                self.assigned_tasks.append(sub)
+                                self.assigned_subtasks.append(sub)
                         else:
                             rospy.loginfo(
                                 "------ INVALID: " + str(self.bids[subtask_id]["done"]) + " with bid value: " + str(
@@ -167,8 +174,8 @@ class RhbpAgent(object):
 
                     # delete all the subtasks assigned
                     for sub in task_object.sub_tasks:
-                        if sub in self.assigned_tasks:
-                            self.assigned_tasks.remove(sub)
+                        if sub in self.assigned_subtasks:
+                            self.assigned_subtasks.remove(sub)
 
         for task_name in to_delete_tasks:
             del self.tasks[task_name]
@@ -246,7 +253,7 @@ class RhbpAgent(object):
             int: bid value of agent for the task
         """
         bid_value = -1
-        pos = -1
+        pos = None
         min_dist = -1
 
         if self.local_map.goal_area_fully_discovered:
@@ -257,6 +264,7 @@ class RhbpAgent(object):
 
             if pos is not None:  # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
+
                 meeting_point = self.local_map.goal_top_left  # TODO change the meeting point with communication
                 end = np.array([meeting_point[0], meeting_point[1]], dtype=int)
                 distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
@@ -264,10 +272,11 @@ class RhbpAgent(object):
                 bid_value = distance + min_dist  # distance from agent to dispenser + dispenser to goal
 
                 # TODO save task parameters dinamically every step to set sensors
-                subtask.set_closest_dispenser_position(pos)
-                subtask.set_meeting_point(meeting_point)
+                subtask.closest_dispenser_position = pos
+                subtask.meeting_point = end
                 path_id = self.local_map._save_path(path)
-                subtask.set_path_to_dispenser_id(path_id)
+                subtask.path_to_dispenser_id = path_id
+
 
         return bid_value, min_dist, pos
 
@@ -322,6 +331,7 @@ class RhbpAgent(object):
         :param msg: the message
         :type msg: RequestAction
         """
+
 
         # calculate deadline for the current simulation step
         start_time = rospy.get_rostime()
@@ -454,7 +464,7 @@ class RhbpAgent(object):
                         else:
                             self.bids[task_id]["done"] = key
                             self.bids[task_id]["distance_to_dispenser"] = distance_to_dispenser
-                            self.bids[task_id]["closest_dispenser_position"] = [closest_dispenser_position_x,closest_dispenser_position_y]
+                            self.bids[task_id]["closest_dispenser_position"] = [closest_dispenser_position_y, closest_dispenser_position_x]
                             break
 
     def _initialize_behaviour_model(self):
@@ -533,7 +543,7 @@ class RhbpAgent(object):
         self.behaviours.append(attach)
 
         # Preconditions
-        # assigned to a tas
+        # assigned to a task
         attach.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
                                           activator=BooleanActivator(desiredValue=False)))
         # is not yet attached to a block of type of the current task
@@ -546,11 +556,37 @@ class RhbpAgent(object):
         # effect of attach is that agent is attached to a block
         attach.add_effect(Effect(self.sensor_manager.attached_to_block.name, indicator=True))
 
-        attach_goal = GoalBase("attaching", permanent=True,
-                                 conditions=[
-                                     Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
-                                 planner_prefix=self._agent_name)
-        self.goals.append(attach_goal)
+        # attach_goal = GoalBase("attaching", permanent=True,
+        #                          conditions=[
+        #                              Condition(self.sensor_manager.attached_to_block, GreedyActivator())],
+        #                          planner_prefix=self._agent_name)
+        # self.goals.append(attach_goal)
+
+        #### Reach meeting point ###
+        reach_meeting_point = ReachMeetingPointBehaviour(name="reach_meeting_point", agent_name=self._agent_name, rhbp_agent=self)
+        self.behaviours.append(reach_meeting_point)
+        # assigned to a task
+        reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                          activator=BooleanActivator(desiredValue=False)))
+        # have the block attached
+        reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block,
+                                          activator=BooleanActivator(desiredValue=True)))
+
+        # canNOT submit, because the shape is not complete or the agent is not in charge of submitting
+        reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.can_submit,
+                                                       activator=BooleanActivator(desiredValue=False)))
+        # has not reached the meeting point already
+        reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.at_meeting_point,
+                                                       activator=BooleanActivator(desiredValue=False)))
+
+        # effect is moving till the agent reaches the meeting point
+        reach_meeting_point.add_effect(Effect(self.sensor_manager.at_meeting_point.name, indicator=True))
+
+        at_meeting_point_goal = GoalBase("reach_meeting_point_goal", permanent=True,
+                               conditions=[
+                                   Condition(self.sensor_manager.at_meeting_point, GreedyActivator())],
+                               planner_prefix=self._agent_name)
+        self.goals.append(at_meeting_point_goal)
         """
         HERE
         move_to_dispenser = MoveToDispenserBehaviour()

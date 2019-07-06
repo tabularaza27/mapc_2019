@@ -32,10 +32,10 @@ class MoveToDispenserBehaviour(BehaviourBase):
         self.rhbp_agent = rhbp_agent
 
     def do_step(self):
-        active_subtask = self.rhbp_agent.assigned_tasks[0]  # type: SubTask
+        active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
         path_id, direction = self.rhbp_agent.local_map.get_go_to_dispenser_move(active_subtask)
+        active_subtask.path_to_dispenser_id = path_id
         if direction is not None:
-            active_subtask.set_path_to_dispenser_id(path_id)
             params = [KeyValue(key="direction", value=direction)]
             rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
             action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,

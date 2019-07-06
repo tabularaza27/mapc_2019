@@ -32,7 +32,7 @@ class DispenseBehaviour(BehaviourBase):
         self.rhbp_agent = rhbp_agent
 
     def do_step(self):
-        active_subtask = self.rhbp_agent.assigned_tasks[0]  # type: SubTask
+        active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
         direction = self.rhbp_agent.local_map.get_direction_to_close_dispenser(active_subtask.type)
 
         if direction is not None and direction is not False:

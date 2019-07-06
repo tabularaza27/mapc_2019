@@ -32,12 +32,13 @@ class ReachMeetingPointBehaviour(BehaviourBase):
         self.rhbp_agent = rhbp_agent
 
     def do_step(self):
-        active_subtask = self.rhbp_agent.assigned_tasks[0]  # type: SubTask
+        active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
         #temp generation of the meeting point
         task_meeting_point = self.rhbp_agent.local_map.goal_top_left
-        active_subtask._meeting_point = [task_meeting_point + active_subtask.position] # this is really the block position not the agent position
+        active_subtask.meeting_point = [task_meeting_point + active_subtask.position] # this is really the block position not the agent position
 
-        direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask)
+        path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask)
+        active_subtask.path_to_meeting_point_id = path_id
 
         if direction is not None and direction is not False:
             params = [KeyValue(key="direction", value=direction)]
