@@ -9,7 +9,7 @@ from generic_action_behaviour import action_generic_simple
 from agent_commons.agent_utils import get_bridge_topic_prefix
 
 
-class MoveToDispenserBehaviour(BehaviourBase):
+class DispenseBehaviour(BehaviourBase):
 
     def __init__(self, name, agent_name, rhbp_agent, **kwargs):
         """Move to Dispenser
@@ -20,7 +20,7 @@ class MoveToDispenserBehaviour(BehaviourBase):
             rhbp_agent (RhbpAgent): the agent owner of the behaviour
             **kwargs: more optional parameter that are passed to the base class
         """
-        super(MoveToDispenserBehaviour, self).__init__(name=name, requires_execution_steps=True,
+        super(DispenseBehaviour, self).__init__(name=name, requires_execution_steps=True,
                                                        planner_prefix=agent_name,
                                                        **kwargs)
 
@@ -33,10 +33,10 @@ class MoveToDispenserBehaviour(BehaviourBase):
 
     def do_step(self):
         active_subtask = self.rhbp_agent.assigned_tasks[0]  # type: SubTask
-        path_id, direction = self.rhbp_agent.local_map.get_go_to_dispenser_move(active_subtask)
-        if direction is not None:
-            active_subtask.set_path_to_dispenser_id(path_id)
+        direction = self.rhbp_agent.local_map.get_direction_to_close_dispenser(active_subtask.type)
+
+        if direction is not None and direction is not False:
             params = [KeyValue(key="direction", value=direction)]
             rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
-            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
+            action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_REQUEST,
                                   params=params)

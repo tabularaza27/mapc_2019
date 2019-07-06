@@ -1,8 +1,12 @@
 from __future__ import division  # force floating point division when using plain /
 
+import rospy
+
 from behaviour_components.sensors import TopicSensor
 
 from behaviour_components.sensors import Sensor
+
+import global_variables
 
 
 class SensorManager():
@@ -58,16 +62,21 @@ class SensorManager():
         # check if agent is not assigned to at least one subtask
         self.assigned_task_list_empty.update(current_subtask is None)
 
-        # check if agent has already the block attached
         if current_subtask is not None:
+            # check if agent has already the block attached
             tmp_attached = False
+            block_type = current_subtask.type
             for block in attached_blocks:
                 if block._subtask_id == current_subtask.sub_task_name:
                     tmp_attached = True
             self.attached_to_block.update(tmp_attached)
 
-        # check if the agent is 1 step away from the dispenser
-        self.at_the_dispenser.update(self.rhbp_agent.local_map.is_close_to_dispenser(current_subtask.type))
+            # check if the agent is 1 step away from the dispenser
+            if self.rhbp_agent.local_map.get_direction_to_close_dispenser(block_type) in global_variables.string_directions:
+                rospy.loginfo('AT THE DISPENSER = TRUE!!!!!!!')
+                self.at_the_dispenser.update(True)
+            else:
+                self.at_the_dispenser.update(False)
 
-        # check if the agent is 1 step away from a block of the type of the current task
-        self.next_to_block.update(self.rhbp_agent.local_map.is_close_to_block(current_subtask.type))
+            # check if the agent is 1 step away from a block of the type of the current task
+            self.next_to_block.update(self.rhbp_agent.local_map.get_direction_to_close_block(current_subtask.type) != False)

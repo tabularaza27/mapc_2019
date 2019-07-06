@@ -6,7 +6,7 @@ import pickle
 
 
 def load_map(map_name, origin):
-    my_map = GridMap('Agent1', 5)
+    my_map = GridMap('agentA1', 5)
     my_map._representation = np.loadtxt(open("test_maps/{}.txt".format(map_name), "rb"), delimiter=",")
     my_map._path_planner_representation = my_map._representation
     my_map.origin = np.array(origin, dtype=np.int)
@@ -32,11 +32,12 @@ def task_dictionary1():
     dispensers: b0 : 1, b1 : 2, b2 : 3
     """
     task = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/dumped_class.dat", "rb")
-    task_dictionary1 = pickle.load(task)
+    complete_task = pickle.load(task)
+    task_dictionary1 = complete_task['task0']
 
     return task_dictionary1
 
-def test_meeting_point_1(map1, task_dictionary1, task_dictionary2, task_dictionary3):
+def test_meeting_point_1(map1, task_dictionary1):
     """Cases:
             1: 2 agents
             2: 3 agents, Agent1 and Agent 2 are the closest
@@ -65,8 +66,16 @@ def test_meeting_point_1(map1, task_dictionary1, task_dictionary2, task_dictiona
 
     desired_meeting_point = np.array([[15, 24]])
     actual_meeting_point = map1.get_common_meeting_point(task_dictionary1)
+    #
+    # np.testing.assert_array_equal(actual_meeting_point, desired_meeting_point)
 
-    np.testing.assert_array_equal(actual_meeting_point, desired_meeting_point)
+    #desired_figure = [[0,0], [-1,0], [-1,-1]]
+    #actual_figure = map1.create_figure(task_dictionary1)
+    #agent = map1.agent_position_in_figure(actual_figure, [15, 24])
+    agent = map1.meeting_position(task_dictionary1, actual_meeting_point)
+    print (agent)
+
+    #np.testing.assert_array_equal(actual_figure, desired_figure)
 
 
 

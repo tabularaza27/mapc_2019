@@ -102,7 +102,7 @@ class GridPathPlanner():
                             > (len(maze[len(maze) - 1]) - 1) or element[1] < 0:
                         break
                     # Make sure walkable terrain
-                    elif not GridPathPlanner.is_walkable(maze[element[0], element[1]]):
+                    elif not GridPathPlanner.is_walkable(maze[element[0]][element[1]]):
                         break
                 else:
                     # Create new node
@@ -274,7 +274,7 @@ class GridPathPlanner():
             return None
 
         # Check if path is not just the agent position
-        if path != -1:  # Map fully discovered
+        if path != -1 and path != 'invalid end':  # Map fully discovered
             length = len(path)
             if length > 1:
                 # Index of actual position in path
@@ -386,10 +386,10 @@ def main():
 
     # Simple maze
     maze = [[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
-            [-2, 2, 0, -2, 5, 0, 0, 0, 0, 0],
+            [-2, 0, 0, -2, 0, 0, 0, 0, 0, 0],
             [ 0, 0, 0, -2, 0, 0, 0, 0, 0, 0],
             [ 0, 0,-2,  0,-2,-2, 0, 0, 0, 0],
-            [ -3, 0, 0,  0, 0,-2, 0, 0, 0, 0],
+            [ 0, 0, 0,  0, 0,-2, 0, 0, 0, 0],
             [-2, 0, 0,  0, 0, 0, 0, 0,-2,-2],
             [ 0,-2, 0,  0, 0, 0, 0,-2, 0, 0],
             [ 0, 0, 0,  0,-2, 0,-2, 0,-2, 0],
@@ -399,16 +399,18 @@ def main():
 
     # Origin
     origin = [[0, 0]]
+    """
     # Single agent
     start_point = [[1, 1]]
     #end_point = [[6, 8]]
     end_point = start_point
-
     """
+
+
     # Agent + blocks (L shape)
     start_point = [[0, 0], [0, 1], [1, 1]]
     end_point = [[1, 5], [1, 4], [0, 4]]
-    """
+
 
     start = np.array(start_point, dtype=np.int)
     end = np.array(end_point, dtype=np.int)

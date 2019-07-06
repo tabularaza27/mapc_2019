@@ -1,5 +1,7 @@
 """ This module contains the class representing a single task """
 
+import numpy as np
+
 from sub_task import SubTask
 
 
@@ -75,22 +77,37 @@ class Task:
         sub_tasks_auctioned = [sub_task.assigned_agent for sub_task in self.sub_tasks]
         if None in sub_tasks_auctioned:
             return False
+        elif 'invalid' in sub_tasks_auctioned:
+            return False
         else:
             self.mark_task_auctioned()
             self.delegate_submit_behaviour()
             return True
 
     def delegate_submit_behaviour(self):
-        """delegates the submit behaviour of the task to the agent with the lowest id
+        """delegates the submit behaviour to the agent that is assigned to the block next to the origin in the task requirements
+        (red dot in the GUI of the simulation).
 
-        ToDo: This heuristic should be replaced by a more sophisticated approach later
+        Note:
+            * the block is next to the origin if abs(position.x) + abs(position(.y) == 1
+            * If there are several blocks next to the origin ( so far we never experienced that in the simulation ), the
+              agent with the lowest id assigned to one of these subtasks is going to do the submit behaviour
         """
-        # ToDo implement this in a cleaner way
-        sub_task_agents = [sub_task.assigned_agent for sub_task in self.sub_tasks]
-        submit_agent = min(sub_task_agents)
+        submit_agent_candidates = []
         for sub_task in self.sub_tasks:
-            if sub_task.assigned_agent == submit_agent:
-                sub_task.submit_behaviour = True
+            if abs(sub_task.position[0]) + abs(sub_task.position[1]) == 1:
+                submit_agent_candidates.append(sub_task)
+
+        if len(submit_agent_candidates) == 0:
+            raise ValueError, 'There is no block next to the origin of the task. Check calculations this should not ' \
+                              'be possible '
+        elif len(submit_agent_candidates) == 1:
+            submit_agent_candidates[0].submit_behaviour = True
+        else:
+            # if there are more than 2 blocks next to the origin of the task, select the agent to do the submit
+            # that has the lowest agent_id
+            index = np.argmin([sub_task.assigned_agent for sub_task in submit_agent_candidates])
+            submit_agent_candidates[index].submit_behaviour = True
 
     def mark_task_complete(self):
         self.complete = True
