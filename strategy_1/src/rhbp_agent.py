@@ -104,13 +104,13 @@ class RhbpAgent(object):
         """ Communicate the bids and assign the subtasks to the agents """
         count = 0
         for task_name, task_object in self.tasks.iteritems():
-            if len(task_object.sub_tasks) <= self.number_of_agents:
-                rospy.loginfo("-- Analyizing: " + task_name)
+            if len(task_object.sub_tasks) <= self.number_of_agents and not task_object.auctioned:
+                rospy.loginfo(self._agent_name + "| -- Analyizing: " + task_name)
                 # STEP 1: SEND ALL THE BIDS
                 for sub in task_object.sub_tasks:
                     if sub.assigned_agent == None:
                         subtask_id = sub.sub_task_name
-                        rospy.loginfo("---- Bid needed for " + subtask_id)
+                        rospy.loginfo(self._agent_name + "| ---- Bid needed for " + subtask_id)
 
                         # first calculate the already assigned sub tasks
                         # TODO improve the way of summing the bid value of already assigned tasks
@@ -138,14 +138,14 @@ class RhbpAgent(object):
                     for key, value in self.bids.items():
                         if task_object.name in key:
                             count += len(self.bids[key])
-                            rospy.loginfo("IL BESTIA DI DIO: " + key + " - count: " + str(count))
+                            #rospy.loginfo("IL BESTIA DI DIO: " + key + " - count: " + str(count))
                     
                     time.sleep(0.05)
                     current_time += 0.05
                 
                 # STEP 3: MANAGE ASSIGN
 
-                rospy.loginfo("ORO BENON")
+                #rospy.loginfo("ORO BENON")
                 ass = self.assign_subtasks(self.bids,task_object.name)
 
                 # STEP 4: ACTUALLY ASSIGN
@@ -157,41 +157,46 @@ class RhbpAgent(object):
                             sub.distance_to_dispenser = ass[ass_subtask_name]["bid"].distance_to_dispenser
                             sub.closest_dispenser_position = ass[ass_subtask_name]["bid"].closest_dispenser_position
 
-                            rospy.loginfo("---- ALLL DONE: " + sub.sub_task_name)
-                            rospy.loginfo("-------- AGENT: " + sub.assigned_agent)
-                            rospy.loginfo("-------- DTD: " + str(sub.distance_to_dispenser))
-                            rospy.loginfo("-------- CDP: " + str(sub.closest_dispenser_position))
+                            self.assigned_subtasks.append(sub)
+
+                            rospy.loginfo(self._agent_name + "| ---- ALLL DONE: " + sub.sub_task_name)
+                            rospy.loginfo(self._agent_name + "| -------- AGENT: " + sub.assigned_agent)
+                            rospy.loginfo(self._agent_name + "| -------- DTD: " + str(sub.distance_to_dispenser))
+                            rospy.loginfo(self._agent_name + "| -------- CDP: " + str(sub.closest_dispenser_position))
+
+                            del self.bids[sub.sub_task_name] # free memory
 
     def assign_subtasks(self,bids,current_task_name):
-        current_task_name += "_" # to avoid amibiguities in the if
+        current_task_name += "_" # to avoid amibiguities in the if (1)
         ret = {}
+        assigned = []
 
         for subtask_name, value in bids.items():
-            if current_task_name in subtask_name:
+            if current_task_name in subtask_name: # (1)
                 ordered_subtask = OrderedDict(sorted(self.bids[subtask_name].items(), key=lambda x: (x[1].bid_value, x[0])))
-                rospy.loginfo("IL PAPA CORRE DIETRO LA LEPRE: " + subtask_name)
+                #rospy.loginfo(self._agent_name + "| IL PAPA CORRE DIETRO LA LEPRE: " + subtask_name)
 
-                invalid = True
-
+                invalid = True                
                 for agent_name, bid in ordered_subtask.items():
-                    rospy.loginfo("----- " + agent_name + ": " + str(bid.bid_value))
-                    if bid.bid_value != -1:
+                    rospy.loginfo(self._agent_name + "|----- " + agent_name + ": " + str(bid.bid_value))
+
+                    if bid.bid_value != -1 and agent_name not in assigned:
                         invalid = False
                         ret[subtask_name] = {}
                         ret[subtask_name]["assigned_agent"] = agent_name
                         ret[subtask_name]["bid"] = bid
+                        assigned.append(agent_name)
 
-                        '''
-                        rospy.loginfo("-------- ASSIGNED: " + ret[subtask_name]["assigned_agent"])
+                        
+                        '''rospy.loginfo("-------- ASSIGNED: " + ret[subtask_name]["assigned_agent"])
                         rospy.loginfo("-------- BID: " + str(ret[subtask_name]["bid"].bid_value))
                         rospy.loginfo("-------- DTD: " + str(ret[subtask_name]["bid"].distance_to_dispenser))
-                        rospy.loginfo("-------- CDP: " + str(ret[subtask_name]["bid"].closest_dispenser_position))
-                        '''
+                        rospy.loginfo("-------- CDP: " + str(ret[subtask_name]["bid"].closest_dispenser_position))'''
 
                         break
                     
-                if invalid: # if i find one invalid subtask then all the task can't be assigned, so return empty set
-                    rospy.loginfo("*** AT THE LEAST ONE GUY INVALID")
+                if invalid: # if i find even just one invalid subtask then all the task can't be assigned, so return empty set
+                    rospy.loginfo(self._agent_name + "| *** AT THE LEAST ONE GUY INVALID")
                     ret = {}
                     return ret
 
@@ -446,9 +451,8 @@ class RhbpAgent(object):
         if task_id not in self.bids:
             self.bids[task_id] = OrderedDict()
 
-        if msg_from not in self.bids[task_id]:
-            bid = Bid(task_bid_value,distance_to_dispenser,[closest_dispenser_position_y,closest_dispenser_position_x])
-            self.bids[task_id][msg_from] = bid
+        bid = Bid(task_bid_value,distance_to_dispenser,[closest_dispenser_position_y,closest_dispenser_position_x])
+        self.bids[task_id][msg_from] = bid
 
 
     def _initialize_behaviour_model(self):
