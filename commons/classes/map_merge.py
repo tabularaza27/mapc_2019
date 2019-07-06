@@ -4,59 +4,66 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import rospy
 
-def mapMerge(m1, m2, lm1, lm2, origin):
+def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
+    """
+    merges the external_map and my_map and returns the merged_map + the updated origin
+    Args:
+        external_map(np.array): the map of the other agent
+        my_map(np.array): my map
+        external_land_mark(np.array): the top left of the goal area of external_map
+        my_land_mark(np.array): the top left of the goal area of my_map
+        my_origin(np.array): origin coordinate in matrix my_map
+
+    Returns:
+        tuple:(merged_map, new_origin)
+    """
     # TODO PASS AND USE TOP_LEFT COORDINATES
     # TODO copy only the unknown in m2
     #goal_landmark = 3
 
     # Check rows and columns added in the merge map
-    top_rows_to_add = int(lm1[0] - lm2[0])
+    top_rows_to_add = int(external_land_mark[0] - my_land_mark[0])
     if top_rows_to_add < 0:
         top_rows_to_add = 0
 
-    bottom_rows_to_add = int(m1.shape[0] - lm1[0]) - int(m2.shape[0] - lm2[0])
+    bottom_rows_to_add = int(external_map.shape[0] - external_land_mark[0]) - int(my_map.shape[0] - my_land_mark[0])
     if bottom_rows_to_add < 0:
         bottom_rows_to_add = 0
     
-    left_columns_to_add = int(lm1[1] - lm2[1])
+    left_columns_to_add = int(external_land_mark[1] - my_land_mark[1])
     if left_columns_to_add < 0:
         left_columns_to_add = 0
 
-    right_columns_to_add = int(m1.shape[1] - lm1[1]) - int(m2.shape[1] - lm2[1])
+    right_columns_to_add = int(external_map.shape[1] - external_land_mark[1]) - int(my_map.shape[1] - my_land_mark[1])
     if right_columns_to_add < 0:
         right_columns_to_add = 0
 
-    # Comment out
-    # print(str(top_rows_to_add))
-    # print(str(bottom_rows_to_add))
-    # print(str(left_columns_to_add))
-    # print(str(right_columns_to_add))
 
     # Fill extra columns and rows with -1
-    fill_top = np.full((top_rows_to_add, m2.shape[1]), -1)
-    m2 = np.r_[fill_top, m2]
+    fill_top = np.full((top_rows_to_add, my_map.shape[1]), -1)
+    my_map = np.r_[fill_top, my_map]
 
-    fill_bot = np.full((bottom_rows_to_add, m2.shape[1]), -1)
-    m2 = np.r_[m2, fill_bot]
+    fill_bot = np.full((bottom_rows_to_add, my_map.shape[1]), -1)
+    my_map = np.r_[my_map, fill_bot]
 
-    fill_left = np.full((m2.shape[0], left_columns_to_add), -1)
-    m2 = np.c_[fill_left, m2]
+    fill_left = np.full((my_map.shape[0], left_columns_to_add), -1)
+    my_map = np.c_[fill_left, my_map]
 
-    fill_right = np.full((m2.shape[0], right_columns_to_add), -1)
-    m2 = np.c_[m2, fill_right]
+    fill_right = np.full((my_map.shape[0], right_columns_to_add), -1)
+    my_map = np.c_[my_map, fill_right]
 
     #showSingleMap(m2)
 
     # get new coordinates of landmarks of m2
-    lm2 = (lm2[0]+top_rows_to_add, lm2[1]+left_columns_to_add)
+    my_land_mark = (my_land_mark[0] + top_rows_to_add, my_land_mark[1] + left_columns_to_add)
 
     # get new coordinates of origin
-    new_origin = [origin[0] + top_rows_to_add, origin[1] + left_columns_to_add]
+    new_origin = np.array([my_origin[0] + top_rows_to_add, my_origin[1] + left_columns_to_add])
 
     # print(lm1)
     # print(lm2)
-    shift = sum_tuple(lm2, lm1, minus=True)
-    # print("shift: " + str(shift))
+    overlap_shift = my_land_mark - external_land_mark
+    # print("overlap_shift: " + str(overlap_shift))
     # print ("SHAAAAPEEEEEEEEEEEEE M1!!!!!!!!!!!!!!!!!!!!!" + str(m1.shape))
     # print ("SHAAAAPEEEEEEEEEEEEE M2!!!!!!!!!!!!!!!!!!!!!" + str(m2.shape))
 
@@ -64,56 +71,17 @@ def mapMerge(m1, m2, lm1, lm2, origin):
     #showSingleMap(m2)
     #showSingleMap(m1)
 
-    for i in range(m1.shape[0]):
-        for j in range(m1.shape[1]):
-            index_m2 = (i, j)
-            #print (index_m2)
-            cell_value = m1[index_m2]
+    for i in range(external_map.shape[0]):
+        for j in range(external_map.shape[1]):
+            cell_value = external_map[i, j]
 
-            index_m2 = sum_tuple(index_m2, shift)
-            if m2[index_m2] == -1:
-                m2[index_m2] = cell_value
+            if my_map[i+overlap_shift[0], j+overlap_shift[1]] == -1:
+                my_map[i+overlap_shift[0], j+overlap_shift[1]] = cell_value
 
-    return m2, new_origin
+    return my_map, new_origin
     #showSingleMap(m2)
 
-    """
-    if (top_rows_to_add == 0):
-        i_m2_zeroval = int(pos_landmark_m2[0] - pos_landmark_m1[0])
-    else: # added on the top
-        i_m2_zeroval = int(pos_landmark_m2[0] - pos_landmark_m1[0]) + n_rows
 
-    if (left_columns_to_add == 0):
-        j_m2_zeroval = int(pos_landmark_m2[1] - pos_landmark_m1[1])
-    else: # added on the left
-        j_m2_zeroval = int(pos_landmark_m2[1] - pos_landmark_m1[1]) + n_columns
-    
-    
-
-    i_m2 = i_m2_zeroval
-
-    print(i_m2_zeroval)
-    print(j_m2_zeroval)
-    
-    for i in range(0,m1.shape[0]):
-        j_m2 = j_m2_zeroval
-
-        for j in range(0,len(m1[0])):
-            m2[i_m2,j_m2] = m1[i,j]
-            j_m2 += 1
-        
-        i_m2 += 1
-
-    print("---")
-    print(str(m2))
-    return m2
-    """
-
-def sum_tuple(a,b,minus=False):
-    if not minus:
-        return a[0] + b[0], a[1] + b[1]
-    else:
-        return a[0] - b[0], a[1] - b[1]
 
 def showSingleMap(map):
     cmap = 'cool'#mpl.colors.ListedColormap(['grey','white', 'black', 'blue', 'red'])

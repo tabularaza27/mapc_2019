@@ -119,7 +119,7 @@ def live_plotting(no_agents=None):
                     continue
 
 
-    ani = animation.FuncAnimation(fig, animate, interval=2000)
+    ani = animation.FuncAnimation(fig, animate, interval=500)
     plt.show()
 
 if __name__ == '__main__':

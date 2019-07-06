@@ -3,7 +3,7 @@
 import rospy
 import uuid
 from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, \
-    general_communication
+general_communication, subtask_update_communication
 
 
 class Communication:
@@ -70,6 +70,23 @@ class Communication:
         pub_agents = rospy.Publisher(topic_name, message_type, queue_size=10)
 
         return pub_agents
+    
+    def start_subtask_update(self, callback_function, topic_name="subtask_update", message_type=subtask_update_communication):
+        """
+        Initialization of the task update communication subscriber and publisher
+        Args:
+            callback_function (function): function to handle the message received in the topic
+            topic_name (string): name of the topic
+            message_type (ros_msg): type of the message accepted by the topic
+
+        Returns: 
+            publisher: the publisher handle for the topic
+        """
+
+        rospy.Subscriber(topic_name, message_type, callback_function)
+        pub_agents = rospy.Publisher(topic_name, message_type, queue_size=10)
+
+        return pub_agents
 
     def send_map(self, publisher, map, lm_y, lm_x, rows, columns):
         """
@@ -114,7 +131,7 @@ class Communication:
             publisher.publish(msg)
             self.lock()
 
-    def send_bid(self, publisher, task_id, bid_value):
+    def send_bid(self, publisher, task_id, bid_value, distance_to_dispenser, closest_dispenser_position_y, closest_dispenser_position_x):
         """
         Send the bid through the auction communication topic
         Args:
@@ -130,6 +147,27 @@ class Communication:
         msg.agent_id = self._agent_name
         msg.task_id = task_id
         msg.bid_value = bid_value
+        msg.distance_to_dispenser = distance_to_dispenser
+        msg.closest_dispenser_position_x = closest_dispenser_position_x
+        msg.closest_dispenser_position_y = closest_dispenser_position_y
+        publisher.publish(msg)
+
+    def send_subtask_update(self, publisher, command, task_id):
+        """
+        Send the bid through the auction communication topic
+        Args:
+            publisher (publisher): publisher handle returned from the function start_agents
+            task_id (string): id of the task subject of the bid
+            bid_value (int): value of the bid
+
+        Returns: void
+        """
+
+        msg = subtask_update_communication()
+        msg.message_id = self.generateID()
+        msg.agent_id = self._agent_name
+        msg.command = command
+        msg.task_id = task_id
         publisher.publish(msg)
 
     def lock(self):

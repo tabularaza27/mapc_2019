@@ -114,3 +114,14 @@ class Task:
 
     def mark_task_auctioned(self):
         self.auctioned = True
+
+    def is_submittable(self):
+        """check if a task is submittable: only one subtask is not done"""
+        sub_tasks_not_complete_count = 0
+        for sub in self.sub_tasks:
+            if not sub.complete:
+                sub_tasks_not_complete_count += 1
+        if sub_tasks_not_complete_count > 1:
+            return False
+        else:
+            return True

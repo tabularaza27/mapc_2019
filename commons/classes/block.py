@@ -5,6 +5,8 @@ class Block:
     def __init__(self, block_type, position, subtask_id=None):
         """Representation of a block attached to an agent
 
+        ToDo: _subtask_id is never used so far, should be implemented in the future when updateing attached blocks
+
         Args:
             block_type(str): string b1,b2,...
             position(np.array): coordinates [y,x] relative to the agent position
@@ -20,6 +22,7 @@ class Block:
         Args:
             rotate_direction(str): cw or ccw
         """
+
         switch_sign = False
         if self._position[0] == 0:
             if rotate_direction == 'ccw':
@@ -63,6 +66,6 @@ class Block:
 
         """
         if change_sign:
-            return np.array(-position[1], -position[0])
+            return np.array([-position[1], -position[0]])
         else:
-            return np.array(position[1], position[0])
+            return np.array([position[1], position[0]])

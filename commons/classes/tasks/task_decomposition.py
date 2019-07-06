@@ -19,6 +19,8 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
     Returns:
         updated list of tasks containing all tasks
     """
+    # ToDo Remove Task if they are not in the perception anymore
+
     new_tasks = current_tasks
 
     # add new tasks
