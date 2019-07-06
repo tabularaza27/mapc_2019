@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import time
 import numpy as np
+import random
 from collections import OrderedDict
 import rospy
 
@@ -46,7 +47,7 @@ class RhbpAgent(object):
 
         rospy.init_node('agent_node', anonymous=True, log_level=log_level)
 
-        self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
+        self._agent_name = rospy.get_param('~agent_name', 'agentA2')  # default for debugging 'agentA1'
 
         self._agent_topic_prefix = get_bridge_topic_prefix(agent_name=self._agent_name)
 
@@ -216,7 +217,7 @@ class RhbpAgent(object):
                 rospy.logdebug(maps)
                 map_received = np.copy(maps)
                 # landmark received
-                lm_received = (map_lm_y, map_lm_x)
+                lm_received = np.array([map_lm_y, map_lm_x])
                 # own landmark
                 lm_own = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
                 # do map merge
@@ -290,7 +291,8 @@ class RhbpAgent(object):
                 bid_value = distance + min_dist  # distance from agent to dispenser + dispenser to goal
 
                 # TODO save task parameters dinamically every step to set sensors
-                subtask.closest_dispenser_position = pos
+                # TODO uncomment this line and pass the position in coordinates relative to the top left of the goal area
+                #subtask.closest_dispenser_position = pos
                 subtask.meeting_point = end
                 path_id = self.local_map._save_path(path)
                 subtask.path_to_dispenser_id = path_id
@@ -375,8 +377,10 @@ class RhbpAgent(object):
         self.task_auctioning()
 
         # map merging
-        self.map_merge()
+
         self.local_map.update_map(perception=self.perception_provider)
+        self.map_merge()
+        self.local_map._update_path_planner_representation(perception=self.perception_provider)
         self.local_map._update_distances()
 
         # send the map if perceive the goal
@@ -611,6 +615,7 @@ class RhbpAgent(object):
 
 if __name__ == '__main__':
     try:
+        random.seed(30)
         rhbp_agent = RhbpAgent()
 
         rospy.spin()
