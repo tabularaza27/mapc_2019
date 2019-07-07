@@ -122,7 +122,7 @@ class SensorManager():
             # check if agent connected the block successfully
             connect_successful = current_subtask.is_connected
             if connect_successful:
-                rospy.loginfo('CAN SUBMIT!')
+                rospy.loginfo('CONNECT SUCCESSFUL')
                 self.connect_successful.update(True)
             else:
                 self.connect_successful.update(False)
@@ -138,7 +138,7 @@ class SensorManager():
             # check if the agent is in the goal area
             at_goal_area = self.rhbp_agent.local_map.is_at_goal_area
             if at_goal_area:
-                rospy.loginfo('SHAPE COMPLETE')
+                rospy.loginfo('AT GOAL AREA')
                 self.at_goal_area.update(True)
             else:
                 self.at_goal_area.update(False)

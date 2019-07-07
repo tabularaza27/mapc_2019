@@ -198,8 +198,8 @@ class GridMap():
         for block in perception.blocks:
             block_rel_to_agent = np.array([block.pos.y, block.pos.x])
             attached = False
-            for attached_blocks in self._attached_blocks:
-                if np.array_equal(attached_blocks._position, block_rel_to_agent):
+            for attached_block in self._attached_blocks:
+                if np.array_equal(attached_block._position, block_rel_to_agent):
                     attached = True
             if not attached:
                 pos = self._from_relative_to_matrix(block_rel_to_agent, self._agent_position)
@@ -853,7 +853,7 @@ class GridMap():
         return path
 
     def get_agent_pos_and_blocks_array(self):
-        list = [self._agent_position]
+        list = [np.copy(self._agent_position)]
         for block in self._attached_blocks:
             # transform the coordinates of the in coordinates relative to the agent
             block_in_relative = self._from_relative_to_matrix(block._position, self._agent_position)

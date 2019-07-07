@@ -419,6 +419,7 @@ class RhbpAgent(object):
         if self.perception_provider.agent.last_action == "detach" and self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the blcok in the direction of the detach
             self.local_map._attached_blocks = []
+            self.assigned_subtasks.pop()
 
 
         # if last action was submit, detach the blocks
@@ -623,8 +624,9 @@ class RhbpAgent(object):
         connect.add_precondition(Condition(sensor=self.sensor_manager.at_meeting_point,
                                                        activator=BooleanActivator(desiredValue=True)))
 
-        # effect is moving till the agent reaches the meeting point
+        # effect is creating the shape
         connect.add_effect(Effect(self.sensor_manager.connect_successful.name, indicator=True))
+        connect.add_effect(Effect(self.sensor_manager.shape_complete.name, indicator=True))
         """
         connect_successful_goal = GoalBase("connect_successful_goal", permanent=True,
                                          conditions=[
@@ -681,6 +683,9 @@ class RhbpAgent(object):
         # assigned to a task
         submit.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
                                                    activator=BooleanActivator(desiredValue=False)))
+        # have the block attached
+        connect.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block,
+                                           activator=BooleanActivator(desiredValue=True)))
         # connect action was succesful
         submit.add_precondition(
             Condition(sensor=self.sensor_manager.shape_complete, activator=BooleanActivator(desiredValue=True)))
@@ -689,7 +694,7 @@ class RhbpAgent(object):
         submit.add_precondition(
             Condition(sensor=self.sensor_manager.can_submit, activator=BooleanActivator(desiredValue=True)))
 
-        # is the agent assigned to submit
+        # is the agent at the goal area
         submit.add_precondition(
             Condition(sensor=self.sensor_manager.at_goal_area, activator=BooleanActivator(desiredValue=True)))
 
