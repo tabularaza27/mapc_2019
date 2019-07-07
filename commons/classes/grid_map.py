@@ -352,7 +352,7 @@ class GridMap():
         """get the move direction for the reach_goal_area behaviour"""
         return self.get_move_direction(path_id, self._get_path_to_reach_goal_area)
 
-    def get_meeting_point_move(self, subtask):
+    def get_meeting_point_move(self, subtask, meeting_position):
         """get the move direction for the go_to_meeting_point behaviour
         Args:
             subtask(): the subtask needed to recompute the path to the closest dispenser if needed
@@ -360,7 +360,9 @@ class GridMap():
         Returns:n,s,e or w or None
         """
         parameters = dict()
-        parameters["final_pos"] = subtask.meeting_point
+        # TODO change it back
+        parameters["final_pos"] = meeting_position
+        #parameters["final_pos"] = subtask.meeting_point
         return self.get_move_direction(subtask.path_to_meeting_point_id, self._get_path_to_meeting_point, parameters)
 
     def get_direction_to_close_dispenser(self, dispenser_type):
@@ -859,7 +861,7 @@ class GridMap():
                                             recomputed common meeting point
         """
 
-        agent_position = []
+        agent_end_position = []
         task_figure = self.create_figure(task)
         all_agent_position = self.agent_position_in_figure(task_figure, common_meeting_point)
 
@@ -868,14 +870,14 @@ class GridMap():
             if sub.assigned_agent == self.agent_name:
                 index = abs(sub.position[0]) + abs(sub.position[1])
                 if sub.submit_behaviour:  # True
-                    agent_position = all_agent_position[:index+1]
+                    agent_end_position = all_agent_position[:index+1]
                 else:
-                    agent_position = all_agent_position[index:index+2]
+                    agent_end_position = all_agent_position[index:index+2]
 
         # Transform to relative
-        agent_position = self._from_matrix_to_relative(self.goal_top_left)
+        agent_end_position = self._from_matrix_to_relative(agent_end_position)
 
-        return agent_position
+        return agent_end_position
 
     def create_figure(self, task):
         # TODO subposition has to be swaped (x,y) wrong format to us

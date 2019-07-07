@@ -51,7 +51,7 @@ class ReachMeetingPointBehaviour(BehaviourBase):
         if common_meeting_point is not None:
             task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point )
             active_subtask.meeting_point = task_meeting_point
-            path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask)
+            path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask, task_meeting_point)
             active_subtask.path_to_meeting_point_id = path_id
 
         if direction is not None and direction is not False:
