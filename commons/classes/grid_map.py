@@ -59,7 +59,7 @@ class GridMap():
         # agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         # self._representation[agent_in_matrix[1]][agent_in_matrix[0]] = -4
         self._distances = np.array([])  # the matrix of all the distances from the agent
-
+        self.is_at_goal_area = False
         # objects in map
         self._dispensers = []
         self._goal_areas = []
@@ -120,8 +120,6 @@ class GridMap():
             self._attached_blocks.append(attached_block)
             rospy.loginfo('{} attached to block of type {} in direction {}'.format(self.agent_name, block_type, attach_direction))
 
-        # TODO if last action == 'connect' and result = 'success' then save the attached block
-
         agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         self._representation[agent_in_matrix[0], agent_in_matrix[1]] = global_variables.AGENT_CELL
         # update empty cells (all cells that are in vision range, get overwritten below if they are occupied)
@@ -141,6 +139,10 @@ class GridMap():
 
         # update goal cells
         for goal in perception.goals:
+            # save if the agent is in the goal area
+            self.is_at_goal_area = True
+            if goal.pos.x == 0 and goal.pos.y == 0:
+                self.is_at_goal_area = True
             # to activate the goal area discovering if the agent spawn in the middle of it
             if self.STEP == 0:
                 self._start_discovering_goal_area = True
@@ -346,6 +348,10 @@ class GridMap():
         parameters["dispenser_pos"] = self._from_relative_to_matrix(subtask.closest_dispenser_position, self.goal_top_left)
         return self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
 
+    def get_go_to_goal_area_move(self, path_id):
+        """get the move direction for the reach_goal_area behaviour"""
+        return self.get_move_direction(path_id, self._get_path_to_reach_goal_area)
+
     def get_meeting_point_move(self, subtask):
         """get the move direction for the go_to_meeting_point behaviour
         Args:
@@ -398,12 +404,13 @@ class GridMap():
 
         return False
 
-    def is_at_point(self, relative_coord):
+    def is_at_point(self, position):
         """ Check if agent is arrived in the point with coordinates=relative_coord"""
-        if np.array_equal(self._agent_position, relative_coord):
+        if np.array_equal(self.get_agent_pos_and_blocks_array(), position):
             return True
         else:
             return False
+
 
     ### PRIVATE METHODS ###
     def _get_value_of_cell(self, coord, maze=None):
@@ -1084,6 +1091,24 @@ class GridMap():
 
     def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
         return
+
+
+    def _get_path_to_reach_goal_area(self, parameters):
+        """get path from agent to the goal area"""
+        # TODO add the blocks to the agent
+        #agent_pos = self.get_agent_pos_and_blocks_array()
+        #agent_pos = self.list_from_relative_to_matrix(agent_pos)
+        agent_pos = self.list_from_relative_to_matrix(np.array([self._agent_position]))
+        goal_area_matrix = self.list_from_matrix_to_relative(np.array([self.goal_top_left]))
+        # TODO THIS FINAL POS SHOULD ALREADY BE A LIST, CHANGE IT WHEN IT IS
+        # TODO put in the list of the agent pos the attached blocks
+        path = self.path_planner.astar(
+            maze=self._path_planner_representation,
+            origin=self.origin,
+            start=agent_pos,
+            end=goal_area_matrix
+        )
+        return path
 
 
     def get_agent_pos_and_blocks_array(self):

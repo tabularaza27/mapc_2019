@@ -19,6 +19,10 @@ from agent_commons.behaviour_classes.move_to_dispenser_behaviour import MoveToDi
 from agent_commons.behaviour_classes.dispense_behaviour import DispenseBehaviour
 from agent_commons.behaviour_classes.attach_behaviour import AttachBehaviour
 from agent_commons.behaviour_classes.reach_meeting_point_behaviour import ReachMeetingPointBehaviour
+from agent_commons.behaviour_classes.connect_behaviour import ConnectBehaviour
+from agent_commons.behaviour_classes.detach_behaviour import DetachBehaviour
+from agent_commons.behaviour_classes.reach_goal_area_behaviour import ReachGoalAreaBehaviour
+from agent_commons.behaviour_classes.submit_behaviour import SubmitBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
@@ -49,7 +53,7 @@ class RhbpAgent(object):
 
         rospy.init_node('agent_node', anonymous=True, log_level=log_level)
 
-        self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
+        self._agent_name = rospy.get_param('~agent_name', 'agentA2')  # default for debugging 'agentA1'
 
         self._agent_topic_prefix = get_bridge_topic_prefix(agent_name=self._agent_name)
 
@@ -371,6 +375,8 @@ class RhbpAgent(object):
 
         self.perception_provider.update_perception(request_action_msg=msg)
 
+
+
         ### breakpoint after 30 steps to debug task subdivision every 30 steps
         if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
             rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
@@ -396,10 +402,31 @@ class RhbpAgent(object):
         if self.local_map.goal_area_fully_discovered:
             self.publish_map()
 
+        # if last action was `connect` and result = 'success' then save the attached block
+        if self.perception_provider.agent.last_action == "connect" and self.perception_provider.agent.last_action_result == "success":
+            # TODO ADD THE BLOCK CONNECTED
+            other_agent_name = self.perception_provider.agent.last_action_params[0]
+            self.assigned_subtasks[0].is_connected = True
+            # make the other guy's subtask completed and connected
+            task_name = self.assigned_subtasks[0].parent_task_name
+            current_task = self.tasks.get(task_name, None)
+            a = 1
+            for sub_task in current_task.sub_tasks:
+                # TODO check which is the completed sub_task
+                if sub_task.assigned_agent == other_agent_name:
+                    sub_task.is_connected = True
+                    sub_task.complete = True
+
+        # if last action was detach, detach the blocks
+        if self.perception_provider.agent.last_action == "detach" and self.perception_provider.agent.last_action_result == "success":
+            # TODO detach only the blcok in the direction of the detach
+            self.local_map._attached_blocks = []
 
 
-        # test of task update
-        #self._communication.send_subtask_update(self._pub_subtask_update,"done","task0_-1_0")
+        # if last action was submit, detach the blocks
+        if self.perception_provider.agent.last_action == "submit" and self.perception_provider.agent.last_action_result == "success":
+            # TODO detach only the blcok in the direction of the task
+            self.local_map._attached_blocks = []
 
         '''
         # send personal message test
@@ -571,8 +598,8 @@ class RhbpAgent(object):
         reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block,
                                           activator=BooleanActivator(desiredValue=True)))
 
-        # canNOT submit, because the shape is not complete or the agent is not in charge of submitting
-        reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.can_submit,
+        # the shape is not complete
+        reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.shape_complete,
                                                        activator=BooleanActivator(desiredValue=False)))
         # has not reached the meeting point already
         reach_meeting_point.add_precondition(Condition(sensor=self.sensor_manager.at_meeting_point,
@@ -581,11 +608,109 @@ class RhbpAgent(object):
         # effect is moving till the agent reaches the meeting point
         reach_meeting_point.add_effect(Effect(self.sensor_manager.at_meeting_point.name, indicator=True))
 
-        at_meeting_point_goal = GoalBase("reach_meeting_point_goal", permanent=True,
-                               conditions=[
-                                   Condition(self.sensor_manager.at_meeting_point, GreedyActivator())],
-                               planner_prefix=self._agent_name)
-        self.goals.append(at_meeting_point_goal)
+        # at_meeting_point_goal = GoalBase("reach_meeting_point_goal", permanent=True,
+        #                        conditions=[
+        #                            Condition(self.sensor_manager.at_meeting_point, GreedyActivator())],
+        #                        planner_prefix=self._agent_name)
+        # self.goals.append(at_meeting_point_goal)
+
+        #### Connect ###
+        connect = ConnectBehaviour(name="connect", agent_name=self._agent_name,
+                                                         rhbp_agent=self)
+        self.behaviours.append(connect)
+        # assigned to a task
+        connect.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                                       activator=BooleanActivator(desiredValue=False)))
+        # have the block attached
+        connect.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block,
+                                                       activator=BooleanActivator(desiredValue=True)))
+
+        # connection not completed
+        connect.add_precondition(Condition(sensor=self.sensor_manager.connect_successful,
+                                                       activator=BooleanActivator(desiredValue=False)))
+        # has reached the meeting point
+        connect.add_precondition(Condition(sensor=self.sensor_manager.at_meeting_point,
+                                                       activator=BooleanActivator(desiredValue=True)))
+
+        # effect is moving till the agent reaches the meeting point
+        connect.add_effect(Effect(self.sensor_manager.connect_successful.name, indicator=True))
+        """
+        connect_successful_goal = GoalBase("connect_successful_goal", permanent=True,
+                                         conditions=[
+                                             Condition(self.sensor_manager.connect_successful, GreedyActivator())],
+                                         planner_prefix=self._agent_name)
+        self.goals.append(connect_successful_goal)
+        """
+        #### Detach to Block ###
+        detach = DetachBehaviour(name="detach", agent_name=self._agent_name, rhbp_agent=self)
+        self.behaviours.append(detach)
+
+        # Preconditions
+        # assigned to a task
+        detach.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                          activator=BooleanActivator(desiredValue=False)))
+        # connect action was succesful
+        detach.add_precondition(
+            Condition(sensor=self.sensor_manager.connect_successful, activator=BooleanActivator(desiredValue=True)))
+        # is NOT the agent assigned to submit
+        detach.add_precondition(
+            Condition(sensor=self.sensor_manager.can_submit, activator=BooleanActivator(desiredValue=False)))
+
+        # effect of attach is that agent is attached to a block
+        detach.add_effect(Effect(self.sensor_manager.points.name, indicator=True))
+
+        #### Go to goal area ###
+        go_to_goal_area = ReachGoalAreaBehaviour(name="go_to_goal_area", agent_name=self._agent_name, rhbp_agent=self)
+        self.behaviours.append(go_to_goal_area)
+
+        # Preconditions
+        # assigned to a task
+        go_to_goal_area.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                          activator=BooleanActivator(desiredValue=False)))
+        # connect action was succesful
+        go_to_goal_area.add_precondition(
+            Condition(sensor=self.sensor_manager.shape_complete, activator=BooleanActivator(desiredValue=True)))
+
+        # is the agent assigned to submit
+        go_to_goal_area.add_precondition(
+            Condition(sensor=self.sensor_manager.can_submit, activator=BooleanActivator(desiredValue=True)))
+
+        # is the agent assigned to submit
+        go_to_goal_area.add_precondition(
+            Condition(sensor=self.sensor_manager.at_goal_area, activator=BooleanActivator(desiredValue=False)))
+
+        # effect of attach is that agent is attached to a block
+        go_to_goal_area.add_effect(Effect(self.sensor_manager.at_goal_area.name, indicator=True))
+
+        #### Submit ###
+        submit = SubmitBehaviour(name="submit", agent_name=self._agent_name, rhbp_agent=self)
+        self.behaviours.append(submit)
+
+        # Preconditions
+        # assigned to a task
+        submit.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                                   activator=BooleanActivator(desiredValue=False)))
+        # connect action was succesful
+        submit.add_precondition(
+            Condition(sensor=self.sensor_manager.shape_complete, activator=BooleanActivator(desiredValue=True)))
+
+        # is the agent assigned to submit
+        submit.add_precondition(
+            Condition(sensor=self.sensor_manager.can_submit, activator=BooleanActivator(desiredValue=True)))
+
+        # is the agent assigned to submit
+        submit.add_precondition(
+            Condition(sensor=self.sensor_manager.at_goal_area, activator=BooleanActivator(desiredValue=True)))
+
+        # effect of attach is that agent is attached to a block
+        submit.add_effect(Effect(self.sensor_manager.points.name, indicator=True))
+
+
+        make_points_goal = GoalBase("make_points_goal", permanent=True,
+                                   conditions=[
+                                       Condition(self.sensor_manager.points, GreedyActivator())],
+                                   planner_prefix=self._agent_name)
+        self.goals.append(make_points_goal)
         """
         HERE
         move_to_dispenser = MoveToDispenserBehaviour()

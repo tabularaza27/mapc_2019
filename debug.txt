@@ -1,0 +1,484 @@
+[INFO] [1562457896.159142]: agentA1 started
+[INFO] [1562457896.175351]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457896.176370]: agentA1| -- Analyizing: task0
+[INFO] [1562457896.178093]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457896.179465]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457896.280599]: agentA1|----- agentA1: -1
+[INFO] [1562457896.281305]: agentA1|----- agentA2: -1
+[INFO] [1562457896.281926]: agentA1| *** AT THE LEAST ONE GUY INVALID
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457896.617198]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457896.618427]: agentA1| -- Analyizing: task0
+[INFO] [1562457896.619677]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457896.620913]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457896.672499]: agentA1|----- agentA1: -1
+[INFO] [1562457896.673388]: agentA1|----- agentA2: -1
+[INFO] [1562457896.674085]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457896.674792]: old origin:(5, 5)
+[INFO] [1562457896.675529]: new origin:(5, 5)
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457897.016360]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457897.017134]: agentA1| -- Analyizing: task0
+[INFO] [1562457897.017890]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457897.018663]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457897.069660]: agentA1|----- agentA1: -1
+[INFO] [1562457897.070755]: agentA1|----- agentA2: -1
+[INFO] [1562457897.071695]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457897.072697]: old origin:(5, 5)
+[INFO] [1562457897.073616]: new origin:(5, 5)
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457897.434680]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457897.437077]: agentA1| -- Analyizing: task0
+[INFO] [1562457897.439201]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457897.441916]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457897.494826]: agentA1|----- agentA1: -1
+[INFO] [1562457897.497402]: agentA1|----- agentA2: -1
+[INFO] [1562457897.499604]: agentA1| *** AT THE LEAST ONE GUY INVALID
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457897.843263]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457897.846190]: agentA1| -- Analyizing: task0
+[INFO] [1562457897.849437]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457897.852260]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457897.904676]: agentA1|----- agentA1: -1
+[INFO] [1562457897.906930]: agentA1|----- agentA2: -1
+[INFO] [1562457897.909130]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457897.911461]: old origin:(5, 5)
+[INFO] [1562457897.914323]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457898.247682]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457898.250585]: agentA1| -- Analyizing: task0
+[INFO] [1562457898.253436]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457898.256198]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457898.308814]: agentA1|----- agentA1: -1
+[INFO] [1562457898.311074]: agentA1|----- agentA2: -1
+[INFO] [1562457898.313118]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457898.315675]: old origin:[6 5]
+[INFO] [1562457898.318150]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457898.638015]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457898.638866]: agentA1| -- Analyizing: task0
+[INFO] [1562457898.639481]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457898.640405]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457898.691696]: agentA1|----- agentA1: -1
+[INFO] [1562457898.693910]: agentA1|----- agentA2: -1
+[INFO] [1562457898.696667]: agentA1| *** AT THE LEAST ONE GUY INVALID
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457899.041077]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457899.042160]: agentA1| -- Analyizing: task0
+[INFO] [1562457899.043091]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457899.043949]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457899.095686]: agentA1|----- agentA1: -1
+[INFO] [1562457899.098057]: agentA1|----- agentA2: -1
+[INFO] [1562457899.100593]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457899.103017]: old origin:[6 5]
+[INFO] [1562457899.105957]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457899.462084]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457899.465194]: agentA1| -- Analyizing: task0
+[INFO] [1562457899.468529]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457899.471671]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457899.524959]: agentA1|----- agentA1: -1
+[INFO] [1562457899.526240]: agentA1|----- agentA2: -1
+[INFO] [1562457899.527203]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457899.528343]: old origin:[6 5]
+[INFO] [1562457899.529658]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457899.854029]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457899.854952]: agentA1| -- Analyizing: task0
+[INFO] [1562457899.855675]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457899.856503]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457899.907581]: agentA1|----- agentA1: -1
+[INFO] [1562457899.908868]: agentA1|----- agentA2: -1
+[INFO] [1562457899.909877]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457899.910981]: old origin:[6 5]
+[INFO] [1562457899.912013]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457900.256779]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457900.257751]: agentA1| -- Analyizing: task0
+[INFO] [1562457900.258442]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457900.259404]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457900.310518]: agentA1|----- agentA1: -1
+[INFO] [1562457900.311866]: agentA1|----- agentA2: -1
+[INFO] [1562457900.313043]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457900.314659]: old origin:[6 5]
+[INFO] [1562457900.316833]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457900.673162]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457900.675462]: agentA1| -- Analyizing: task0
+[INFO] [1562457900.677334]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457900.680268]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457900.733902]: agentA1|----- agentA1: -1
+[INFO] [1562457900.736620]: agentA1|----- agentA2: -1
+[INFO] [1562457900.738832]: agentA1| *** AT THE LEAST ONE GUY INVALID
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457901.078955]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457901.081333]: agentA1| -- Analyizing: task0
+[INFO] [1562457901.083629]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457901.087285]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457901.140644]: agentA1|----- agentA1: -1
+[INFO] [1562457901.143107]: agentA1|----- agentA2: -1
+[INFO] [1562457901.145231]: agentA1| *** AT THE LEAST ONE GUY INVALID
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457901.484362]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457901.487544]: agentA1| -- Analyizing: task0
+[INFO] [1562457901.490701]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457901.493031]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457901.545598]: agentA1|----- agentA1: -1
+[INFO] [1562457901.546837]: agentA1|----- agentA2: -1
+[INFO] [1562457901.548001]: agentA1| *** AT THE LEAST ONE GUY INVALID
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457901.888732]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457901.891390]: agentA1| -- Analyizing: task0
+[INFO] [1562457901.893427]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457901.896111]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457901.948544]: agentA1|----- agentA1: -1
+[INFO] [1562457901.950799]: agentA1|----- agentA2: -1
+[INFO] [1562457901.952898]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457901.955420]: old origin:[6 5]
+[INFO] [1562457901.958105]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457902.291513]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457902.294732]: agentA1| -- Analyizing: task0
+[INFO] [1562457902.297053]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457902.308900]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457902.364070]: agentA1|----- agentA2: -1
+[INFO] [1562457902.364795]: agentA1|----- agentA1: 17
+[INFO] [1562457902.365410]: agentA1|----- agentA2: -1
+[INFO] [1562457902.366131]: agentA1|----- agentA1: 11
+[INFO] [1562457902.366845]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457902.367620]: old origin:[6 5]
+[INFO] [1562457902.368423]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457902.682552]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457902.683886]: agentA1| -- Analyizing: task0
+[INFO] [1562457902.685179]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457902.691567]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457902.744552]: agentA1|----- agentA2: -1
+[INFO] [1562457902.745335]: agentA1|----- agentA1: 18
+[INFO] [1562457902.746069]: agentA1|----- agentA2: -1
+[INFO] [1562457902.746848]: agentA1|----- agentA1: 10
+[INFO] [1562457902.747828]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457902.748641]: old origin:[6 5]
+[INFO] [1562457902.749334]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457903.095694]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457903.098298]: agentA1| -- Analyizing: task0
+[INFO] [1562457903.100964]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457903.117976]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457903.178928]: agentA1|----- agentA2: -1
+[INFO] [1562457903.179606]: agentA1|----- agentA1: 19
+[INFO] [1562457903.180221]: agentA1|----- agentA2: -1
+[INFO] [1562457903.180769]: agentA1|----- agentA1: 9
+[INFO] [1562457903.181295]: agentA1| *** AT THE LEAST ONE GUY INVALID
+[INFO] [1562457903.181969]: old origin:[6 5]
+[INFO] [1562457903.182601]: new origin:[6 5]
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457903.499644]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457903.502613]: agentA1| -- Analyizing: task0
+[INFO] [1562457903.505763]: agentA1| ---- Bid needed for task0_-1_0
+[INFO] [1562457903.528553]: agentA1| ---- Bid needed for task0_-2_0
+[INFO] [1562457903.584632]: agentA1|----- agentA2: -1
+[INFO] [1562457903.586855]: agentA1|----- agentA1: 20
+[INFO] [1562457903.588960]: agentA1|----- agentA2: 7
+[INFO] [1562457903.591453]: agentA1| ---- ALLL DONE: task0_-1_0
+[INFO] [1562457903.593673]: agentA1| -------- AGENT: agentA2
+[INFO] [1562457903.595907]: agentA1| -------- DTD: -1
+[INFO] [1562457903.598167]: agentA1| -------- CDP: [2 5]
+[INFO] [1562457903.600479]: agentA1| ---- ALLL DONE: task0_-2_0
+[INFO] [1562457903.602520]: agentA1| -------- AGENT: agentA1
+[INFO] [1562457903.604746]: agentA1| -------- DTD: 12
+[INFO] [1562457903.606844]: agentA1| -------- CDP: [ 1 -6]
+[INFO] [1562457903.609208]: old origin:[6 5]
+[INFO] [1562457903.611377]: new origin:[6 5]
+[INFO] [1562457903.627125]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457903.927877]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457903.930032]: old origin:[6 5]
+[INFO] [1562457903.931346]: new origin:[6 5]
+[INFO] [1562457903.940607]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457904.329969]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457904.342917]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457904.744985]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457904.757211]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457905.126590]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457905.133863]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457905.527184]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457905.534132]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457905.939456]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457905.961373]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457906.342598]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457906.363260]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457906.740634]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457906.747426]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457907.142296]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457907.148501]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457907.549300]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457907.556575]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457907.959174]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457907.981846]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457908.357156]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457908.363505]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457908.769970]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457908.793137]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457909.175222]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457909.199903]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457909.568368]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457909.575731]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457909.978771]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457910.000650]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457910.374373]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457910.376154]: old origin:[6 5]
+[INFO] [1562457910.377938]: new origin:[6 6]
+[INFO] [1562457910.383726]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457910.779580]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457910.780621]: old origin:[6 6]
+[INFO] [1562457910.781342]: new origin:[6 7]
+[INFO] [1562457910.787251]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457911.182504]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457911.183742]: old origin:[6 7]
+[INFO] [1562457911.184443]: new origin:[6 8]
+[INFO] [1562457911.190480]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457911.595988]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457911.598966]: old origin:[6 8]
+[INFO] [1562457911.601435]: new origin:[6 9]
+[INFO] [1562457911.619532]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457911.994661]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457911.997857]: old origin:[6 9]
+[INFO] [1562457912.000213]: new origin:[ 6 10]
+[INFO] [1562457912.020507]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457912.398822]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457912.402118]: old origin:[ 6 10]
+[INFO] [1562457912.404757]: new origin:[ 6 11]
+[INFO] [1562457912.437549]: AT THE DISPENSER = TRUE!!!!!!!
+[INFO] [1562457912.438928]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457912.803484]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457912.825889]: AT THE DISPENSER = TRUE!!!!!!!
+[INFO] [1562457912.827631]: Block of Type b1 in Direction s
+[INFO] [1562457912.828841]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457913.206447]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457913.209339]: old origin:[ 6 11]
+[INFO] [1562457913.212355]: new origin:[ 6 12]
+[INFO] [1562457913.238304]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457913.601224]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457913.608016]: AT THE DISPENSER = TRUE!!!!!!!
+[INFO] [1562457913.608932]: Block of Type b1 in Direction s
+[INFO] [1562457913.609539]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457914.013014]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457914.035321]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457914.403301]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457914.410716]: AT THE DISPENSER = TRUE!!!!!!!
+[INFO] [1562457914.412096]: Block of Type b1 in Direction s
+[INFO] [1562457914.413591]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457914.809159]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457914.810271]: agentA1 attached to block of type b1 in direction s
+[INFO] [1562457914.817678]: AT THE DISPENSER = TRUE!!!!!!!
+[INFO] [1562457914.818493]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457915.207110]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457915.215447]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457915.632961]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457915.657090]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457916.057648]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457916.066422]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457916.419072]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457916.426257]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457916.834192]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457916.853335]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457917.238870]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457917.260646]: Reached meeting point!
+[INFO] [1562457917.261816]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
+[INFO] [1562457917.631844]: agentA1 updated tasks. New amount of tasks: 1
+[INFO] [1562457917.638526]: Reached meeting point!
+[INFO] [1562457917.639360]: CAN SUBMIT!
+[INFO] [1562457917.639954]: SHAPE COMPLETE
+[INFO] [1562457917.640542]: SHAPE COMPLETE
+
+ff: goal can be simplified to FALSE. No plan will solve it
+
