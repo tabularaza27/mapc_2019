@@ -42,8 +42,8 @@
 )
 (:action connect
 :parameters ()
-:precondition (and (not (assigned_task_list_empty)) (attached_to_block) (not (connect_successful)) (at_meeting_point))
-:effect (and (increase (costs) 1.0) (connect_successful))
+:precondition (and (not (assigned_task_list_empty)) (attached_to_block) (not (connect_successful)) (at_meeting_point) (attached_to_block))
+:effect (and (increase (costs) 1.0) (connect_successful) (shape_complete))
 )
 (:action detach
 :parameters ()

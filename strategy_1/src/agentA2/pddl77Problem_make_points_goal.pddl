@@ -1,8 +1,10 @@
 (define (problem problem-agentA2)
 	(:domain agentA2)
 	(:init 
-		(at_the_dispenser)
-		(next_to_block)
+		(attached_to_block)
+		(shape_complete)
+		(at_meeting_point)
+		(connect_successful)
 		(can_submit)
 		(at_goal_area)
 		( = (points) 0.000000 )

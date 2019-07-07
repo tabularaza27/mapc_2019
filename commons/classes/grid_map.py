@@ -829,7 +829,8 @@ class GridMap():
         # end = np.array([dispenser_position[second_agent]])
         # Calculate a path from first (closest agent) dispenser to second (second closest agent) dispenser
         path = self.path_planner.astar( \
-            maze=self._path_planner_representation, \
+            #maze=self._path_planner_representation, \
+            maze=self._representation, \
             origin=self.origin, \
             start=np.array([dispenser_position[first_agent]]), \
             end=np.array([dispenser_position[second_agent]]))
@@ -929,7 +930,7 @@ class GridMap():
         max_pairs = 10  # Agents + blocks
         free_figure_basic = figure_rel[:]
         #walkable = False
-        mp_shift = 1
+        mp_shift_times = 1
         mp_shift_values = np.array([[0, 0], [-1, 0], [0, 1], [1, 0], [0, -1]])  # same, up, right, down, left
         agent_shift_values = [[-1, 0], [0, 1], [1, 0], [0, -1]]  # up, right, down, left
 
@@ -953,7 +954,7 @@ class GridMap():
         # Figure composition
         # Submitting agent and blocks have fixed position
         while True:
-            mp_shift_values = mp_shift_values*mp_shift  #if there is no position around meeting point, shift
+            mp_shift_values = mp_shift_values*mp_shift_times  #if there is no position around meeting point, shift
             for mp_shift in mp_shift_values:
                 # Submitting agent position
                 agent_submit_pos = common_mp_matrix + mp_shift  # submitting agent is in common meeting point
@@ -978,17 +979,50 @@ class GridMap():
                                 if (free_figure_shifted[j-1] == free_figure_shifted[j-2]).all() or (free_figure_shifted[j-1] == free_figure_shifted[j]).all():
                                     continue
                                 else:
-                                    # Check if figure composition is blocked with an element of the map
-                                    for element in free_figure_shifted:
-                                        if GridPathPlanner.is_walkable(self._get_value_of_cell(element, self._path_planner_representation)):
-                                            continue
-                                        else:
-                                            break
-                                    # Figure composition found
-                                    return free_figure_shifted
+                                    break
 
-            else:
-                print("TODO")
+                    # Check if figure composition is blocked with an element of the map
+                    # TODO improvement of how we checked if it is occupied the figure composition location
+                    # for element in free_figure_shifted:
+                    #     if GridPathPlanner.is_walkable(self._get_value_of_cell(element, self._path_planner_representation)):
+                    #         continue
+                    #     else:
+                    #         break
+                    if self.free_spot_for_meeting(free_figure_shifted):
+                        # Figure composition found
+                        return free_figure_shifted
+                    # else, I shift the common meeting point
+
+            # Increase the shifts values of common meeting point by 1
+            mp_shift_times += 1
+
+    # TODO not needed, I can use is_walkable only with _representation
+    def free_spot_for_meeting(self, composition, maze=None):
+        """Right now this function is as is_walkable but ignore agents and blocks, so it is a
+        temporal fix for a problem with the end position of figure composition
+
+        Args:
+            composition:
+            maze:
+
+        Returns:
+
+        """
+
+        if maze is None:
+            map_representation = self._path_planner_representation
+        else:
+            map_representation = self._representation
+
+        for cell in composition:
+            cell_value = self._get_value_of_cell(cell, map_representation)
+            if cell_value not in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL, global_variables.AGENT_CELL, \
+                        global_variables.ENTITY_CELL) and not \
+                    global_variables.BLOCK_CELL_STARTING_NUMBER <= cell_value and not \
+                    global_variables.DISPENSER_STARTING_NUMBER <= cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
+                return False
+
+        return True
 
     ### GO TO DISPENSER FUNCTIONS ###
     def _get_path_to_reach_dispenser(self, parameters):
@@ -1045,7 +1079,8 @@ class GridMap():
         Returns:
             distance_matrix (np.array): distances matrix from starting point
         """
-        dist_shape = self._path_planner_representation.shape
+        #dist_shape = self._path_planner_representation.shape
+        dist_shape = self._representation.shape
         distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
         #start_point_matrix = self._from_relative_to_matrix(start_point)
         # Dispenser are already in matrix notations
@@ -1059,7 +1094,8 @@ class GridMap():
                     new_pos = direction + pos
                     if self.coord_inside_matrix(new_pos, dist_shape):
                         if distances[new_pos[0], new_pos[1]] == -1:
-                            cell_value = self._path_planner_representation[new_pos[0], new_pos[1]]
+                            #cell_value = self._path_planner_representation[new_pos[0], new_pos[1]]
+                            cell_value = self._representation[new_pos[0], new_pos[1]]
                             if GridPathPlanner.is_walkable(cell_value):
                                 queue.append((new_pos, dist + 1))
         return distances
