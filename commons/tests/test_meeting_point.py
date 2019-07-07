@@ -9,19 +9,23 @@ def load_map(map_name, origin):
     my_map = GridMap('agentA1', 5)
     my_map._representation = np.loadtxt(open("test_maps/{}.txt".format(map_name), "rb"), delimiter=",")
     my_map._path_planner_representation = my_map._representation
+    my_map._representation = my_map._representation
     my_map.origin = np.array(origin, dtype=np.int)
     # Agent position equal to agent origin
     my_map._agent_position = my_map.origin
     my_map._set_goal_top_left()
     return my_map
 
+# move 7 8 agentA1
+# move 10 10 agentA2
+
 @pytest.fixture
 def map1():
-    return load_map('04_test_map', [10, 15])
+    return load_map('agentA1', [8, 7])
 
 @pytest.fixture
 def map2():
-    return load_map('04_test_map', [26, 20])
+    return load_map('04_test_map', [10, 10])
 
 
 @pytest.fixture
@@ -65,7 +69,8 @@ def test_meeting_point_1(map1, task_dictionary1):
     #     desired_meeting_point = np.array([[29, 24]])
 
     desired_meeting_point = np.array([[15, 24]])
-    actual_meeting_point = map1.get_common_meeting_point(task_dictionary1)
+    agent1, agent2, actual_meeting_point = map1.get_common_meeting_point(task_dictionary1)
+    #actual_meeting_point = map1.goal_top_left
     #
     # np.testing.assert_array_equal(actual_meeting_point, desired_meeting_point)
 

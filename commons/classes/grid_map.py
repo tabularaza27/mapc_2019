@@ -619,6 +619,7 @@ class GridMap():
 
         self.goal_top_left = self._from_matrix_to_relative(np.array([top, left]))
 
+
     def get_distance_and_path(self, a, b, return_path=False):
         """returns the distance and path from a point to another
 
@@ -781,13 +782,17 @@ class GridMap():
 
         for sub in task.sub_tasks:
             if sub.complete is not True:
-                # TODO check if the dispenser is actually where it should be.
-                # TODO dispenser has to be in relative to the top left goal area corner
-                dispenser_position.append(self._from_relative_to_matrix(sub._closest_dispenser_position, self.goal_top_left))
+                # dispenser is in relative to top_left corner
+                # transform from relative to top_left to relative to origin
+                dispenser_rel = self._from_relative_to_matrix(sub.closest_dispenser_position, self.goal_top_left)
+                # transform from relative to matrix
+                dispenser_position.append(self._from_relative_to_matrix(dispenser_rel))
                 # Check if dispensers are actually in its position
                 for dispenser in dispenser_position:
-                    if not GridPathPlanner.is_walkable(self._get_value_of_cell(dispenser)):
-                        return None
+                    cell_value = self._get_value_of_cell(dispenser)
+                    if not cell_value >= global_variables.DISPENSER_STARTING_NUMBER \
+                            and cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER :
+                        return None, None, None
                 # distance to dispensers
                 dist_to_dispenser.append(sub.distance_to_dispenser)
                 # name of agents assigned
@@ -796,24 +801,35 @@ class GridMap():
         # calculate distance matrix for each dispenser
         # TODO dont calculate twice distance d1-d2 and d2-d1 (how?)
         for i, disp_i in enumerate(dispenser_position):
+            # # transform to matrix
+            # disp_i = self._from_relative_to_matrix(disp_i)
             dist_matrix = self.distance_matrix(disp_i)
             # get the distance from each pair of dispenser
             for j, disp_j in enumerate(dispenser_position):
                 if i != j:
+                    # # transform to matrix
+                    # disp_j = self._from_relative_to_matrix(disp_j)
                     dist = self._get_value_of_cell(disp_j, dist_matrix) + dist_to_dispenser[i]
                     if dist < lowest_dist:
                         lowest_dist = dist  # lowest distance
                         first_agent = i    # first couple of closest agents
                         second_agent = j    # second couple of closest agents
-
+        # maze = self._path_planner_representation
+        # origin = self.origin
+        # start = np.array([dispenser_position[first_agent]])
+        # end = np.array([dispenser_position[second_agent]])
         # Calculate a path from first (closest agent) dispenser to second (second closest agent) dispenser
-        path = self.path_planner.astar(self._path_planner_representation, self.origin, \
-                                     np.array([dispenser_position[first_agent]]), \
-                                     np.array([dispenser_position[second_agent]]))
+        path = self.path_planner.astar( \
+            maze=self._path_planner_representation, \
+            origin=self.origin, \
+            start=np.array([dispenser_position[first_agent]]), \
+            end=np.array([dispenser_position[second_agent]]))
 
         # Meeting point = (distance between dispenser + distance agent2 to dispenser)/2 - distance agent1 to dispenser
         meet_index = int((lowest_dist + dist_to_dispenser[second_agent])/2 - dist_to_dispenser[first_agent])
         common_meeting_point = path[meet_index]     # in relative
+        # Conver to 1D array
+        common_meeting_point = common_meeting_point[0]
         # Transform into matrix notation
         common_meeting_point = self._from_relative_to_matrix(common_meeting_point)
 
@@ -847,14 +863,15 @@ class GridMap():
                 if sub.submit_behaviour:  # True
                     agent_position = all_agent_position[:index+1]
                 else:
-                    agent_position = all_agent_position[index:index+1]
+                    agent_position = all_agent_position[index:index+2]
 
         # Transform to relative
-        agent_position = self._from_matrix_to_relative(agent_position)
+        agent_position = self._from_matrix_to_relative(self.goal_top_left)
 
         return agent_position
 
     def create_figure(self, task):
+        # TODO subposition has to be swaped (x,y) wrong format to us
         """ Create a list of agents and relative positions of blocks (to the submitting agent) associated to a
         particular task
 
@@ -875,14 +892,16 @@ class GridMap():
         # TODO check if there are any subtasks? there should be if task exists tho
         for sub in task.sub_tasks:
             # Sum of abs value of each coordinate is equal to the distance to the agent position
-            index = abs(sub.position[0]) + abs(sub.position[1])
+            index = abs(sub.position[0]) + abs(sub.position[1])     #--> (x,y)
             # Save the agent names and blocks of figure in order
             if index == 1:  # submit agent
                 figure_tmp[index - 1] = sub.assigned_agent
-                figure_tmp[index] = sub.position
+                #figure_tmp[index] = sub.position
+                figure_tmp[index] = self.swap(sub.position)
             else:
                 figure_tmp[index] = sub.assigned_agent
-                figure_tmp[index + 1] = sub.position
+                #figure_tmp[index + 1] = sub.position
+                figure_tmp[index + 1] = self.swap(sub.position)
 
         # Eliminate extra elements of figure
         for i, element in enumerate(figure_tmp):
@@ -890,6 +909,12 @@ class GridMap():
                 figure.append(element)
 
         return figure
+
+    def swap(self, arr):
+        a = arr[0]
+        b = arr[1]
+
+        return [b,a]
 
     def agent_position_in_figure(self, figure_rel, common_meeting_point):
         max_pairs = 10  # Agents + blocks
@@ -1021,7 +1046,7 @@ class GridMap():
             pos, dist = queue.popleft()
             if distances[pos[0], pos[1]] == -1:  # to avoid infinite loop
                 distances[pos[0], pos[1]] = dist
-                for direction in global_variables.moving_directions:
+                for direction in global_variables.MOVING_DIRECTIONS:
                     new_pos = direction + pos
                     if self.coord_inside_matrix(new_pos, dist_shape):
                         if distances[new_pos[0], new_pos[1]] == -1:

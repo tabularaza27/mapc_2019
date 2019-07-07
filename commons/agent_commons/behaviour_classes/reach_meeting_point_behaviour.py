@@ -33,17 +33,26 @@ class ReachMeetingPointBehaviour(BehaviourBase):
         self.rhbp_agent = rhbp_agent
 
     def do_step(self):
+        direction = None
         active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
+        current_task = self.rhbp_agent.tasks[active_subtask.parent_task_name]
         #temp generation of the meeting point [[agent_position],[block_position]]
-        task_meeting_point = self.rhbp_agent.local_map.goal_top_left
-        if active_subtask.type == "b1":
-            active_subtask.meeting_point = np.array([task_meeting_point + np.array([0,-1]), task_meeting_point])
-        else:
-            active_subtask.meeting_point = \
-                np.array([task_meeting_point + np.array([0, 2]),
-                         task_meeting_point + np.array([0, 1])])
-        path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask)
-        active_subtask.path_to_meeting_point_id = path_id
+        # task_meeting_point = self.rhbp_agent.local_map.goal_top_left
+        # if active_subtask.type == "b1":
+        #     active_subtask.meeting_point = np.array([task_meeting_point + np.array([0,-1]), task_meeting_point])
+        # else:
+        #     active_subtask.meeting_point = \
+        #         np.array([task_meeting_point + np.array([0, 2]),
+        #                  task_meeting_point + np.array([0, 1])])
+
+        # common_meeting_point = self.rhbp_agent.local_map._from_relative_to_matrix(self.rhbp_agent.local_map.goal_top_left)
+
+        agent1, agent2, common_meeting_point = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
+        if common_meeting_point is not None:
+            task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point )
+            active_subtask.meeting_point = task_meeting_point
+            path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask)
+            active_subtask.path_to_meeting_point_id = path_id
 
         if direction is not None and direction is not False:
             params = [KeyValue(key="direction", value=direction)]
