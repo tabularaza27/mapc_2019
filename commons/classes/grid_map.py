@@ -79,6 +79,10 @@ class GridMap():
         self.path_planner = GridPathPlanner()
         self.paths = {}
 
+        # agents for connect
+        self.first_agent = None
+        self.second_agent = None
+
         #### DEBUG ####
         if global_variables.DEBUG_MODE:
             self.PLOT_MAP = True

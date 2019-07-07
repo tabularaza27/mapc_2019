@@ -429,6 +429,7 @@ class RhbpAgent(object):
             # TODO detach only the blcok in the direction of the task
             self.local_map._attached_blocks = []
 
+
         '''
         # send personal message test
         if self._agent_name == "agentA1":

@@ -47,7 +47,8 @@ class ReachMeetingPointBehaviour(BehaviourBase):
 
         # common_meeting_point = self.rhbp_agent.local_map._from_relative_to_matrix(self.rhbp_agent.local_map.goal_top_left)
 
-        agent1, agent2, common_meeting_point = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
+        self.rhbp_agent.first_agent, self.rhbp_agent.second_agent, common_meeting_point \
+            = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
         if common_meeting_point is not None:
             task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point )
             # #TEST

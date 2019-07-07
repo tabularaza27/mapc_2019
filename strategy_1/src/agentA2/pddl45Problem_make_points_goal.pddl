@@ -2,7 +2,9 @@
 	(:domain agentA2)
 	(:init 
 		(attached_to_block)
-		(at_the_dispenser)
+		(shape_complete)
+		(at_meeting_point)
+		(connect_successful)
 		(can_submit)
 		(at_goal_area)
 		( = (points) 0.000000 )
