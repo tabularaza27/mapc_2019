@@ -37,10 +37,16 @@ class SensorManager():
         self.can_submit = Sensor(name="can_submit", initial_value=False)
 
         # sensors for connect behaviour
+        self.connect_successful = Sensor(name="connect_successful", initial_value=False)
 
         # sensors for detach behaviour
 
         # sensors for submit behaviour
+        self.shape_complete = Sensor(name="shape_complete", initial_value=False)
+
+        self.at_goal_area = Sensor(name="at_goal_area", initial_value=False)
+
+        self.points = Sensor(name="points", initial_value=0)
 
     def update_sensors(self):
         """updates sensor values"""
@@ -97,6 +103,7 @@ class SensorManager():
             #    self.fully_attached.update(False)
             self.fully_attached.update(False)
             #check if agent is at the meeting point
+            # TODO REFACTOR THIS FUNCTION TO CHECK THE POSITION OF THE BLOCKS
             at_meeting_point = self.rhbp_agent.local_map.is_at_point(current_subtask.meeting_point)
             if at_meeting_point:
                 rospy.loginfo('Reached meeting point!')
@@ -104,10 +111,35 @@ class SensorManager():
             else:
                 self.at_meeting_point.update(False)
 
-            # check if agent can submit the task because it is assigned and all the connections has taken place
-            can_submit = current_subtask.submit_behaviour and current_task.is_submittable()
+            # check if agent can submit the task because it is assigned
+            can_submit = current_subtask.submit_behaviour
             if can_submit:
-                rospy.loginfo('Reached meeting point!')
+                rospy.loginfo('CAN SUBMIT!')
                 self.can_submit.update(True)
             else:
                 self.can_submit.update(False)
+
+            # check if agent connected the block successfully
+            connect_successful = current_subtask.is_connected
+            if connect_successful:
+                rospy.loginfo('CAN SUBMIT!')
+                self.connect_successful.update(True)
+            else:
+                self.connect_successful.update(False)
+
+            # check if the shape is complete
+            shape_complete = current_task.is_submittable()
+            if shape_complete:
+                rospy.loginfo('SHAPE COMPLETE')
+                self.shape_complete.update(True)
+            else:
+                self.shape_complete.update(False)
+
+            # check if the agent is in the goal area
+            at_goal_area = self.rhbp_agent.local_map.is_at_goal_area
+            if at_goal_area:
+                rospy.loginfo('SHAPE COMPLETE')
+                self.at_goal_area.update(True)
+            else:
+                self.at_goal_area.update(False)
+
