@@ -725,9 +725,9 @@ class GridMap():
             #print(point)
             #print(path)
             length = self._distances[interesting_points[i][0],interesting_points[i][1]]
-            if length == 0:
+            if length == 0: # to avoid division per zero
                 lenght = 100
-            new_score = unknown_counts[i]/(length)
+            new_score = unknown_counts[i]/length
             #print (length)
             update_new_highscore = False
             if new_score > best_score:
