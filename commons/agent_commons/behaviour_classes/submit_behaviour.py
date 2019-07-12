@@ -35,12 +35,12 @@ class SubmitBehaviour(BehaviourBase):
     def do_step(self):
         active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
         task_name = active_subtask.parent_task_name
-        params = [KeyValue(key="task", value=task_name)]
-        rospy.logdebug(self._agent_name + "::" + self._name + "submitting task " + str(task_name))
-        action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_SUBMIT,
-                                  params=params)
-        # direction = 'n'
-        # params = [KeyValue(key="direction", value=direction)]
-        # rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
-        # action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_MOVE,
-        #                       params=params)
+        # params = [KeyValue(key="task", value=task_name)]
+        # rospy.logdebug(self._agent_name + "::" + self._name + "submitting task " + str(task_name))
+        # action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_SUBMIT,
+        #                           params=params)
+        direction = 'cw'
+        params = [KeyValue(key="direction", value=direction)]
+        rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
+        action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_ROTATE,
+                              params=params)

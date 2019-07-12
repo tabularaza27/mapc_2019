@@ -376,7 +376,6 @@ class RhbpAgent(object):
         self.perception_provider.update_perception(request_action_msg=msg)
 
 
-
         ### breakpoint after 30 steps to debug task subdivision every 30 steps
         if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
             rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
@@ -502,6 +501,11 @@ class RhbpAgent(object):
         ### Exploration ##
         exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(exploration_move)
+
+        # assigned to a task
+        exploration_move.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                          activator=BooleanActivator(desiredValue=True)))
+
         exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
         exploration_move.add_effect(Effect(self.sensor_manager.assigned_task_list_empty.name, indicator=True))
 
