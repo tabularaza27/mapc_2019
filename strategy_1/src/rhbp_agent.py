@@ -440,10 +440,10 @@ class RhbpAgent(object):
         self.sensor_manager.update_sensors()
 
         # eliminate
-        # som = SOM_CLASS()
-        fileObject = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/dumped_class.dat", "wb")
-        pickle.dump(self.tasks, fileObject)
-        fileObject.close()
+        file_name = 'task_assignment_for_' + str(self.number_of_agents)
+        file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" + file_name, "wb")
+        pickle.dump(self.tasks, file_object)
+        file_object.close()
 
         self.start_rhbp_reasoning(start_time, deadline)
 
