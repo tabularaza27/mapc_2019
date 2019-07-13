@@ -50,7 +50,7 @@ class ReachMeetingPointBehaviour(BehaviourBase):
         self.rhbp_agent.first_agent, self.rhbp_agent.second_agent, common_meeting_point \
             = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
         if common_meeting_point is not None:
-            task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point )
+            task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point)
             # #TEST
             # meeting_in_matrix = self.rhbp_agent.local_map.list_from_relative_to_matrix(task_meeting_point)
             # rospy.loginfo("AGENT_NAME:" + self._agent_name)

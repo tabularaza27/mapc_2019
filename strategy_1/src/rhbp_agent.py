@@ -439,11 +439,14 @@ class RhbpAgent(object):
         # update the sensors before starting the rhbp reasoning
         self.sensor_manager.update_sensors()
 
-        # eliminate
-        file_name = 'task_assignment_for_' + str(self.number_of_agents)
-        file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" + file_name, "wb")
-        pickle.dump(self.tasks, file_object)
-        file_object.close()
+        # dumped class
+        if global_variables.DUMP_CLASS:
+            test_case_number = '001'
+            file_name = 'task_assignment_for_' + str(self.number_of_agents) + '_' + test_case_number
+            file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" \
+                               + file_name + '.dat', "wb")
+            pickle.dump(self.tasks, file_object)
+            file_object.close()
 
         self.start_rhbp_reasoning(start_time, deadline)
 
