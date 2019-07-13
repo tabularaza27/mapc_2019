@@ -67,7 +67,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 3  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 

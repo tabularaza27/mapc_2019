@@ -1,7 +1,7 @@
 (define (problem problem-agentA2)
 	(:domain agentA2)
 	(:init 
-		(at_goal_area)
+		(assigned_task_list_empty)
 		( = (points) 0.000000 )
 		( = (costs) 0)
 	)

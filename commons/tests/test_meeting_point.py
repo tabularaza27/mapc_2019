@@ -40,16 +40,16 @@ def task_dictionary_2_001():
 
     return task_dictionary_2_001
 
-# @pytest.fixture
-# def task_dictionary_3_001():
-#     """ Task for two agents with different blocks
-#
-#     """
-#     task = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/task_assignment_for_3_001.dat", "rb")
-#     complete_task_list = pickle.load(task)
-#     task_dictionary_3_001 = complete_task_list['task1']
-#
-#     return task_dictionary_3_001
+@pytest.fixture
+def task_dictionary_3_001():
+    """ Task for two agents with different blocks
+
+    """
+    task = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/task_assignment_for_3_001.dat", "rb")
+    complete_task_list = pickle.load(task)
+    task_dictionary_3_001 = complete_task_list['task1']
+
+    return task_dictionary_3_001
 
 def test_meeting_point_for_2_001(map1, task_dictionary_2_001):
     """
@@ -64,11 +64,11 @@ def test_meeting_point_for_2_001(map1, task_dictionary_2_001):
     #
     # #np.testing.assert_array_equal(actual_figure, desired_figure)
 
-# def test_meeting_point_for_3_001(map1, task_dictionary_3_001):
-#
-#     actual_figure = map1.create_figure(task_dictionary_2_001)
-#     # np.testing.assert_array_equal(actual_figure, desired_figure)
-#     print ("dioca")
+def test_meeting_point_for_3_001(map1, task_dictionary_3_001):
+
+    actual_figure = map1.create_figure(task_dictionary_3_001)
+    # np.testing.assert_array_equal(actual_figure, desired_figure)
+    print ("dioca")
 
 
 

@@ -570,7 +570,7 @@ class GridMap():
         """writes two dimensional np.array to .txt file named after agent and in data directory"""
         map_copy = np.copy(self._representation)
         # TODO PRINT LIST OF DISPENSERS
-        map_copy[self.origin[0],self.origin[1]] = -10
+        map_copy[self.origin[0],self.origin[1]] = 0
         for d in self._dispensers:
             pos = self._from_relative_to_matrix(d['pos'])
             map_copy[pos[0], pos[1]] = 0
@@ -877,7 +877,7 @@ class GridMap():
                                             recomputed common meeting point
         """
 
-        single_agent_meeting_position = []
+        #single_agent_meeting_position = []
         task_figure, submitting_agent_index = self.create_figure(task)
         multiple_agent_meeting_position = self.agent_position_in_figure(task_figure, \
                                                                         submitting_agent_index, common_meeting_point)
@@ -892,7 +892,7 @@ class GridMap():
                 #     agent_end_position = all_agent_position[:index+1]
                 # else:
                 #     agent_end_position = all_agent_position[index:index+2]
-                single_agent_meeting_position.append(multiple_agent_meeting_position[agent_index:block_index + 1])
+                single_agent_meeting_position = multiple_agent_meeting_position[agent_index:block_index + 1]
 
         # Transform to relative
         single_agent_meeting_position = self._from_matrix_to_relative(single_agent_meeting_position)
@@ -1110,9 +1110,9 @@ class GridMap():
         """
 
         if maze is None:
-            map_representation = self._path_planner_representation
-        else:
             map_representation = self._representation
+        else:
+            map_representation = maze
 
         for cell in composition:
             cell_value = self._get_value_of_cell(cell, map_representation)

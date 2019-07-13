@@ -2,7 +2,7 @@ import numpy as np
 
 DEBUG_MODE = False
 LIVE_PLOTTING = True
-DUMP_CLASS = False
+DUMP_CLASS = True
 
 MOVING_DIRECTIONS = [[-1, 0], [1, 0], [0, 1], [0, -1]]
 MOVEMENTS = {
