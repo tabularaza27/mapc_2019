@@ -60,6 +60,7 @@ class GridMap():
         # self._representation[agent_in_matrix[1]][agent_in_matrix[0]] = -4
         self._distances = np.array([])  # the matrix of all the distances from the agent
         self.is_at_goal_area = False
+        self.failed_last_move = False
         # objects in map
         self._dispensers = []
         self._goal_areas = []
@@ -108,6 +109,9 @@ class GridMap():
         # if last action was `move` update agent position and expand map size if sight is out of bounds
         if perception.agent.last_action == "move" and perception.agent.last_action_result == "success":
             self._update_agent_position(move=perception.agent.last_action_params[0])
+        elif perception.agent.last_action == "move" and perception.agent.last_action_result != "success":
+            self.failed_last_move = True
+            # TODO randomly change moving direction if continue to fail moving
 
         # if last action was `attach` update the attached_blocks list and update
         if perception.agent.last_action == "attach" and perception.agent.last_action_result == "success":
@@ -735,9 +739,9 @@ class GridMap():
             #print(point)
             #print(path)
             length = self._distances[interesting_points[i][0],interesting_points[i][1]]
-            if length == 0:
+            if length == 0: # to avoid division per zero
                 lenght = 100
-            new_score = unknown_counts[i]/(length)
+            new_score = unknown_counts[i]/length
             #print (length)
             update_new_highscore = False
             if new_score > best_score:
