@@ -29,9 +29,9 @@ class GridPathPlanner():
             maze (np.array): given map
             origin (np.array): given origin of the agent
             start (np.array): starting position in the map of the object compose by the agent and all the blocks
-                attached to it
+                attached to it (in matrix notation)
             end (np.array): ending position in the map of the object compose by the agent and all the blocks
-                attached to it
+                attached to it (in matrix notation)
 
         Returns:
             list: path in relative coordinates
@@ -393,7 +393,7 @@ def main():
     """
 
     # Simple maze
-    maze = np.array([[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
+    maze = ([[ 0, 0, 0, -2, 0,-2,-2, 0, 0, 0],
             [-2, 0, 0, -2, 0, 0, 0, 0, 0, 0],
             [ 0, 0, 0, -2, 0, 0, 0, 0, 0, 0],
             [ 0, 0,-2,  0,-2,-2, 0, 0, 0, 0],

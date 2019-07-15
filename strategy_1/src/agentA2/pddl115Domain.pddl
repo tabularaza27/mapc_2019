@@ -1,0 +1,63 @@
+(define (domain agentA2)
+(:requirements :strips :adl :equality :negation :conditional-effects :fluents)
+(:predicates
+    (all_positions_attached)
+    (next_to_block)
+    (attached_to_block)
+    (assigned_task_list_empty)
+    (at_meeting_point)
+    (connect_successful)
+    (points)
+    (shape_complete)
+    (at_the_dispenser)
+    (dispenser_visible)
+    (at_goal_area)
+    (can_submit))
+(:functions
+    (costs)
+    (points))
+(:action exploration_move
+:parameters ()
+:effect (and (increase (costs) 1.0) (dispenser_visible) (assigned_task_list_empty))
+)
+(:action move_to_dispenser
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (not (attached_to_block)) (not (at_the_dispenser)))
+:effect (and (increase (costs) 1.0) (at_the_dispenser))
+)
+(:action dispense
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (not (attached_to_block)) (at_the_dispenser) (not (next_to_block)))
+:effect (and (increase (costs) 1.0) (next_to_block))
+)
+(:action attach
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (not (attached_to_block)) (next_to_block) (not (all_positions_attached)))
+:effect (and (increase (costs) 1.0) (attached_to_block))
+)
+(:action reach_meeting_point
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (attached_to_block) (not (shape_complete)) (not (at_meeting_point)))
+:effect (and (increase (costs) 1.0) (at_meeting_point))
+)
+(:action connect
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (attached_to_block) (not (connect_successful)) (at_meeting_point) (attached_to_block))
+:effect (and (increase (costs) 1.0) (connect_successful) (shape_complete))
+)
+(:action detach
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (connect_successful) (not (can_submit)))
+:effect (and (increase (costs) 1.0) (points))
+)
+(:action go_to_goal_area
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (shape_complete) (can_submit) (not (at_goal_area)))
+:effect (and (increase (costs) 1.0) (at_goal_area))
+)
+(:action submit
+:parameters ()
+:precondition (and (not (assigned_task_list_empty)) (shape_complete) (can_submit) (at_goal_area))
+:effect (and (increase (costs) 1.0) (points))
+)
+)

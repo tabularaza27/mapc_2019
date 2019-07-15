@@ -32,6 +32,8 @@ from classes.tasks.task_decomposition import update_tasks
 from classes.communications import Communication
 from classes.map_merge import mapMerge
 
+import pickle
+
 from classes.bid import Bid
 
 import random
@@ -109,12 +111,12 @@ class RhbpAgent(object):
         count = 0
         for task_name, task_object in self.tasks.iteritems():
             if len(task_object.sub_tasks) <= self.number_of_agents and not task_object.auctioned:
-                rospy.loginfo(self._agent_name + "| -- Analyizing: " + task_name)
+                #rospy.loginfo(self._agent_name + "| -- Analyizing: " + task_name)
                 # STEP 1: SEND ALL THE BIDS
                 for sub in task_object.sub_tasks:
                     if sub.assigned_agent == None:
                         subtask_id = sub.sub_task_name
-                        rospy.loginfo(self._agent_name + "| ---- Bid needed for " + subtask_id)
+                        #rospy.loginfo(self._agent_name + "| ---- Bid needed for " + subtask_id)
 
                         # first calculate the already assigned sub tasks
                         # TODO improve the way of summing the bid value of already assigned tasks
@@ -165,10 +167,10 @@ class RhbpAgent(object):
                             if self._agent_name == sub.assigned_agent:
                                 self.assigned_subtasks.append(sub)
 
-                            rospy.loginfo(self._agent_name + "| ---- ALLL DONE: " + sub.sub_task_name)
-                            rospy.loginfo(self._agent_name + "| -------- AGENT: " + sub.assigned_agent)
-                            rospy.loginfo(self._agent_name + "| -------- DTD: " + str(sub.distance_to_dispenser))
-                            rospy.loginfo(self._agent_name + "| -------- CDP: " + str(sub.closest_dispenser_position))
+                            # rospy.loginfo(self._agent_name + "| ---- ALLL DONE: " + sub.sub_task_name)
+                            # rospy.loginfo(self._agent_name + "| -------- AGENT: " + sub.assigned_agent)
+                            # rospy.loginfo(self._agent_name + "| -------- DTD: " + str(sub.distance_to_dispenser))
+                            # rospy.loginfo(self._agent_name + "| -------- CDP: " + str(sub.closest_dispenser_position))
 
                             del self.bids[sub.sub_task_name] # free memory
 
@@ -184,7 +186,7 @@ class RhbpAgent(object):
 
                 invalid = True                
                 for agent_name, bid in ordered_subtask.items():
-                    rospy.loginfo(self._agent_name + "|----- " + agent_name + ": " + str(bid.bid_value))
+                    #rospy.loginfo(self._agent_name + "|----- " + agent_name + ": " + str(bid.bid_value))
 
                     if bid.bid_value != -1 and agent_name not in assigned:
                         invalid = False
@@ -340,7 +342,7 @@ class RhbpAgent(object):
         :param msg:  the message
         :type msg: SimEnd
         """
-        rospy.loginfo("SimEnd:" + str(msg))
+        #rospy.loginfo("SimEnd:" + str(msg))
         for g in self.goals:
             g.unregister()
         for b in self.behaviours:
@@ -352,7 +354,7 @@ class RhbpAgent(object):
         :param msg:  the message
         :type msg: Bye
         """
-        rospy.loginfo("Simulation finished")
+        #rospy.loginfo("Simulation finished")
         rospy.signal_shutdown('Shutting down {}  - Simulation server closed'.format(self._agent_name))
 
     def _action_request_callback(self, msg):
@@ -383,7 +385,7 @@ class RhbpAgent(object):
         # update tasks from perception
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
                                   simulation_step=self.perception_provider.simulation_step)
-        rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
+        #rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
         # task auctioning
         self.task_auctioning()
@@ -426,6 +428,7 @@ class RhbpAgent(object):
             # TODO detach only the blcok in the direction of the task
             self.local_map._attached_blocks = []
 
+
         '''
         # send personal message test
         if self._agent_name == "agentA1":
@@ -435,6 +438,12 @@ class RhbpAgent(object):
 
         # update the sensors before starting the rhbp reasoning
         self.sensor_manager.update_sensors()
+
+        # eliminate
+        # som = SOM_CLASS()
+        fileObject = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/dumped_class.dat", "wb")
+        pickle.dump(self.tasks, fileObject)
+        fileObject.close()
 
         self.start_rhbp_reasoning(start_time, deadline)
 
@@ -552,6 +561,7 @@ class RhbpAgent(object):
 
         # effect of dispense is that agent is next to block
         dispense.add_effect(Effect(self.sensor_manager.next_to_block.name, indicator=True))
+
 
         # Our simple goal is to create more and more blocks
         # dispense_goal = GoalBase("dispensing", permanent=True,
@@ -751,6 +761,11 @@ class RhbpAgent(object):
                                  planner_prefix=self._agent_name)
         self.goals.append(dispense_goal)
         """
+        # TODO meeting thing
+        # if self.assigned_tasks is not None:
+        #     task = self.assigned_tasks[self.assigned_tasks[0].parent_task_name]
+
+
 
 
 if __name__ == '__main__':
