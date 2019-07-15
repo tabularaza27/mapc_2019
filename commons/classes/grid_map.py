@@ -938,39 +938,50 @@ class GridMap():
 
     def agent_position_in_figure(self, figure_rel, submitting_agent_index, common_meeting_point):
 
-        max_pairs = 10  # Agents + blocks
         free_figure_basic = figure_rel[:]
         mp_shift_times = 1
         mp_shift_values = np.array([[0, 0], [-1, 0], [0, 1], [1, 0], [0, -1]])  # same, up, right, down, left
         agent_shift_values = np.array([[-1, 0], [0, 1], [1, 0], [0, -1]])  # up, right, down, left
-        #agent_shift_values = np.array([[0, 1], [1, 0], [1, 0], [0, -1]])  # up, right, down, left
 
-        # TODO CHANGE THIS
+        # common meeting point already in matrix notation
         common_mp_matrix = common_meeting_point
 
-        # TODO REFACTOR THIS
-        # Size of the figure list
+        # check the numbers of agents involved in this task
         figure_size = len(free_figure_basic)
-        number_of_agents_for_task = figure_size/2
-        # minimum for meeting is 4
+        number_of_agents_for_task = figure_size / 2
+
+        # calculate cartesian product of all possible positions of agents around a block
+        product_list = []
+        all_possible_shifts = []
+
         if number_of_agents_for_task == 2:
             all_possible_shifts = agent_shift_values
-        elif number_of_agents_for_task == 3:
-            all_possible_shifts = list(itertools.product(agent_shift_values, agent_shift_values))
-        elif number_of_agents_for_task == 4:
-            all_possible_shifts = list(itertools.product(agent_shift_values, agent_shift_values, agent_shift_values))
-        elif number_of_agents_for_task == 5:
-            all_possible_shifts = list(itertools.product(agent_shift_values, agent_shift_values, agent_shift_values, agent_shift_values))
+        else:
+            # create product list depending on the number of agents
+            for unused in range(number_of_agents_for_task - 1):
+                product_list.append(agent_shift_values)
+            # calculate cartesian product
+            for element in itertools.product(*product_list):
+                all_possible_shifts.append(element)
 
         # Figure composition
         # Submitting agent and blocks have fixed position
         while True:
-            counter = 0
+            # counter = 0
             mp_shift_amount = mp_shift_values * mp_shift_times  # if there is no position around meeting point, shift
             for mp_shift in mp_shift_amount:
-                invalid_figure_composition = False
                 # Establish common meeting point value
                 submitting_agent_meeting_position = common_mp_matrix + mp_shift
+                # Check if the position of the submitting agent is reachable (inside the wall boundaries)
+                path_to_submitting_agent_position = self.path_planner.astar(
+                    # TODO could it be better to use path_planner_representation? possible errors?
+                    maze=self._representation,
+                    origin=self.origin,
+                    start=np.array([self._from_relative_to_matrix(self._agent_position)]),
+                    end=np.array([submitting_agent_meeting_position]))
+                # TODO is there a function for invalid paths?
+                if path_to_submitting_agent_position is None or path_to_submitting_agent_position == 'invalid end':
+                    continue   # next shift for common meeting point
                 # Submitting agent meeting position is fixed
                 free_figure_basic[2*submitting_agent_index] = submitting_agent_meeting_position
                 # Blocks are fixed
@@ -983,42 +994,23 @@ class GridMap():
                         free_figure_basic[blocks_position] = np.array([-1, -1])
 
                 # Iterate through different agent position
-                #TODO CHANGE THIS TO INCLUDE 3 AGENTS FIRST
                 combinations = all_possible_shifts
                 for shifts in combinations:
                     # Reset variables
                     free_figure_shifted = free_figure_basic[:]
                     invalid_figure_composition = False
-                    # if counter == 164 and mp_shift_times == 5:
-                    #     print ("dioca")
-                    # counter += 1
 
-                    # # NEW old
-                    # #TODO once he check that the first element shift is not valid, he should jumps all the other combinations
-                    # # that starts with the same shift
-                    # # TODO CHANGE THIS SO IT WORKS WITH TWO AGENTS. MAYBE REFACTOR THE WAY I GET ALL POSSIBLE SHIFTS
-                    # for blocks_position in range(figure_size):
-                    #     # Blocks are in even positions and submitting agent is fixed
-                    #     if blocks_position % 2 != 0 and blocks_position != 2 * submitting_agent_index + 1:
-                    #         for shift_value in shifts:
-                    #             # Possible agent position by applying shift to attached block position
-                    #             possible_agent_position = free_figure_shifted[blocks_position] + shift_value
-                    #             # Check duplicate position in figure composition
-                    #             for index, position in enumerate(free_figure_shifted):
-                    #                 # duplicated
-                    #                 if index != blocks_position and (position == possible_agent_position).all():
-                    #                     invalid_figure_composition = True
-                    #                     break
-                    #             # Composition not valid, try next shift combination
-                    #             if invalid_figure_composition:
-                    #                 break
-
-                    # NEW new
+                    # Apply shifts
                     block_counter = 0
                     for blocks_position in range(figure_size):
                         # Blocks are in even positions and submitting agent is fixed
                         if blocks_position % 2 != 0 and blocks_position != 2 * submitting_agent_index + 1:
-                            shift_value = shifts[block_counter]
+                            # TODO CHECK
+                            # for more than 2 agents, shifts is a list of arrays (else is an array)
+                            if number_of_agents_for_task == 2:
+                                shift_value = shifts
+                            else:
+                                shift_value = shifts[block_counter]
                             block_counter += 1
                             # Possible agent position by applying shift to attached block position
                             possible_agent_position = free_figure_shifted[blocks_position] + shift_value
@@ -1044,18 +1036,6 @@ class GridMap():
 
             # Increase the shifts values of common meeting point by 1
             mp_shift_times += 1
-
-                    # Check if figure composition is blocked with an element of the map
-                    # TODO improvement of how we checked if it is occupied the figure composition location
-                    # for element in free_figure_shifted:
-                    #     if GridPathPlanner.is_walkable(self._get_value_of_cell(element, self._path_planner_representation)):
-                    #         continue
-                    #     else:
-                    #         break
-
-                    # else, I shift the common meeting point
-
-
 
     #TODO this has to be rethink, right now it is the same as is_walkable. We need to find a way to track if a cell
     # is occupied by an ally and the block we expect or not
@@ -1275,6 +1255,44 @@ class GridMap():
             return "b{}".format(cell_value - global_variables.BLOCK_CELL_STARTING_NUMBER)
         else:
             return False
+
+  # todo trying cartesian product
+    def cartesianProduct(self, set_a, set_b):
+        result = []
+        for i in range(0, len(set_a)):
+            for j in range(0, len(set_b)):
+
+                # for handling case having cartesian
+                # prodct first time of two sets
+                if type(set_a[i]) != list:
+                    set_a[i] = [set_a[i]]
+
+                # coping all the members
+                # of set_a to temp
+                temp = [num for num in set_a[i]]
+
+                # add member of set_b to
+                # temp to have cartesian product
+                temp.append(set_b[j])
+                result.append(temp)
+
+        return result
+
+        # Function to do a cartesian
+
+    # product of N sets
+    def Cartesian(self, list_a, n):
+
+        # result of cartesian product
+        # of all the sets taken two at a time
+        temp = list_a[0]
+
+        # do product of N sets
+        for i in range(1, n):
+            temp = self.cartesianProduct(temp, list_a[i])
+
+        #print(temp)
+        return temp
 
 
 def main():

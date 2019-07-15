@@ -67,7 +67,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 3  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -444,7 +444,7 @@ class RhbpAgent(object):
 
         # dumped class
         if global_variables.DUMP_CLASS:
-            test_case_number = '001'
+            test_case_number = '004'
             file_name = 'task_assignment_for_' + str(self.number_of_agents) + '_' + test_case_number
             file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" \
                                + file_name + '.dat', "wb")

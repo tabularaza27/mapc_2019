@@ -38,12 +38,12 @@ class GridPathPlanner():
 
         """
 
-        # Check if the end point is not a free cell
-        for element in end:
-            end_pos_value = maze[element[0]][element[1]]
-            if not GridPathPlanner.is_walkable(end_pos_value):
-                print ("invalid End point")
-                return 'invalid end'
+        # # Check if the end point is not a free cell
+        # for element in end:
+        #     end_pos_value = maze[element[0]][element[1]]
+        #     if not GridPathPlanner.is_walkable(end_pos_value):
+        #         print ("invalid End point")
+        #         return 'invalid end'
 
         # Create start and end node
         start_node = self.Node(None, start)
