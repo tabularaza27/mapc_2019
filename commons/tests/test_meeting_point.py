@@ -6,7 +6,7 @@ import pickle
 
 
 def load_map(map_name, origin):
-    my_map = GridMap('agentA1', 5)
+    my_map = GridMap(map_name, 5)
     my_map._representation = np.loadtxt(open("test_maps/{}.txt".format(map_name), "rb"), delimiter=",")
     my_map._representation = my_map._representation
     # TODO we consider no obstacles in this case, we now it works with obstacles
@@ -26,7 +26,11 @@ def map1():
 
 @pytest.fixture
 def map2():
-    return load_map('agentA2', [17, 15])
+    return load_map('agentA3', [17, 11])
+
+@pytest.fixture
+def map5():
+    return load_map('agentA3', [18, 18])
 
 
 @pytest.fixture
@@ -51,23 +55,46 @@ def task_dictionary_3_001():
 
     return task_dictionary_3_001
 
-def test_meeting_point_for_2_001(map1, task_dictionary_2_001):
-    """
+@pytest.fixture
+def task_dictionary_5_001():
+    """ Task for two agents with different blocks
 
     """
-    figure_old = map1.create_figure(task_dictionary_2_001)
-    # np.testing.assert_array_equal(actual_figure, desired_figure)
-    agent1, agent2, actual_meeting_point = map1.get_common_meeting_point(task_dictionary_2_001)
-    # # np.testing.assert_array_equal(actual_meeting_point, desired_meeting_point)
-    meeting_position = map1.meeting_position(task_dictionary_2_001, actual_meeting_point)
-    print (meeting_position)
-    #
-    # #np.testing.assert_array_equal(actual_figure, desired_figure)
+    task = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/task_assignment_for_5_001.dat", "rb")
+    complete_task_list = pickle.load(task)
+    task_dictionary_5_001 = complete_task_list['task1']
 
-def test_meeting_point_for_3_001(map1, task_dictionary_3_001):
+    return task_dictionary_5_001
 
-    actual_figure = map1.create_figure(task_dictionary_3_001)
-    # np.testing.assert_array_equal(actual_figure, desired_figure)
+# def test_meeting_point_for_2_001(map1, task_dictionary_2_001):
+#     """
+#
+#     """
+#     figure_old = map1.create_figure(task_dictionary_2_001)
+#     # np.testing.assert_array_equal(actual_figure, desired_figure)
+#     agent1, agent2, actual_meeting_point = map1.get_common_meeting_point(task_dictionary_2_001)
+#     # # np.testing.assert_array_equal(actual_meeting_point, desired_meeting_point)
+#     meeting_position = map1.meeting_position(task_dictionary_2_001, actual_meeting_point)
+#     print (map1.agent_name, meeting_position)
+#     #
+#     # #np.testing.assert_array_equal(actual_figure, desired_figure)
+
+# def test_meeting_point_for_3_001(map2, task_dictionary_3_001):
+#
+#     actual_figure = map2.create_figure(task_dictionary_3_001)
+#     agent1, agent2, actual_meeting_point = map2.get_common_meeting_point(task_dictionary_3_001)
+#     meeting_position = map2.meeting_position(task_dictionary_3_001, actual_meeting_point)
+#     print (map2.agent_name, meeting_position)
+#
+#     print ("dioca")
+
+def test_meeting_point_for_5_001(map5, task_dictionary_5_001):
+
+    actual_figure = map5.create_figure(task_dictionary_5_001)
+    agent1, agent2, actual_meeting_point = map5.get_common_meeting_point(task_dictionary_5_001)
+    meeting_position = map5.meeting_position(task_dictionary_5_001, actual_meeting_point)
+    print (map2.agent_name, meeting_position)
+
     print ("dioca")
 
 

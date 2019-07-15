@@ -416,6 +416,9 @@ class RhbpAgent(object):
                     sub_task.is_connected = True
                     sub_task.complete = True
 
+        #TODO add attach behaviour effect, add blocks to attached blocks, without that,
+        # agents with blocks get stuck
+
         # if last action was detach, detach the blocks
         if self.perception_provider.agent.last_action == "detach" and self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the blcok in the direction of the detach
@@ -425,7 +428,7 @@ class RhbpAgent(object):
 
         # if last action was submit, detach the blocks
         if self.perception_provider.agent.last_action == "submit" and self.perception_provider.agent.last_action_result == "success":
-            # TODO detach only the blcok in the direction of the task
+            # TODO detach only the block in the direction of the task
             self.local_map._attached_blocks = []
 
 

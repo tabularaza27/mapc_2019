@@ -18,6 +18,7 @@
     (points))
 (:action exploration_move
 :parameters ()
+:precondition (assigned_task_list_empty)
 :effect (and (increase (costs) 1.0) (dispenser_visible) (assigned_task_list_empty))
 )
 (:action move_to_dispenser

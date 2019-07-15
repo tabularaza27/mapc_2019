@@ -296,7 +296,7 @@ class GridMap():
                         else:
                             next_cell_matrix = self._from_relative_to_matrix(self._agent_position) \
                                         + global_variables.MOVEMENTS[direction]
-                        # Check if next_cell is out of bounds (synchronization problem?) # TODO out of bounds error in get_value_of_cell just after merging the map, this does not solve the problem idky
+                        # Check if next_cell is out of bounds
                         if next_cell_matrix[0] < self._path_planner_representation.shape[0] - 1 \
                                 or next_cell_matrix[1] < self._path_planner_representation.shape[1] - 1:
                             walkable_cell = GridPathPlanner.is_walkable \
@@ -840,6 +840,19 @@ class GridMap():
             upper_col_limit = second_dispenser[1]
             lower_col_limit = first_dispenser[1]
 
+        # Check if the distance between dispensers is enough to fit the meeting point
+        # E.g when two agents dispense from the same dispenser
+        goal_top_left_matrix = self._from_relative_to_matrix(self.goal_top_left)
+        # maximum distance between dispensers
+        max_distance = lower_row_limit - upper_row_limit + lower_col_limit - upper_col_limit
+        if max_distance < middle_point_distance:    # common meeting point out of bounds
+            # Establish new upper and lower limits
+            added_row_and_col = middle_point_distance - max_distance
+            upper_row_limit -= added_row_and_col
+            lower_row_limit += added_row_and_col
+            upper_col_limit -= added_row_and_col
+            lower_col_limit += added_row_and_col
+
         # Get points as the same distance as middle_point_distance
         for row_index, row in enumerate(lowest_dist_matrix):
             # only points inside the row bounds
@@ -851,9 +864,8 @@ class GridMap():
                             possible_meeting_points.append([row_index, col_index])
 
         # Get the point with the lowest distance to the goal top left corner
-        top_goal_left_matrix = self._from_relative_to_matrix(self.goal_top_left)
         for point in possible_meeting_points:
-            dist_to_goal = abs(point[0] - top_goal_left_matrix[0]) + abs(point[1] - top_goal_left_matrix[1])
+            dist_to_goal = abs(point[0] - goal_top_left_matrix[0]) + abs(point[1] - goal_top_left_matrix[1])
             if dist_to_goal < lowest_dist_goal:
                 lowest_dist_goal = dist_to_goal
                 common_meeting_point = point
@@ -877,7 +889,6 @@ class GridMap():
                                             recomputed common meeting point
         """
 
-        #single_agent_meeting_position = []
         task_figure, submitting_agent_index = self.create_figure(task)
         multiple_agent_meeting_position = self.agent_position_in_figure(task_figure, \
                                                                         submitting_agent_index, common_meeting_point)
@@ -887,11 +898,6 @@ class GridMap():
             if sub.assigned_agent == self.agent_name:
                 agent_index = 2*sub_index
                 block_index = agent_index + 1
-                # index = abs(sub.position[0]) + abs(sub.position[1])
-                # if sub.submit_behaviour:  # True
-                #     agent_end_position = all_agent_position[:index+1]
-                # else:
-                #     agent_end_position = all_agent_position[index:index+2]
                 single_agent_meeting_position = multiple_agent_meeting_position[agent_index:block_index + 1]
 
         # Transform to relative
@@ -911,27 +917,8 @@ class GridMap():
         Returns:
             figure (np.array): [Agent_name + relative block position]
         """
-        # max_pairs = 10  # Agents + blocks
-        # figure_tmp_old = [None]*max_pairs
-        # figure_tmp = [None]*max_pairs
-        # figure_old = []
-        figure = []
 
-        # # NOT NEEDED
-        # # Get all the blocks
-        # for sub in task.sub_tasks:
-        #     # Sum of abs value of each coordinate is equal to the distance to the agent position
-        #     index = abs(sub.position[0]) + abs(sub.position[1])     #--> (x,y)
-        #     # Save the agent names and blocks of figure in order
-        #     if index == 1:  # submit agent
-        #         figure_tmp_old[index - 1] = sub.assigned_agent
-        #         #figure_tmp[index] = sub.position
-        #         figure_tmp_old[index] = self.swap(sub.position)
-        #     else:
-        #         figure_tmp_old[index] = sub.assigned_agent
-        #         #figure_tmp[index + 1] = sub.position
-        #         figure_tmp_old[index + 1] = self.swap(sub.position)
-        # # NOT NEEDED
+        figure = []
 
         # Figure is a list of pairs (agent_name,block position) in the same order as the subtasks
         if task.sub_tasks is not None:      # Ensure there are subtasks
@@ -947,20 +934,10 @@ class GridMap():
             # No figure for task
             return None
 
-
-        # # NOT NEEDED
-        #
-        # # Eliminate extra elements of figure
-        # for i, element in enumerate(figure_tmp_old):
-        #     if element is not None:
-        #         figure_old.append(element)
-        #
-        # print (figure)
-        # print (figure_old)
-
         return figure, submitting_agent_index
 
     def agent_position_in_figure(self, figure_rel, submitting_agent_index, common_meeting_point):
+
         max_pairs = 10  # Agents + blocks
         free_figure_basic = figure_rel[:]
         mp_shift_times = 1
@@ -974,66 +951,23 @@ class GridMap():
         # TODO REFACTOR THIS
         # Size of the figure list
         figure_size = len(free_figure_basic)
+        number_of_agents_for_task = figure_size/2
         # minimum for meeting is 4
-        if figure_size == 4:
-            all_possible_shifts = list(itertools.product(agent_shift_values))
-        elif figure_size == 6:
+        if number_of_agents_for_task == 2:
+            all_possible_shifts = agent_shift_values
+        elif number_of_agents_for_task == 3:
+            all_possible_shifts = list(itertools.product(agent_shift_values, agent_shift_values))
+        elif number_of_agents_for_task == 4:
             all_possible_shifts = list(itertools.product(agent_shift_values, agent_shift_values, agent_shift_values))
-        elif figure_size == 8:
+        elif number_of_agents_for_task == 5:
             all_possible_shifts = list(itertools.product(agent_shift_values, agent_shift_values, agent_shift_values, agent_shift_values))
-        elif figure_size == 10:
-            all_possible_shifts = list(itertools.product(agent_shift_values, agent_shift_values, agent_shift_values, agent_shift_values, agent_shift_values))
-
-        # # Figure composition
-        # # Submitting agent and blocks have fixed position
-        # while True:
-        #     mp_shift_values = mp_shift_values*mp_shift_times  #if there is no position around meeting point, shift
-        #     for mp_shift in mp_shift_values:
-        #         # Submitting agent position
-        #         agent_submit_pos = common_mp_matrix + mp_shift  # submitting agent is in common meeting point
-        #         free_figure_basic[0] = agent_submit_pos
-        #         #free_figure_basic[1] = agent_submit_pos + figure_rel[1]
-        #         # Blocks are fixed
-        #         for i in range(1, figure_size):
-        #             # Block is in even position in the list
-        #             if i % 2 != 0:
-        #                 free_figure_basic[i] = agent_submit_pos + figure_rel[i]
-        #         # Iterate through different agent position
-        #         free_figure_shifted = free_figure_basic[:]
-        #         if figure_size == 4:
-        #             combinations = all_possible_shifts
-        #             # sum shift to figure (blocks are in even position)
-        #             # TODO this for is useless when only 2 agents
-        #             for j in range(3, figure_size):  # start at 3 because agent 1 is fixed
-        #                 if j % 2 != 0:
-        #                     for shifts in combinations:
-        #                         free_figure_shifted[j-1] = free_figure_shifted[j] + shifts
-        #                         # Check if figure composition is colliding with nearby blocks of the figure
-        #                         if (free_figure_shifted[j-1] == free_figure_shifted[j-2]).all() or (free_figure_shifted[j-1] == free_figure_shifted[j]).all():
-        #                             continue
-        #                         else:
-        #                             break
-        #
-        #             # Check if figure composition is blocked with an element of the map
-        #             # TODO improvement of how we checked if it is occupied the figure composition location
-        #             # for element in free_figure_shifted:
-        #             #     if GridPathPlanner.is_walkable(self._get_value_of_cell(element, self._path_planner_representation)):
-        #             #         continue
-        #             #     else:
-        #             #         break
-        #             if self.free_spot_for_meeting(free_figure_shifted):
-        #                 # Figure composition found
-        #                 return free_figure_shifted
-        #             # else, I shift the common meeting point
-        #
-        #     # Increase the shifts values of common meeting point by 1
-        #     mp_shift_times += 1
 
         # Figure composition
         # Submitting agent and blocks have fixed position
         while True:
-            mp_shift_values = mp_shift_values * mp_shift_times  # if there is no position around meeting point, shift
-            for mp_shift in mp_shift_values:
+            counter = 0
+            mp_shift_amount = mp_shift_values * mp_shift_times  # if there is no position around meeting point, shift
+            for mp_shift in mp_shift_amount:
                 invalid_figure_composition = False
                 # Establish common meeting point value
                 submitting_agent_meeting_position = common_mp_matrix + mp_shift
@@ -1049,36 +983,64 @@ class GridMap():
                         free_figure_basic[blocks_position] = np.array([-1, -1])
 
                 # Iterate through different agent position
-                free_figure_shifted = free_figure_basic[:]
-                if figure_size == 4:
-                    combinations = agent_shift_values
-                    for shifts in combinations:
-                        # Reset control variable
-                        invalid_figure_composition = False
-                        for blocks_position in range(figure_size):
-                            # Blocks are in even positions and submitting agent is fixed
-                            if blocks_position % 2 != 0 and blocks_position != 2 * submitting_agent_index + 1:
-                                # Possible agent position by applying shift to attached block position
-                                possible_agent_position = free_figure_shifted[blocks_position] + shifts
-                                # Check duplicate position in figure composition
-                                for index, position in enumerate(free_figure_shifted):
-                                    # duplicated
-                                    if index != blocks_position and (position == possible_agent_position).all():
-                                        invalid_figure_composition = True
-                                        break
+                #TODO CHANGE THIS TO INCLUDE 3 AGENTS FIRST
+                combinations = all_possible_shifts
+                for shifts in combinations:
+                    # Reset variables
+                    free_figure_shifted = free_figure_basic[:]
+                    invalid_figure_composition = False
+                    # if counter == 164 and mp_shift_times == 5:
+                    #     print ("dioca")
+                    # counter += 1
 
-                                # not duplicated, I save it in figure composition
-                                if not invalid_figure_composition:
-                                    # save agent position in figure composition
-                                    free_figure_shifted[blocks_position - 1] = possible_agent_position
-                                else:   # invalid figure, I don't check the rest of the positions
+                    # # NEW old
+                    # #TODO once he check that the first element shift is not valid, he should jumps all the other combinations
+                    # # that starts with the same shift
+                    # # TODO CHANGE THIS SO IT WORKS WITH TWO AGENTS. MAYBE REFACTOR THE WAY I GET ALL POSSIBLE SHIFTS
+                    # for blocks_position in range(figure_size):
+                    #     # Blocks are in even positions and submitting agent is fixed
+                    #     if blocks_position % 2 != 0 and blocks_position != 2 * submitting_agent_index + 1:
+                    #         for shift_value in shifts:
+                    #             # Possible agent position by applying shift to attached block position
+                    #             possible_agent_position = free_figure_shifted[blocks_position] + shift_value
+                    #             # Check duplicate position in figure composition
+                    #             for index, position in enumerate(free_figure_shifted):
+                    #                 # duplicated
+                    #                 if index != blocks_position and (position == possible_agent_position).all():
+                    #                     invalid_figure_composition = True
+                    #                     break
+                    #             # Composition not valid, try next shift combination
+                    #             if invalid_figure_composition:
+                    #                 break
+
+                    # NEW new
+                    block_counter = 0
+                    for blocks_position in range(figure_size):
+                        # Blocks are in even positions and submitting agent is fixed
+                        if blocks_position % 2 != 0 and blocks_position != 2 * submitting_agent_index + 1:
+                            shift_value = shifts[block_counter]
+                            block_counter += 1
+                            # Possible agent position by applying shift to attached block position
+                            possible_agent_position = free_figure_shifted[blocks_position] + shift_value
+                            # Check duplicate position in figure composition
+                            for index, position in enumerate(free_figure_shifted):
+                                # duplicated
+                                if index != blocks_position and (position == possible_agent_position).all():
+                                    invalid_figure_composition = True
                                     break
-                        # If valid figure composition, check if figure position is feasible in the map
-                        if not invalid_figure_composition:
-                            # TODO Refactor free_spot function
-                            if self.free_spot_for_meeting(free_figure_shifted):
-                                # Figure composition found
-                                return free_figure_shifted
+                            # Composition not valid, try next shift combination
+                            if invalid_figure_composition:
+                                break
+                            else:
+                                # save agent position in figure composition
+                                free_figure_shifted[blocks_position - 1] = possible_agent_position
+
+                    # If valid figure composition, check if figure position is feasible in the map
+                    if not invalid_figure_composition:
+                        # TODO Refactor free_spot function
+                        if self.free_spot_for_meeting(free_figure_shifted):
+                            # Figure composition found
+                            return free_figure_shifted
 
             # Increase the shifts values of common meeting point by 1
             mp_shift_times += 1
@@ -1117,9 +1079,12 @@ class GridMap():
         for cell in composition:
             cell_value = self._get_value_of_cell(cell, map_representation)
             if GridPathPlanner.is_walkable(cell_value):
-                return True
+                continue
             else:
                 return False
+
+        return True
+
         #     if cell_value not in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL, global_variables.AGENT_CELL, \
         #                 global_variables.ENTITY_CELL) and not \
         #             global_variables.BLOCK_CELL_STARTING_NUMBER <= cell_value and not \
@@ -1228,6 +1193,10 @@ class GridMap():
             start=agent_pos,
             end=final_pos_in_matrix
         )
+
+        #TODO to delete
+        if self.agent_name == 'agentA3':
+            print (self._from_relative_to_matrix(path))
 
         return path
 

@@ -1,10 +1,7 @@
 (define (problem problem-agentA2)
 	(:domain agentA2)
 	(:init 
-		(at_the_dispenser)
-		(next_to_block)
-		(can_submit)
-		(at_goal_area)
+		(assigned_task_list_empty)
 		( = (points) 0.000000 )
 		( = (costs) 0)
 	)
