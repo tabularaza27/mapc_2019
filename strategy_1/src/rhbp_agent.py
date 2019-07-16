@@ -439,11 +439,11 @@ class RhbpAgent(object):
         # update the sensors before starting the rhbp reasoning
         self.sensor_manager.update_sensors()
 
-        # eliminate
+        # FOR SAVING object instances for testing
         # som = SOM_CLASS()
-        fileObject = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/dumped_class.dat", "wb")
-        pickle.dump(self.tasks, fileObject)
-        fileObject.close()
+        # fileObject = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/dumped_class.dat", "wb")
+        # pickle.dump(self.tasks, fileObject)
+        # fileObject.close()
 
         self.start_rhbp_reasoning(start_time, deadline)
 

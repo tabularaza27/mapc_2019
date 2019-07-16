@@ -146,9 +146,9 @@ class GridMap():
             self._representation[matrix_pos[0]][matrix_pos[1]] = global_variables.WALL_CELL
 
         # update goal cells
+        self.is_at_goal_area = False
         for goal in perception.goals:
             # save if the agent is in the goal area
-            self.is_at_goal_area = True
             if goal.pos.x == 0 and goal.pos.y == 0:
                 self.is_at_goal_area = True
             # to activate the goal area discovering if the agent spawn in the middle of it
@@ -320,6 +320,7 @@ class GridMap():
                         # Recalculate path
                         best_path = path_creation_function(parameters)
                         path_id = self._save_path(best_path)
+                        # TODO this function is now unreadable, we need to refactor it and create a logic
                     else:
                         # direction is valid
                         valid_direction = True
@@ -1138,30 +1139,65 @@ class GridMap():
     def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
         return
 
-
     def _get_path_to_reach_goal_area(self, parameters):
         """get path from agent to the goal area"""
-        # TODO add the blocks to the agent
-        #agent_pos = self.get_agent_pos_and_blocks_array()
-        #agent_pos = self.list_from_relative_to_matrix(agent_pos)
-        agent_pos = self.list_from_relative_to_matrix(np.array([self._agent_position]))
-        goal_area_matrix = self.list_from_matrix_to_relative(np.array([self.goal_top_left]))
-        # TODO THIS FINAL POS SHOULD ALREADY BE A LIST, CHANGE IT WHEN IT IS
-        # TODO put in the list of the agent pos the attached blocks
-        path = self.path_planner.astar(
-            maze=self._path_planner_representation,
-            origin=self.origin,
-            start=agent_pos,
-            end=goal_area_matrix
-        )
-        return path
+        best_path = None
+        agent_pos = self.get_agent_pos_and_blocks_array()
+        agent_pos_matrix = self.list_from_relative_to_matrix(agent_pos)
+        goal_area = np.array(self.goal_top_left) + np.array([1, 1])
+        # TODO should check for all the goal area cells (starting from the closest)
+        possible_ends = self.get_possible_configurations_in_point(goal_area)
+        for end in possible_ends:
+            goal_area_matrix = self.list_from_relative_to_matrix(end)
+            path = self.path_planner.astar(
+                maze=self._path_planner_representation,
+                origin=self.origin,
+                start=agent_pos_matrix,
+                end=goal_area_matrix
+            )
+            if GridPathPlanner.is_valid_path(path):
+                best_path = path
+                break
+        return best_path
 
-
-    def get_agent_pos_and_blocks_array(self):
-        list = [np.copy(self._agent_position)]
+    def get_possible_configurations_in_point(self, point):
+        """get all the possible configuration of the agents and blocks attached in a point
+            point(np.array): the point that the agent must reach
+        """
+        possible_configurations = []
+        # copy the blocks_attached array
+        blocks = []
         for block in self._attached_blocks:
-            # transform the coordinates of the in coordinates relative to the agent
-            block_in_relative = self._from_relative_to_matrix(block._position, self._agent_position)
+            blocks.append(Block(block._type, block._position))
+
+        # create a configuration and add it if it is free
+        for i in range(4):
+            configuration = self.get_agent_pos_and_blocks_array(agent_position=point, attached_blocks=blocks)
+            if self.is_configuration_free(configuration):
+                possible_configurations.append(configuration)
+            for block in blocks: # the last rotation is not needed
+                block.rotate(rotate_direction='cw')
+        return possible_configurations
+
+    def is_configuration_free(self, configuration):
+        """check if a configuration of the agents and blocks attached in a point is a valid end point"""
+        for coord in configuration:
+            matrix_coord = self._from_relative_to_matrix(coord)
+            if not GridPathPlanner.is_walkable(self._get_value_of_cell(matrix_coord,maze=self._path_planner_representation)):
+                return False
+        return True
+
+
+    def get_agent_pos_and_blocks_array(self, agent_position=None, attached_blocks=None):
+        """get agent with blocks array in relative coordinates"""
+        if attached_blocks is None:
+            attached_blocks = self._attached_blocks
+        if agent_position is None:
+            agent_position = self._agent_position
+        list = [np.copy(agent_position)]
+        for block in attached_blocks:
+            # transform the coordinates of the block in coordinates relative to the agent
+            block_in_relative = self._from_relative_to_matrix(block._position, agent_position)
             list.append(block_in_relative)
 
         return np.array(list)
