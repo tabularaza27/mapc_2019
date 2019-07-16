@@ -60,6 +60,7 @@ class GridMap():
         # self._representation[agent_in_matrix[1]][agent_in_matrix[0]] = -4
         self._distances = np.array([])  # the matrix of all the distances from the agent
         self.is_at_goal_area = False
+        self.failed_last_move = False
         # objects in map
         self._dispensers = []
         self._goal_areas = []
@@ -108,6 +109,9 @@ class GridMap():
         # if last action was `move` update agent position and expand map size if sight is out of bounds
         if perception.agent.last_action == "move" and perception.agent.last_action_result == "success":
             self._update_agent_position(move=perception.agent.last_action_params[0])
+        elif perception.agent.last_action == "move" and perception.agent.last_action_result != "success":
+            self.failed_last_move = True
+            # TODO randomly change moving direction if continue to fail moving
 
         # if last action was `attach` update the attached_blocks list and update
         if perception.agent.last_action == "attach" and perception.agent.last_action_result == "success":
@@ -142,9 +146,9 @@ class GridMap():
             self._representation[matrix_pos[0]][matrix_pos[1]] = global_variables.WALL_CELL
 
         # update goal cells
+        self.is_at_goal_area = False
         for goal in perception.goals:
             # save if the agent is in the goal area
-            self.is_at_goal_area = True
             if goal.pos.x == 0 and goal.pos.y == 0:
                 self.is_at_goal_area = True
             # to activate the goal area discovering if the agent spawn in the middle of it
@@ -316,6 +320,7 @@ class GridMap():
                         # Recalculate path
                         best_path = path_creation_function(parameters)
                         path_id = self._save_path(best_path)
+                        # TODO this function is now unreadable, we need to refactor it and create a logic
                     else:
                         # direction is valid
                         valid_direction = True
@@ -573,7 +578,7 @@ class GridMap():
         map_copy[self.origin[0],self.origin[1]] = 0
         for d in self._dispensers:
             pos = self._from_relative_to_matrix(d['pos'])
-            map_copy[pos[0], pos[1]] = 0
+            map_copy[pos[0], pos[1]] = 10
         np.savetxt(os.path.join(self.data_directory, '{}.txt'.format(self.agent_name)), map_copy, fmt='%i',
                    delimiter=',')
 
@@ -900,6 +905,10 @@ class GridMap():
                 block_index = agent_index + 1
                 single_agent_meeting_position = multiple_agent_meeting_position[agent_index:block_index + 1]
 
+        # todo delete
+        #print (self.agent_name + ": common meeting point =" + str(common_meeting_point))
+        #print (self.agent_name + ": multiple agent pos =" + str(multiple_agent_meeting_position))
+
         # Transform to relative
         single_agent_meeting_position = self._from_matrix_to_relative(single_agent_meeting_position)
 
@@ -941,7 +950,7 @@ class GridMap():
         free_figure_basic = figure_rel[:]
         mp_shift_times = 1
         mp_shift_values = np.array([[0, 0], [-1, 0], [0, 1], [1, 0], [0, -1]])  # same, up, right, down, left
-        agent_shift_values = np.array([[-1, 0], [0, 1], [1, 0], [0, -1]])  # up, right, down, left
+        agent_shift_values = np.array([[-1, 0], [1, 0], [0, 1], [0, -1]])  # up, down, right, left
 
         # common meeting point already in matrix notation
         common_mp_matrix = common_meeting_point
@@ -1005,7 +1014,6 @@ class GridMap():
                     for blocks_position in range(figure_size):
                         # Blocks are in even positions and submitting agent is fixed
                         if blocks_position % 2 != 0 and blocks_position != 2 * submitting_agent_index + 1:
-                            # TODO CHECK
                             # for more than 2 agents, shifts is a list of arrays (else is an array)
                             if number_of_agents_for_task == 2:
                                 shift_value = shifts
@@ -1058,20 +1066,14 @@ class GridMap():
 
         for cell in composition:
             cell_value = self._get_value_of_cell(cell, map_representation)
-            if GridPathPlanner.is_walkable(cell_value):
+            #if GridPathPlanner.is_walkable(cell_value):
+            # We are avoiding meeting on top of dispensers due to it leads to possible wrong behaviors
+            if cell_value in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL, global_variables.AGENT_CELL):
                 continue
             else:
                 return False
 
         return True
-
-        #     if cell_value not in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL, global_variables.AGENT_CELL, \
-        #                 global_variables.ENTITY_CELL) and not \
-        #             global_variables.BLOCK_CELL_STARTING_NUMBER <= cell_value and not \
-        #             global_variables.DISPENSER_STARTING_NUMBER <= cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
-        #         return False
-        #
-        # return True
 
     ### GO TO DISPENSER FUNCTIONS ###
     def _get_path_to_reach_dispenser(self, parameters):
@@ -1174,39 +1176,70 @@ class GridMap():
             end=final_pos_in_matrix
         )
 
-        #TODO to delete
-        if self.agent_name == 'agentA3':
-            print (self._from_relative_to_matrix(path))
-
         return path
 
     def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
         return
 
-
     def _get_path_to_reach_goal_area(self, parameters):
         """get path from agent to the goal area"""
-        # TODO add the blocks to the agent
-        #agent_pos = self.get_agent_pos_and_blocks_array()
-        #agent_pos = self.list_from_relative_to_matrix(agent_pos)
-        agent_pos = self.list_from_relative_to_matrix(np.array([self._agent_position]))
-        goal_area_matrix = self.list_from_matrix_to_relative(np.array([self.goal_top_left]))
-        # TODO THIS FINAL POS SHOULD ALREADY BE A LIST, CHANGE IT WHEN IT IS
-        # TODO put in the list of the agent pos the attached blocks
-        path = self.path_planner.astar(
-            maze=self._path_planner_representation,
-            origin=self.origin,
-            start=agent_pos,
-            end=goal_area_matrix
-        )
-        return path
+        best_path = None
+        agent_pos = self.get_agent_pos_and_blocks_array()
+        agent_pos_matrix = self.list_from_relative_to_matrix(agent_pos)
+        goal_area = np.array(self.goal_top_left) + np.array([1, 1])
+        # TODO should check for all the goal area cells (starting from the closest)
+        possible_ends = self.get_possible_configurations_in_point(goal_area)
+        for end in possible_ends:
+            goal_area_matrix = self.list_from_relative_to_matrix(end)
+            path = self.path_planner.astar(
+                maze=self._path_planner_representation,
+                origin=self.origin,
+                start=agent_pos_matrix,
+                end=goal_area_matrix
+            )
+            if GridPathPlanner.is_valid_path(path):
+                best_path = path
+                break
+        return best_path
 
-
-    def get_agent_pos_and_blocks_array(self):
-        list = [np.copy(self._agent_position)]
+    def get_possible_configurations_in_point(self, point):
+        """get all the possible configuration of the agents and blocks attached in a point
+            point(np.array): the point that the agent must reach
+        """
+        possible_configurations = []
+        # copy the blocks_attached array
+        blocks = []
         for block in self._attached_blocks:
-            # transform the coordinates of the in coordinates relative to the agent
-            block_in_relative = self._from_relative_to_matrix(block._position, self._agent_position)
+            blocks.append(Block(block._type, block._position))
+
+        # create a configuration and add it if it is free
+        for i in range(4):
+            configuration = self.get_agent_pos_and_blocks_array(agent_position=point, attached_blocks=blocks)
+            if self.is_configuration_free(configuration):
+                possible_configurations.append(configuration)
+            for block in blocks: # the last rotation is not needed
+                block.rotate(rotate_direction='cw')
+        return possible_configurations
+
+    def is_configuration_free(self, configuration):
+        """check if a configuration of the agents and blocks attached in a point is a valid end point"""
+        for coord in configuration:
+            matrix_coord = self._from_relative_to_matrix(coord)
+            if not GridPathPlanner.is_walkable(self._get_value_of_cell(matrix_coord,maze=self._path_planner_representation)):
+                return False
+        return True
+
+
+    def get_agent_pos_and_blocks_array(self, agent_position=None, attached_blocks=None):
+        """get agent with blocks array in relative coordinates"""
+        if attached_blocks is None:
+            attached_blocks = self._attached_blocks
+        if agent_position is None:
+            agent_position = self._agent_position
+        list = [np.copy(agent_position)]
+        for block in attached_blocks:
+            # transform the coordinates of the block in coordinates relative to the agent
+            block_in_relative = self._from_relative_to_matrix(block._position, agent_position)
             list.append(block_in_relative)
 
         return np.array(list)
@@ -1255,45 +1288,6 @@ class GridMap():
             return "b{}".format(cell_value - global_variables.BLOCK_CELL_STARTING_NUMBER)
         else:
             return False
-
-  # todo trying cartesian product
-    def cartesianProduct(self, set_a, set_b):
-        result = []
-        for i in range(0, len(set_a)):
-            for j in range(0, len(set_b)):
-
-                # for handling case having cartesian
-                # prodct first time of two sets
-                if type(set_a[i]) != list:
-                    set_a[i] = [set_a[i]]
-
-                # coping all the members
-                # of set_a to temp
-                temp = [num for num in set_a[i]]
-
-                # add member of set_b to
-                # temp to have cartesian product
-                temp.append(set_b[j])
-                result.append(temp)
-
-        return result
-
-        # Function to do a cartesian
-
-    # product of N sets
-    def Cartesian(self, list_a, n):
-
-        # result of cartesian product
-        # of all the sets taken two at a time
-        temp = list_a[0]
-
-        # do product of N sets
-        for i in range(1, n):
-            temp = self.cartesianProduct(temp, list_a[i])
-
-        #print(temp)
-        return temp
-
 
 def main():
     import time

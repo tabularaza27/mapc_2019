@@ -67,7 +67,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 5  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -416,9 +416,6 @@ class RhbpAgent(object):
                     sub_task.is_connected = True
                     sub_task.complete = True
 
-        #TODO add attach behaviour effect, add blocks to attached blocks, without that,
-        # agents with blocks get stuck
-
         # if last action was detach, detach the blocks
         if self.perception_provider.agent.last_action == "detach" and self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the blcok in the direction of the detach
@@ -444,7 +441,7 @@ class RhbpAgent(object):
 
         # dumped class
         if global_variables.DUMP_CLASS:
-            test_case_number = '004'
+            test_case_number = 'fixed'
             file_name = 'task_assignment_for_' + str(self.number_of_agents) + '_' + test_case_number
             file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" \
                                + file_name + '.dat', "wb")

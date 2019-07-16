@@ -77,6 +77,17 @@ def task_dictionary_5_003():
 
     return task_dictionary_5_003
 
+@pytest.fixture
+def task_dictionary_5_fixed():
+    """ Task for two agents with different blocks
+
+    """
+    task = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/task_assignment_for_5_fixed.dat", "rb")
+    complete_task_list = pickle.load(task)
+    task_dictionary_5_fixed = complete_task_list['task1']
+
+    return task_dictionary_5_fixed
+
 # def test_meeting_point_for_2_001(map1, task_dictionary_2_001):
 #     """
 #
@@ -108,11 +119,19 @@ def task_dictionary_5_003():
 #
 #     print ("dioca")
 
-def test_meeting_point_for_5_003(map5, task_dictionary_5_003):
+# def test_meeting_point_for_5_003(map5, task_dictionary_5_003):
+#
+#     actual_figure, submit_agent_index = map5.create_figure(task_dictionary_5_003)
+#     agent1, agent2, actual_meeting_point = map5.get_common_meeting_point(task_dictionary_5_003)
+#     meeting_position = map5.meeting_position(task_dictionary_5_003, actual_meeting_point)
+#     print (map5.agent_name, meeting_position)
+#
+#     print ("dioca")
 
-    actual_figure, submit_agent_index = map5.create_figure(task_dictionary_5_003)
-    agent1, agent2, actual_meeting_point = map5.get_common_meeting_point(task_dictionary_5_003)
-    meeting_position = map5.meeting_position(task_dictionary_5_003, actual_meeting_point)
+def test_meeting_point_for_5_fixed(map5, task_dictionary_5_fixed):
+    actual_figure, submit_agent_index = map5.create_figure(task_dictionary_5_fixed)
+    agent1, agent2, actual_meeting_point = map5.get_common_meeting_point(task_dictionary_5_fixed)
+    meeting_position = map5.meeting_position(task_dictionary_5_fixed, actual_meeting_point)
     print (map5.agent_name, meeting_position)
 
     print ("dioca")

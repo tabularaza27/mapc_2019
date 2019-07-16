@@ -59,3 +59,5 @@ CATKIN_IGNORE
 utils/generatedMaps/tmp_maps/*.txt
 data/generatedMaps/tmp_maps/*.txt
 
+#manager logs
+/strategy_1/src/agentA*/
