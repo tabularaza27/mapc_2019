@@ -386,6 +386,12 @@ class RhbpAgent(object):
         # update tasks from perception
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
                                   simulation_step=self.perception_provider.simulation_step)
+
+        # remove assigned subtasks if task is deleted
+        for assigned_subtask in self.assigned_subtasks[:]:
+            if assigned_subtask.parent_task_name not in self.tasks:
+                self.assigned_subtasks.remove(assigned_subtask)
+                
         #rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
         # task auctioning
@@ -429,6 +435,7 @@ class RhbpAgent(object):
         if self.perception_provider.agent.last_action == "submit" and self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the block in the direction of the task
             self.local_map._attached_blocks = []
+            self.assigned_subtasks.pop()
 
 
         '''

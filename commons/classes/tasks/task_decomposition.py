@@ -19,7 +19,6 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
     Returns:
         updated list of tasks containing all tasks
     """
-    # ToDo Remove Task if they are not in the perception anymore
 
     new_tasks = current_tasks
 
@@ -27,6 +26,20 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
     for task in tasks_percept:
         if task.name not in current_tasks.keys():
             new_tasks[task.name] = Task(task_percept=task)
+
+    # select tasks that are not in the percept anymore
+    to_remove_tasks = list()
+    for current_task in current_tasks:
+        to_remove = True
+        for task in tasks_percept:
+            if task.name == current_task:
+                to_remove = False
+        if to_remove:
+            to_remove_tasks.append(current_task)
+
+    # delete those tasks
+    for task_name in to_remove_tasks:
+        del current_tasks[task_name]
 
     # mark expired tasks & mark complete tasks
     # ToDo implement way so that completed and expired tasks don't get looped through again every time
