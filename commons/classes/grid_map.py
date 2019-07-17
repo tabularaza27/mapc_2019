@@ -915,7 +915,6 @@ class GridMap():
         return single_agent_meeting_position
 
     def create_figure(self, task):
-        # TODO subposition has to be swaped (x,y) wrong format to us
         """ Create a list of agents and relative positions of blocks (to the submitting agent) associated to a
         particular task
 
@@ -935,7 +934,7 @@ class GridMap():
                 # Save agent name
                 figure.append(sub.assigned_agent)
                 # Save block position
-                figure.append(self.swap(sub.position))     # (x,y) --> (y,x)
+                figure.append(sub.position)
                 # Save submitting agent index
                 if sub.submit_behaviour:    # True
                     submitting_agent_index = sub_index

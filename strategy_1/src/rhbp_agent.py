@@ -26,6 +26,7 @@ from agent_commons.behaviour_classes.submit_behaviour import SubmitBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
+from classes.block import Block
 
 from classes.grid_map import GridMap
 from classes.tasks.task_decomposition import update_tasks
@@ -67,7 +68,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 5  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -403,7 +404,6 @@ class RhbpAgent(object):
 
         # if last action was `connect` and result = 'success' then save the attached block
         if self.perception_provider.agent.last_action == "connect" and self.perception_provider.agent.last_action_result == "success":
-            # TODO ADD THE BLOCK CONNECTED
             other_agent_name = self.perception_provider.agent.last_action_params[0]
             self.assigned_subtasks[0].is_connected = True
             # make the other guy's subtask completed and connected
@@ -411,14 +411,16 @@ class RhbpAgent(object):
             current_task = self.tasks.get(task_name, None)
             a = 1
             for sub_task in current_task.sub_tasks:
-                # TODO check which is the completed sub_task
+                # TODO check which is the completed sub_task if an agent can have more sub_tasks
                 if sub_task.assigned_agent == other_agent_name:
+                    self.local_map._attached_blocks.append(Block(block_type=sub_task.type,
+                                                                 position=sub_task.position))
                     sub_task.is_connected = True
                     sub_task.complete = True
 
         # if last action was detach, detach the blocks
         if self.perception_provider.agent.last_action == "detach" and self.perception_provider.agent.last_action_result == "success":
-            # TODO detach only the blcok in the direction of the detach
+            # TODO detach only the block in the direction of the detach
             self.local_map._attached_blocks = []
             self.assigned_subtasks.pop()
 

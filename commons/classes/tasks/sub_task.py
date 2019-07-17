@@ -36,7 +36,7 @@ class SubTask:
             parent_task_name (str): unique id of parent task (e.g. task22)
         """
         self.parent_task_name = parent_task_name
-        self.position = np.array([task_requirement.pos.x, task_requirement.pos.y])
+        self.position = np.array([task_requirement.pos.y, task_requirement.pos.x])
         self.type = task_requirement.type
         self.sub_task_name = '{}_{}_{}'.format(parent_task_name, self.position[0], self.position[1])
 
