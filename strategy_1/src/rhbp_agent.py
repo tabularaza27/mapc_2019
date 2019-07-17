@@ -181,7 +181,7 @@ class RhbpAgent(object):
 
         for subtask_name, value in bids.items():
             if current_task_name in subtask_name: # (1)
-                ordered_subtask = OrderedDict(sorted(self.bids[subtask_name].items(), key=lambda x: (x[1].bid_value, x[0])))
+                ordered_subtask = OrderedDict(sorted(bids[subtask_name].items(), key=lambda x: (x[1].bid_value, x[0])))
                 #rospy.loginfo(self._agent_name + "| IL PAPA CORRE DIETRO LA LEPRE: " + subtask_name)
 
                 invalid = True                
