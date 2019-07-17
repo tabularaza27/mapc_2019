@@ -119,13 +119,6 @@ class SensorManager():
             else:
                 self.can_submit.update(False)
 
-            # check if agent connected the block successfully
-            connect_successful = current_subtask.is_connected
-            if connect_successful:
-                #rospy.loginfo('CONNECT SUCCESSFUL')
-                self.connect_successful.update(True)
-            else:
-                self.connect_successful.update(False)
 
             # check if the shape is complete
             shape_complete = current_task.is_submittable()
@@ -134,6 +127,20 @@ class SensorManager():
                 self.shape_complete.update(True)
             else:
                 self.shape_complete.update(False)
+
+            # check if agent connected the block successfully
+            # TODO recheck this
+            if current_subtask.submit_behaviour:
+                # submitting agent requires the whole shape completed
+                connect_successful = self.shape_complete
+            else:
+                connect_successful = current_subtask.is_connected
+
+            if connect_successful:
+                # rospy.loginfo('CONNECT SUCCESSFUL')
+                self.connect_successful.update(True)
+            else:
+                self.connect_successful.update(False)
 
             # check if the agent is in the goal area
             at_goal_area = self.rhbp_agent.local_map.is_at_goal_area

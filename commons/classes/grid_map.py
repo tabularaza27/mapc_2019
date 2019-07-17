@@ -79,8 +79,9 @@ class GridMap():
         self.paths = {}
 
         # agents for connect
-        self.first_agent = None
-        self.second_agent = None
+        # self.first_agent = None
+        # self.second_agent = None
+        self.nearby_agents = []
 
         #### DEBUG ####
         if global_variables.DEBUG_MODE:
@@ -371,8 +372,8 @@ class GridMap():
         """
         parameters = dict()
         # TODO change it back
-        parameters["final_pos"] = meeting_position
-        #parameters["final_pos"] = subtask.meeting_point
+        #parameters["final_pos"] = meeting_position
+        parameters["final_pos"] = subtask.meeting_point
         return self.get_move_direction(subtask.path_to_meeting_point_id, self._get_path_to_meeting_point, parameters)
 
     def get_direction_to_close_dispenser(self, dispenser_type):
@@ -416,9 +417,19 @@ class GridMap():
 
         return False
 
+    # def is_at_point(self, position):
+    #     """ Check if agent is arrived in the point with coordinates=relative_coord"""
+    #     if np.array_equal(self.get_agent_pos_and_blocks_array(), position):
+    #         return True
+    #     else:
+    #         return False
+
+    # TODO this shit is to avoid an error with different dimensionality between blocks_attached and meeting_point
     def is_at_point(self, position):
         """ Check if agent is arrived in the point with coordinates=relative_coord"""
-        if np.array_equal(self.get_agent_pos_and_blocks_array(), position):
+        agent_and_blocks = self.get_agent_pos_and_blocks_array()
+        meeting_point_elements = agent_and_blocks[0:2]
+        if np.array_equal(meeting_point_elements, position):
             return True
         else:
             return False
@@ -793,7 +804,8 @@ class GridMap():
         possible_meeting_points = []
 
         for sub in task.sub_tasks:
-            if sub.complete is not True:
+            if True:    # Right now we don't change common meeting point
+            #if sub.complete is not True:
                 # transform from relative to top_left to matrix
                 dispenser_rel = self._from_relative_to_matrix(sub.closest_dispenser_position, self.goal_top_left)
                 # transform from relative to matrix
@@ -808,7 +820,7 @@ class GridMap():
             cell_value = self._get_value_of_cell(dispenser)
             if not cell_value >= global_variables.DISPENSER_STARTING_NUMBER \
                     and cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
-                return None, None, None
+                return None
 
         # calculate distance matrix for each dispenser
         # TODO dont calculate twice distance d1-d2 and d2-d1 (how?)
@@ -877,10 +889,12 @@ class GridMap():
                 common_meeting_point = point
 
         # save names of closest agents
-        closest_agent_1 = assigned_agents[first_agent]
-        closest_agent_2 = assigned_agents[second_agent]
+        # closest_agent_1 = assigned_agents[first_agent]
+        # closest_agent_2 = assigned_agents[second_agent]
 
-        return closest_agent_1, closest_agent_2, common_meeting_point
+        #return closest_agent_1, closest_agent_2, common_meeting_point
+
+        return common_meeting_point
 
     def meeting_position(self, task, common_meeting_point):
         """ #TODO change description
@@ -895,6 +909,7 @@ class GridMap():
                                             recomputed common meeting point
         """
 
+        nearby_agents = []
         task_figure, submitting_agent_index = self.create_figure(task)
         multiple_agent_meeting_position = self.agent_position_in_figure(task_figure, \
                                                                         submitting_agent_index, common_meeting_point)
@@ -902,18 +917,27 @@ class GridMap():
         # return position only for actual agent
         for sub_index, sub in enumerate(task.sub_tasks):
             if sub.assigned_agent == self.agent_name:
+                # Agent and block position
                 agent_index = 2*sub_index
                 block_index = agent_index + 1
                 single_agent_meeting_position = multiple_agent_meeting_position[agent_index:block_index + 1]
+                # Nearby agent names (to connect)
+                block_position = abs(sub.position[0]) + abs(sub.position[1])
+                for sub_task in task.sub_tasks:
+                    if abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position - 1:
+                        nearby_agents.append(sub_task.assigned_agent)
+                    elif abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position + 1:
+                        nearby_agents.append(sub_task.assigned_agent)
 
         # todo delete
         #print (self.agent_name + ": common meeting point =" + str(common_meeting_point))
-        #print (self.agent_name + ": multiple agent pos =" + str(multiple_agent_meeting_position))
+        print (self.agent_name + ": multiple agent pos =" + str(multiple_agent_meeting_position) \
+               + "Agent to connect:" + str(nearby_agents))
 
         # Transform to relative
         single_agent_meeting_position = self._from_matrix_to_relative(single_agent_meeting_position)
 
-        return single_agent_meeting_position
+        return nearby_agents, single_agent_meeting_position
 
     def create_figure(self, task):
         """ Create a list of agents and relative positions of blocks (to the submitting agent) associated to a
@@ -1169,6 +1193,10 @@ class GridMap():
         final_pos_in_matrix = self.list_from_relative_to_matrix(final_pos)
         # TODO THIS FINAL POS SHOULD ALREADY BE A LIST, CHANGE IT WHEN IT IS
         # TODO put in the list of the agent pos the attached blocks
+        # if (final_pos_in_matrix[0] == agent_pos[0]).all():  # already in meeting point
+        #     return None
+        print (agent_pos)
+        print (final_pos_in_matrix)
         path = self.path_planner.astar(
             maze=self._path_planner_representation,
             origin=self.origin,

@@ -36,27 +36,15 @@ class ReachMeetingPointBehaviour(BehaviourBase):
         direction = None
         active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
         current_task = self.rhbp_agent.tasks[active_subtask.parent_task_name]
-        #temp generation of the meeting point [[agent_position],[block_position]]
-        # task_meeting_point = self.rhbp_agent.local_map.goal_top_left
-        # if active_subtask.type == "b1":
-        #     active_subtask.meeting_point = np.array([task_meeting_point + np.array([0,-1]), task_meeting_point])
-        # else:
-        #     active_subtask.meeting_point = \
-        #         np.array([task_meeting_point + np.array([0, 2]),
-        #                  task_meeting_point + np.array([0, 1])])
 
-        # common_meeting_point = self.rhbp_agent.local_map._from_relative_to_matrix(self.rhbp_agent.local_map.goal_top_left)
+        # self.rhbp_agent.first_agent, self.rhbp_agent.second_agent, common_meeting_point \
+        #     = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
+        common_meeting_point = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
 
-        self.rhbp_agent.first_agent, self.rhbp_agent.second_agent, common_meeting_point \
-            = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
         if common_meeting_point is not None:
-            task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point)
-            # #TEST
-            # meeting_in_matrix = self.rhbp_agent.local_map.list_from_relative_to_matrix(task_meeting_point)
-            # rospy.loginfo("AGENT_NAME:" + self._agent_name)
-            # rospy.loginfo("COMMON MEET POINT:" + str(common_meeting_point))
-            # rospy.loginfo("MEETING POINT:" + str(meeting_in_matrix))
-            ##########################
+            self.rhbp_agent.nearby_agents, task_meeting_point = \
+                self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point)
+
             active_subtask.meeting_point = task_meeting_point
             path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask, task_meeting_point)
             active_subtask.path_to_meeting_point_id = path_id

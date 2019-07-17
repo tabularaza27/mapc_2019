@@ -279,7 +279,8 @@ class GridPathPlanner():
             if length > 1:
                 # Index of actual position in path
                 for index, node in enumerate(path):
-                    if (node == actual_pos).all():
+                    #if (node == actual_pos).all():
+                    if np.array_equal(node, actual_pos):
                         path_index = index
                         break   # get out
                     else:
@@ -407,17 +408,16 @@ def main():
 
     # Origin
     origin = [[0, 0]]
-    """
+
     # Single agent
     start_point = [[1, 1]]
     #end_point = [[6, 8]]
     end_point = start_point
-    """
 
+    '''
     # Agent + blocks (L shape)
     start_point = [[0, 0], [0, 1], [1, 1]]
-    end_point = [[1, 5], [1, 4], [0, 4]]
-
+    '''
 
     start = np.array(start_point, dtype=np.int)
     end = np.array(end_point, dtype=np.int)
