@@ -1,9 +1,7 @@
 import numpy as np
 from collections import deque
-import matplotlib as mpl
-# mpl.use('Agg')
-import matplotlib.pyplot as plt
 import random
+import copy
 
 
 import os
@@ -294,28 +292,31 @@ class GridMap():
                 if direction is not None:
                     # Calculate next cell value if position  of the agent is not unknown
                     if direction != 'unknown position':
+                        next_configuration = None
                         if direction == 'cw' or direction == 'ccw':
                             # TODO CHECK IF THE NEXT ROTATION IS POSSIBLE
-                            next_cell_matrix = self._from_relative_to_matrix(self._agent_position)
+                            # copy of the blocks
+                            temp_blocks = copy.deepcopy(self._attached_blocks)
+                            for block in temp_blocks:
+                                block.rotate(rotate_direction=direction)
+                            next_configuration = self.get_agent_pos_and_blocks_array(attached_blocks=temp_blocks)
                         else:
-                            next_cell_matrix = self._from_relative_to_matrix(self._agent_position) \
-                                        + global_variables.MOVEMENTS[direction]
-                        # Check if next_cell is out of bounds
-                        if next_cell_matrix[0] < self._path_planner_representation.shape[0] - 1 \
-                                or next_cell_matrix[1] < self._path_planner_representation.shape[1] - 1:
-                            walkable_cell = GridPathPlanner.is_walkable \
-                                (self._get_value_of_cell(next_cell_matrix, self._path_planner_representation))
+                            temp_agent_pos = self._agent_position + global_variables.MOVEMENTS[direction]
+                            next_configuration = self.get_agent_pos_and_blocks_array(agent_position=temp_agent_pos)
+                        if self.is_configuration_free(next_configuration):
+                            configuration_free = True
                         else:  # out of bounds
-                            walkable_cell = False
+                            configuration_free = False
+                        # TODO CHECK UNKNOWN POSITION IN THIS CASE
                         # Check if the next_cell is still inside the path (unknown position error)
-                        next_cell_rel = self._from_matrix_to_relative(next_cell_matrix)
-                        if not (next_cell_rel == best_path).any():
-                            walkable_cell = False
+                        # next_cell_rel = self._from_matrix_to_relative(next_cell_matrix)
+                        if not (next_configuration == best_path).any():
+                            configuration_free = False
                     else:
                         # if position is unknown we want to recalculate path
-                        walkable_cell = False
+                        configuration_free = False
                     # Check if agent has reached the end or the next cell is blocked
-                    if direction == 'end' or not walkable_cell:
+                    if direction == 'end' or not configuration_free:
                         self._remove_path(path_id)
                         # Recalculate path
                         best_path = path_creation_function(parameters)
@@ -1207,9 +1208,7 @@ class GridMap():
         """
         possible_configurations = []
         # copy the blocks_attached array
-        blocks = []
-        for block in self._attached_blocks:
-            blocks.append(Block(block._type, block._position))
+        blocks = copy.deepcopy(self._attached_blocks)
 
         # create a configuration and add it if it is free
         for i in range(4):
@@ -1224,6 +1223,8 @@ class GridMap():
         """check if a configuration of the agents and blocks attached in a point is a valid end point"""
         for coord in configuration:
             matrix_coord = self._from_relative_to_matrix(coord)
+            if not self.coord_inside_matrix(matrix_coord, self._path_planner_representation.shape):
+                return False
             if not GridPathPlanner.is_walkable(self._get_value_of_cell(matrix_coord,maze=self._path_planner_representation)):
                 return False
         return True
