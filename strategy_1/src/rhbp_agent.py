@@ -67,7 +67,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 5  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -376,7 +376,6 @@ class RhbpAgent(object):
         self.perception_provider.update_perception(request_action_msg=msg)
 
 
-
         ### breakpoint after 30 steps to debug task subdivision every 30 steps
         if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
             rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
@@ -426,7 +425,7 @@ class RhbpAgent(object):
 
         # if last action was submit, detach the blocks
         if self.perception_provider.agent.last_action == "submit" and self.perception_provider.agent.last_action_result == "success":
-            # TODO detach only the blcok in the direction of the task
+            # TODO detach only the block in the direction of the task
             self.local_map._attached_blocks = []
 
 
@@ -440,11 +439,14 @@ class RhbpAgent(object):
         # update the sensors before starting the rhbp reasoning
         self.sensor_manager.update_sensors()
 
-        # eliminate
-        # som = SOM_CLASS()
-        fileObject = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/dumped_class.dat", "wb")
-        pickle.dump(self.tasks, fileObject)
-        fileObject.close()
+        # dumped class
+        if global_variables.DUMP_CLASS:
+            test_case_number = 'fixed'
+            file_name = 'task_assignment_for_' + str(self.number_of_agents) + '_' + test_case_number
+            file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" \
+                               + file_name + '.dat', "wb")
+            pickle.dump(self.tasks, file_object)
+            file_object.close()
 
         self.start_rhbp_reasoning(start_time, deadline)
 
@@ -502,6 +504,11 @@ class RhbpAgent(object):
         ### Exploration ##
         exploration_move = ExplorationBehaviour(name="exploration_move", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(exploration_move)
+
+        # assigned to a task
+        exploration_move.add_precondition(Condition(sensor=self.sensor_manager.assigned_task_list_empty,
+                                          activator=BooleanActivator(desiredValue=True)))
+
         exploration_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
         exploration_move.add_effect(Effect(self.sensor_manager.assigned_task_list_empty.name, indicator=True))
 

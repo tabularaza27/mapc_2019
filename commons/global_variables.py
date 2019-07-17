@@ -1,7 +1,8 @@
 import numpy as np
 
-DEBUG_MODE=False
-LIVE_PLOTTING=True
+DEBUG_MODE = False
+LIVE_PLOTTING = True
+DUMP_CLASS = False
 
 MOVING_DIRECTIONS = [[-1, 0], [1, 0], [0, 1], [0, -1]]
 MOVEMENTS = {
