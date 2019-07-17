@@ -30,7 +30,7 @@ from agent_commons.sensor_manager import SensorManager
 from classes.grid_map import GridMap
 from classes.tasks.task_decomposition import update_tasks
 from classes.communications import Communication
-from classes.map_merge import mapMerge
+from classes.map_communication import MapCommunication
 
 import pickle
 
@@ -68,12 +68,6 @@ class RhbpAgent(object):
 
         # start communication class
         self._communication = Communication(self._agent_name)
-        # Map topic
-        self._pub_map = self._communication.start_map(self._callback_map)
-        # Personal message topic
-        self._pub_agents = self._communication.start_agents(self._callback_agents)
-        # Auction topic
-        # moved in the auction class -> TODO also with the others
         # Task update topic
         self._pub_subtask_update = self._communication.start_subtask_update(self._callback_subtask_update)
 
@@ -81,11 +75,13 @@ class RhbpAgent(object):
         self.auction = Auction(self)
         self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
+        self.map_communication = MapCommunication(self)
+
         self._sim_started = False
 
         # agent attributes
         self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5)  # TODO change to get the vision
-        self.map_messages_buffer = []
+        
 
         # instantiate the sensor manager passing a reference to this agent
         self.sensor_manager = SensorManager(self)
@@ -110,42 +106,7 @@ class RhbpAgent(object):
     
 
     
-    def map_merge(self):
-        """ Merges the maps received from the other agents that discovered the goal area and this agent did too"""
-        # process the maps in the buffer
-        for msg in self.map_messages_buffer[:]:
-            msg_id = msg.message_id
-            map_from = msg.agent_id
-            map_value = msg.map
-            map_lm_x = msg.lm_x
-            map_lm_y = msg.lm_y
-            map_rows = msg.rows
-            map_columns = msg.columns
 
-            if map_from != self._agent_name and self.local_map.goal_area_fully_discovered:
-                # map received
-                maps = np.fromstring(map_value, dtype=int).reshape(map_rows, map_columns)
-                rospy.logdebug(maps)
-                map_received = np.copy(maps)
-                # landmark received
-                lm_received = np.array([map_lm_y, map_lm_x])
-                # own landmark
-                lm_own = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-                # do map merge
-                # Added new origin to function
-                origin_own = np.copy(self.local_map.origin)
-                merged_map, merged_origin = mapMerge(map_received, self.local_map._representation, lm_received, lm_own,
-                                                     origin_own)
-                self.local_map._representation = np.copy(merged_map)
-                self.local_map.origin = np.copy(merged_origin)
-
-            self.map_messages_buffer.remove(msg)
-
-    def publish_map(self):
-        map = self.local_map._representation
-        top_left_corner = self.local_map._from_relative_to_matrix(self.local_map.goal_top_left)
-        self._communication.send_map(self._pub_map, map.tostring(), top_left_corner[0], top_left_corner[1],
-                                     map.shape[0], map.shape[1])  # lm_x and lm_y to get
 
     def start_rhbp_reasoning(self, start_time, deadline):
         self._received_action_response = False
@@ -252,13 +213,13 @@ class RhbpAgent(object):
         # map merging
 
         self.local_map.update_map(perception=self.perception_provider)
-        self.map_merge()
+        self.map_communication.map_merge()
         self.local_map._update_path_planner_representation(perception=self.perception_provider)
         self.local_map._update_distances()
 
         # send the map if perceive the goal
         if self.local_map.goal_area_fully_discovered:
-            self.publish_map()
+            self.map_communication.publish_map()
 
         # if last action was `connect` and result = 'success' then save the attached block
         if self.perception_provider.agent.last_action == "connect" and self.perception_provider.agent.last_action_result == "success":
@@ -309,8 +270,7 @@ class RhbpAgent(object):
 
         self.start_rhbp_reasoning(start_time, deadline)
 
-    def _callback_map(self, msg):
-        self.map_messages_buffer.append(msg)
+
 
     def _callback_agents(self, msg):
         msg_id = msg.message_id
