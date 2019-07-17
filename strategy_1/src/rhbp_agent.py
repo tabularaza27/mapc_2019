@@ -425,18 +425,21 @@ class RhbpAgent(object):
                     sub_task.complete = True
 
         # if last action was detach, detach the blocks
-        if self.perception_provider.agent.last_action == "detach" and self.perception_provider.agent.last_action_result == "success":
+        if self.perception_provider.agent.last_action == "detach" and \
+                self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the block in the direction of the detach
             self.local_map._attached_blocks = []
             self.assigned_subtasks.pop()
 
 
         # if last action was submit, detach the blocks
-        if self.perception_provider.agent.last_action == "submit" and self.perception_provider.agent.last_action_result == "success":
+        if self.perception_provider.agent.last_action == "submit" and \
+                self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the block in the direction of the task
             self.local_map._attached_blocks = []
-            self.assigned_subtasks.pop()
-
+            # this shouldn't be necessary because the task is not in the percept,
+            # therefore the subtask is removed
+            # self.assigned_subtasks.pop()
 
         '''
         # send personal message test
