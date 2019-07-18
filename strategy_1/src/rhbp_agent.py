@@ -54,7 +54,7 @@ class RhbpAgent(object):
 
         rospy.init_node('agent_node', anonymous=True, log_level=log_level)
 
-        self._agent_name = rospy.get_param('~agent_name', 'agentA2')  # default for debugging 'agentA1'
+        self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
 
         self._agent_topic_prefix = get_bridge_topic_prefix(agent_name=self._agent_name)
 
@@ -68,7 +68,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 3  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
