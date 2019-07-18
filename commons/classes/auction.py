@@ -1,3 +1,5 @@
+""" This module contains the class that manages the auction system """
+
 import time
 import numpy as np
 import random
@@ -8,26 +10,41 @@ from classes.bid import Bid
 
 class Auction:
 
+    """ Every subtask gets auctioned. The bid value is calculated based on the distance from the agent to the closest dispenser and the
+        distance from that this dispenser to the meeting point. The bids are published in a shared ros topic, and all the agents wait for all the bids to be published.
+        To recover from failure, a timeout system is implemented.
+
+        The bids are then sorted and the subtask assigned. A task is completely assigned only if all the bids are valid.
+    """
+
     bids = {}
 
     def __init__(self,rhbp_agent_istance):
+        """
+        Args:
+            rhbp_agent_istance: an istance of the rhbp agent
+        """
+
         self.agent = rhbp_agent_istance
         self._pub_auction = self.agent._communication.start_auction(self.callback_auction)
 
     def task_auctioning(self):
-        """ Communicate the bids and assign the subtasks to the agents """
+        """ Does the task auctioning process. The whole algorithm is divided in 4 steps. 
+        (1) First the bids are all calculated and sent. Then (2) the agent waits for all the bids or the timeout event.
+        (3) The subtask assignment is then calculated and (4) the subtasks updated. 
+        """
+
         count = 0
         for task_name, task_object in self.agent.tasks.iteritems():
             if len(task_object.sub_tasks) <= self.agent.number_of_agents and not task_object.auctioned:
-                #rospy.loginfo(self.agent._agent_name + "| -- Analyizing: " + task_name)
+                rospy.logdebug(self.agent._agent_name + "| -- Analyizing: " + task_name)
                 # STEP 1: SEND ALL THE BIDS
                 for sub in task_object.sub_tasks:
                     if sub.assigned_agent == None:
                         subtask_id = sub.sub_task_name
-                        #rospy.loginfo(self.agent._agent_name + "| ---- Bid needed for " + subtask_id)
+                        rospy.logdebug(self.agent._agent_name + "| ---- Bid needed for " + subtask_id)
 
                         # first calculate the already assigned sub tasks
-                        # TODO improve the way of summing the bid value of already assigned tasks
                         bid_value = 0
                         for t in self.agent.assigned_subtasks:
                             bid_value += self.calculate_subtask_bid(t)[0]
@@ -53,14 +70,12 @@ class Auction:
                     for key, value in self.bids.items():
                         if task_object.name in key:
                             count += len(self.bids[key])
-                            #rospy.loginfo("IL BESTIA DI DIO: " + key + " - count: " + str(count))
                     
                     time.sleep(0.05)
                     current_time += 0.05
                 
                 # STEP 3: MANAGE ASSIGN
 
-                #rospy.loginfo("ORO BENON")
                 ass = self.assign_subtasks(self.bids,task_object.name)
 
                 # STEP 4: ACTUALLY ASSIGN
@@ -75,26 +90,34 @@ class Auction:
                             if self.agent._agent_name == sub.assigned_agent:
                                 self.agent.assigned_subtasks.append(sub)
 
-                            # rospy.loginfo(self.agent._agent_name + "| ---- ALLL DONE: " + sub.sub_task_name)
-                            # rospy.loginfo(self.agent._agent_name + "| -------- AGENT: " + sub.assigned_agent)
-                            # rospy.loginfo(self.agent._agent_name + "| -------- DTD: " + str(sub.distance_to_dispenser))
-                            # rospy.loginfo(self.agent._agent_name + "| -------- CDP: " + str(sub.closest_dispenser_position))
+                            rospy.logdebug(self.agent._agent_name + "| ---- ALLL DONE: " + sub.sub_task_name)
+                            rospy.logdebug(self.agent._agent_name + "| -------- AGENT: " + sub.assigned_agent)
+                            rospy.logdebug(self.agent._agent_name + "| -------- DTD: " + str(sub.distance_to_dispenser))
+                            rospy.logdebug(self.agent._agent_name + "| -------- CDP: " + str(sub.closest_dispenser_position))
 
                             del self.bids[sub.sub_task_name] # free memory
     
     def assign_subtasks(self,bids,current_task_name):
+        """ Given a list of bids and the task, assigns (if possible) the different agents to the sub tasks.
+
+        Args:
+            bids (dictionary): dictionary with all the bids
+            current_task_name (string): name of the considered task name 
+
+        Returns:
+            dictionary: dictionary with the subtasks that needs to be modified with the assignment
+        """
+        
         current_task_name += "_" # to avoid amibiguities in the if (1)
         ret = {}
         assigned = []
 
         for subtask_name, value in bids.items():
             if current_task_name in subtask_name: # (1)
-                ordered_subtask = OrderedDict(sorted(bids[subtask_name].items(), key=lambda x: (x[1].bid_value, x[0])))
-                #rospy.loginfo(self.agent._agent_name + "| IL PAPA CORRE DIETRO LA LEPRE: " + subtask_name)
+                ordered_subtask = OrderedDict(sorted(bids[subtask_name].items(), key=lambda x: (x[1].bid_value, x[0]))) #sort the bids for value and for agent name
 
                 invalid = True                
                 for agent_name, bid in ordered_subtask.items():
-                    #rospy.loginfo(self.agent._agent_name + "|----- " + agent_name + ": " + str(bid.bid_value))
 
                     if bid.bid_value != -1 and agent_name not in assigned:
                         invalid = False
@@ -103,24 +126,18 @@ class Auction:
                         ret[subtask_name]["bid"] = bid
                         assigned.append(agent_name)
 
-                        
-                        '''rospy.loginfo("-------- ASSIGNED: " + ret[subtask_name]["assigned_agent"])
-                        rospy.loginfo("-------- BID: " + str(ret[subtask_name]["bid"].bid_value))
-                        rospy.loginfo("-------- DTD: " + str(ret[subtask_name]["bid"].distance_to_dispenser))
-                        rospy.loginfo("-------- CDP: " + str(ret[subtask_name]["bid"].closest_dispenser_position))'''
-
                         break
                     
                 if invalid: # if i find even just one invalid subtask then all the task can't be assigned, so return empty set
-                    rospy.loginfo(self.agent._agent_name + "| *** AT THE LEAST ONE GUY INVALID")
+                    rospy.logdebug(self.agent._agent_name + "| *** AT THE LEAST ONE GUY INVALID")
                     ret = {}
                     return ret
 
         return ret # means that all the subtask were valid and the dictionary is returned
 
     def calculate_subtask_bid(self, subtask):
-        """calculate bid value for a subtask based on the distance from the agent to the closest dispenser and the
-        distance from that this dispenser to the meeting point ( for now that is always the goal area )
+        """ Calculate bid value for a subtask based on the distance from the agent to the closest dispenser and the
+        distance from that this dispenser to the meeting point 
 
         If the agent has not discovered the goal area, he places an invalid bid of -1
 
@@ -130,6 +147,7 @@ class Auction:
         Returns:
             int: bid value of agent for the task
         """
+
         bid_value = -1
         pos = None
         min_dist = -1
@@ -160,6 +178,12 @@ class Auction:
         return bid_value, min_dist, pos
 
     def callback_auction(self, msg):
+        """ Gets the bid message from the agents and appends it to the dictionary representation
+
+        Args:
+            msg (auction_communication): the bid message
+        """
+
         msg_id = msg.message_id
         msg_from = msg.agent_id
         task_id = msg.task_id
