@@ -39,11 +39,10 @@ class ReachMeetingPointBehaviour(BehaviourBase):
 
         # self.rhbp_agent.first_agent, self.rhbp_agent.second_agent, common_meeting_point \
         #     = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
-        common_meeting_point = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
+        self.rhbp_agent.nearby_agents, common_meeting_point = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
 
         if common_meeting_point is not None:
-            self.rhbp_agent.nearby_agents, task_meeting_point = \
-                self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point)
+            task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point)
 
             active_subtask.meeting_point = task_meeting_point
             path_id, direction = self.rhbp_agent.local_map.get_meeting_point_move(active_subtask, task_meeting_point)
