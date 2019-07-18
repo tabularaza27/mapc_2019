@@ -23,6 +23,8 @@ class Auction:
         """
         Args:
             rhbp_agent_istance: an istance of the rhbp agent
+
+        Returns: void
         """
 
         self.agent = rhbp_agent_istance
@@ -32,6 +34,8 @@ class Auction:
         """ Does the task auctioning process. The whole algorithm is divided in 4 steps. 
         (1) First the bids are all calculated and sent. Then (2) the agent waits for all the bids or the timeout event.
         (3) The subtask assignment is then calculated and (4) the subtasks updated. 
+
+        Returns: void
         """
 
         count = 0
@@ -182,6 +186,8 @@ class Auction:
 
         Args:
             msg (auction_communication): the bid message
+
+        Returns: void
         """
 
         msg_id = msg.message_id
