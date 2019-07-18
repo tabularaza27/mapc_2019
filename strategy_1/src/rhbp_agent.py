@@ -26,6 +26,7 @@ from agent_commons.behaviour_classes.submit_behaviour import SubmitBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
+from classes.block import Block
 
 from classes.grid_map import GridMap
 from classes.tasks.task_decomposition import update_tasks
@@ -72,10 +73,15 @@ class RhbpAgent(object):
         self._pub_subtask_update = self._communication.start_subtask_update(self._callback_subtask_update)
 
         # auction structure
+<<<<<<< HEAD
         self.auction = Auction(self)
         self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self.map_communication = MapCommunication(self)
+=======
+        self.bids = {}
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+>>>>>>> common_code_base
 
         self._sim_started = False
 
@@ -205,6 +211,12 @@ class RhbpAgent(object):
         # update tasks from perception
         self.tasks = update_tasks(current_tasks=self.tasks, tasks_percept=self.perception_provider.tasks,
                                   simulation_step=self.perception_provider.simulation_step)
+
+        # remove assigned subtasks if task is deleted
+        for assigned_subtask in self.assigned_subtasks[:]:
+            if assigned_subtask.parent_task_name not in self.tasks:
+                self.assigned_subtasks.remove(assigned_subtask)
+                
         #rospy.loginfo("{} updated tasks. New amount of tasks: {}".format(self._agent_name, len(self.tasks)))
 
         # task auctioning
@@ -223,7 +235,6 @@ class RhbpAgent(object):
 
         # if last action was `connect` and result = 'success' then save the attached block
         if self.perception_provider.agent.last_action == "connect" and self.perception_provider.agent.last_action_result == "success":
-            # TODO ADD THE BLOCK CONNECTED
             other_agent_name = self.perception_provider.agent.last_action_params[0]
             self.assigned_subtasks[0].is_connected = True
             # make the other guy's subtask completed and connected
@@ -231,23 +242,29 @@ class RhbpAgent(object):
             current_task = self.tasks.get(task_name, None)
             a = 1
             for sub_task in current_task.sub_tasks:
-                # TODO check which is the completed sub_task
+                # TODO check which is the completed sub_task if an agent can have more sub_tasks
                 if sub_task.assigned_agent == other_agent_name:
+                    self.local_map._attached_blocks.append(Block(block_type=sub_task.type,
+                                                                 position=sub_task.position))
                     sub_task.is_connected = True
                     sub_task.complete = True
 
         # if last action was detach, detach the blocks
-        if self.perception_provider.agent.last_action == "detach" and self.perception_provider.agent.last_action_result == "success":
-            # TODO detach only the blcok in the direction of the detach
+        if self.perception_provider.agent.last_action == "detach" and \
+                self.perception_provider.agent.last_action_result == "success":
+            # TODO detach only the block in the direction of the detach
             self.local_map._attached_blocks = []
             self.assigned_subtasks.pop()
 
 
         # if last action was submit, detach the blocks
-        if self.perception_provider.agent.last_action == "submit" and self.perception_provider.agent.last_action_result == "success":
+        if self.perception_provider.agent.last_action == "submit" and \
+                self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the block in the direction of the task
             self.local_map._attached_blocks = []
-
+            # this shouldn't be necessary because the task is not in the percept,
+            # therefore the subtask is removed
+            # self.assigned_subtasks.pop()
 
         '''
         # send personal message test

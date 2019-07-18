@@ -55,12 +55,28 @@ class ConnectBehaviour(BehaviourBase):
             agent_to_connect = self.rhbp_agent.second_agent
         else:
             agent_to_connect = self.rhbp_agent.first_agent
+        # get the task
+        active_task = self.rhbp_agent.tasks[active_subtask.parent_task_name]
 
-        # Blocks to connect
-        block_position_x = self.rhbp_agent.local_map._attached_blocks[0]._position[1]
-        block_position_y = self.rhbp_agent.local_map._attached_blocks[0]._position[0]
+        # get other agent subtask
+        for subtask in active_task.sub_tasks:
+            if subtask.assigned_agent == agent_to_connect:
+                other_block_position = subtask.position
+        block_position = None
 
-        params = [KeyValue(key="y", value=str(block_position_y)), KeyValue(key="x", value=str(block_position_x)),
+        # block_position for the agent who has more blocks
+        for block in self.rhbp_agent.local_map._attached_blocks:
+            distance2d = block._position - other_block_position
+            distance = abs(distance2d[0]) + abs(distance2d[1])
+            if distance == 1: # if the blocks 1 step away, that is the one to connect
+                block_position = block._position
+
+        # block_position for the agent who has just one and has to detach
+        if block_position is None:
+            block_position = self.rhbp_agent.local_map._attached_blocks[0]._position
+
+        # connect message
+        params = [KeyValue(key="y", value=str(block_position[0])), KeyValue(key="x", value=str(block_position[1])),
                   KeyValue(key="agent", value=agent_to_connect)]
         rospy.logdebug(self._agent_name + "::" + self._name + " connecting with " + str(agent_to_connect))
         action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_CONNECT,
