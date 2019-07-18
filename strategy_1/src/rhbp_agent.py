@@ -73,15 +73,10 @@ class RhbpAgent(object):
         self._pub_subtask_update = self._communication.start_subtask_update(self._callback_subtask_update)
 
         # auction structure
-<<<<<<< HEAD
         self.auction = Auction(self)
         self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self.map_communication = MapCommunication(self)
-=======
-        self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
->>>>>>> common_code_base
 
         self._sim_started = False
 
