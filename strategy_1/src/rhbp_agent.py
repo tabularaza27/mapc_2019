@@ -54,7 +54,7 @@ class RhbpAgent(object):
 
         rospy.init_node('agent_node', anonymous=True, log_level=log_level)
 
-        self._agent_name = rospy.get_param('~agent_name', 'agentA1')  # default for debugging 'agentA1'
+        self._agent_name = rospy.get_param('~agent_name', 'agentA2')  # default for debugging 'agentA1'
 
         self._agent_topic_prefix = get_bridge_topic_prefix(agent_name=self._agent_name)
 
@@ -68,7 +68,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 3  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -408,6 +408,11 @@ class RhbpAgent(object):
         if self.local_map.goal_area_fully_discovered:
             self.publish_map()
 
+        # if last action was `dispense` and result = 'success' then can attach
+        if self.perception_provider.agent.last_action == "request" and self.perception_provider.agent.last_action_result == "success":
+            #TODO check if the subtask block type is the same of the block just dispensed
+            self.assigned_subtasks[0].is_dispensed = True
+
         # if last action was `connect` and result = 'success' then save the attached block
         if self.perception_provider.agent.last_action == "connect" and self.perception_provider.agent.last_action_result == "success":
             other_agent_name = self.perception_provider.agent.last_action_params[0]
@@ -614,8 +619,14 @@ class RhbpAgent(object):
                                           activator=BooleanActivator(desiredValue=False)))
         # is not yet attached to a block of type of the current task
         attach.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block, activator=BooleanActivator(desiredValue=False)))
+
+        # has already dispensed the block, temporary solution for lack of communication
+        attach.add_precondition(
+            Condition(sensor=self.sensor_manager.is_dispensed, activator=BooleanActivator(desiredValue=True)))
+
         # is next to a block
-        attach.add_precondition(Condition(sensor=self.sensor_manager.next_to_block, activator=BooleanActivator(desiredValue=True)))
+        attach.add_precondition(
+            Condition(sensor=self.sensor_manager.next_to_block, activator=BooleanActivator(desiredValue=True)))
         # has free capacity to attach
         attach.add_precondition(Condition(sensor=self.sensor_manager.fully_attached, activator=BooleanActivator(desiredValue=False)))
 

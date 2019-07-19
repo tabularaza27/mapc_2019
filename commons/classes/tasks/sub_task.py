@@ -58,7 +58,8 @@ class SubTask:
         self.path_to_meeting_point_id = None
         self.meeting_point = None
 
-        # data necessary fro connecting and submittin
+        # data necessary for attaching, connecting and submitting
+        self.is_dispensed = False
         self.is_connected = False
 
         # ToDo decide on which behaviours are needed based on who are the other agents completing the parent task

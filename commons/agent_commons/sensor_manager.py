@@ -27,6 +27,8 @@ class SensorManager():
         self.at_the_dispenser = Sensor(name="at_the_dispenser", initial_value=False)
 
         # sensors for attach behaviour
+        self.is_dispensed = Sensor(name="is_dispensed", initial_value=False)
+
         self.next_to_block = Sensor(name="next_to_block", initial_value=False) # that has the type of the current task
 
         self.fully_attached = Sensor(name="all_positions_attached", initial_value=False) # True if agent is attached to block in all directions
@@ -85,6 +87,12 @@ class SensorManager():
                 self.at_the_dispenser.update(True)
             else:
                 self.at_the_dispenser.update(False)
+
+            # since we do not communicate attached blocks we need to only attach what we dispensed
+            if current_subtask.is_dispensed:
+                self.is_dispensed.update(True)
+            else:
+                self.is_dispensed.update(False)
 
             # check if the agent is 1 step away from a block of the type of the current task
             direction_to_closest_block = self.rhbp_agent.local_map.get_direction_to_close_block(current_subtask.type)
