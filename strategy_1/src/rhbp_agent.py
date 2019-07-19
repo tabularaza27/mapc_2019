@@ -68,7 +68,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 3  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -298,7 +298,8 @@ class RhbpAgent(object):
             if pos is not None:  # the distance to the closer dispenser has been calculated
                 # add the distance to the goal
 
-                meeting_point = self.local_map.goal_top_left  # TODO change the meeting point with communication
+                # TODO change the meeting point with communication
+                meeting_point = self.local_map.goal_top_left
                 end = np.array([meeting_point[0], meeting_point[1]], dtype=int)
                 distance, path = self.local_map.get_distance_and_path(pos, end, return_path=True)
 
@@ -307,9 +308,8 @@ class RhbpAgent(object):
                 # TODO save task parameters dinamically every step to set sensors
                 # TODO uncomment this line and pass the position in coordinates relative to the top left of the goal area
                 #subtask.closest_dispenser_position = pos
-                subtask.meeting_point = end
-                path_id = self.local_map._save_path(path)
-                subtask.path_to_dispenser_id = path_id
+                #subtask.meeting_point = end
+                #path_id = self.local_map._save_path(path)
 
 
         return bid_value, min_dist, pos
@@ -445,7 +445,10 @@ class RhbpAgent(object):
                 self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the block in the direction of the detach
             self.local_map._attached_blocks = []
-            self.assigned_subtasks.pop()
+            for assigned_subtask in self.assigned_subtasks:
+                if assigned_subtask.is_connected == True: # DO NOT KNOW WHY THE PREVIOUS SUBTASK WAS DELETED
+                    assigned_subtask.is_complete = True
+                    self.assigned_subtasks.remove(assigned_subtask)
 
 
         # if last action was submit, detach the blocks

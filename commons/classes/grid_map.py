@@ -218,6 +218,16 @@ class GridMap():
                 self._path_planner_representation[matrix_pos[0]][
                     matrix_pos[1]] = global_variables.BLOCK_CELL_STARTING_NUMBER + int(block.type[1])
 
+        # TO SOLVE BUG WHEN AGENT THINKS TO HAVE BLOCKS ATTACHED THAT DO NOT EXIST
+        for attached_block in self._attached_blocks[:]:
+            block_exist = False
+            for block in perception.blocks:
+                block_rel_to_agent = np.array([block.pos.y, block.pos.x])
+                if np.array_equal(attached_block._position, block_rel_to_agent):
+                    block_exist = True
+            if not block_exist:
+                self._attached_blocks.remove(attached_block)
+
         # updates entities
         for entity in perception.entities:
             # It detects itself as an entity
@@ -286,6 +296,7 @@ class GridMap():
                     print ("invalid end")
                 # increase counter
                 try_counter += 1
+                configuration_free = False
                 # Compute direction
                 direction = self.path_planner.next_move_direction(
                     self.get_agent_pos_and_blocks_array(),
@@ -1107,7 +1118,6 @@ class GridMap():
     def _get_path_to_reach_dispenser(self, parameters):
         """ Get path from agent to the dispenser """
         # TODO add attached blocks to the agent position
-        # TODO delete last point in the path, not needed, we need to move 1 step away from dispenser
         if 'dispenser_pos' not in parameters:
             return None
         else:
@@ -1126,7 +1136,6 @@ class GridMap():
         # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
         return None
 
-    # TODO ERROR!!!! THE DISPENSER ASSIGNED IS NOT OF THE CORRECT TYPE OR NOT THE CORRECT POSITION!
     def get_closest_dispenser_position(self, required_type):
         """get the closest dispenser position (in relative coord) of the required_type
         Args:
