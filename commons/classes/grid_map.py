@@ -894,7 +894,8 @@ class GridMap():
 
         #return closest_agent_1, closest_agent_2, common_meeting_point
 
-        return common_meeting_point
+        #return common_meeting_point
+        return assigned_agents, common_meeting_point
 
     def meeting_position(self, task, common_meeting_point):
         """ #TODO change description
@@ -909,7 +910,7 @@ class GridMap():
                                             recomputed common meeting point
         """
 
-        nearby_agents = []
+        #nearby_agents = []
         task_figure, submitting_agent_index = self.create_figure(task)
         multiple_agent_meeting_position = self.agent_position_in_figure(task_figure, \
                                                                         submitting_agent_index, common_meeting_point)
@@ -921,23 +922,26 @@ class GridMap():
                 agent_index = 2*sub_index
                 block_index = agent_index + 1
                 single_agent_meeting_position = multiple_agent_meeting_position[agent_index:block_index + 1]
-                # Nearby agent names (to connect)
-                block_position = abs(sub.position[0]) + abs(sub.position[1])
-                for sub_task in task.sub_tasks:
-                    if abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position - 1:
-                        nearby_agents.append(sub_task.assigned_agent)
-                    elif abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position + 1:
-                        nearby_agents.append(sub_task.assigned_agent)
+                # # Nearby agent names (to connect)
+                # block_position = abs(sub.position[0]) + abs(sub.position[1])
+                # for sub_task in task.sub_tasks:
+                #     if abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position - 1:
+                #         nearby_agents.append(sub_task.assigned_agent)
+                #     elif abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position + 1:
+                #         nearby_agents.append(sub_task.assigned_agent)
+
 
         # todo delete
         #print (self.agent_name + ": common meeting point =" + str(common_meeting_point))
-        print (self.agent_name + ": multiple agent pos =" + str(multiple_agent_meeting_position) \
-               + "Agent to connect:" + str(nearby_agents))
+        # print (self.agent_name + ": multiple agent pos =" + str(multiple_agent_meeting_position) \
+        #        + "Agent to connect:" + str(nearby_agents))
 
         # Transform to relative
         single_agent_meeting_position = self._from_matrix_to_relative(single_agent_meeting_position)
 
-        return nearby_agents, single_agent_meeting_position
+        #return nearby_agents, single_agent_meeting_position
+
+        return single_agent_meeting_position
 
     def create_figure(self, task):
         """ Create a list of agents and relative positions of blocks (to the submitting agent) associated to a

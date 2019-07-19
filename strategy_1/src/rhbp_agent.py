@@ -68,7 +68,7 @@ class RhbpAgent(object):
 
         # auction structure
         self.bids = {}
-        self.number_of_agents = 3  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
         self._sim_started = False
 
@@ -411,13 +411,29 @@ class RhbpAgent(object):
         # if last action was `connect` and result = 'success' then save the attached block
         if self.perception_provider.agent.last_action == "connect" and self.perception_provider.agent.last_action_result == "success":
             other_agent_name = self.perception_provider.agent.last_action_params[0]
-            self.assigned_subtasks[0].is_connected = True
-            # make the other guy's subtask completed and connected
+            #new
             task_name = self.assigned_subtasks[0].parent_task_name
             current_task = self.tasks.get(task_name, None)
-            a = 1
+            # For submitting agent is_connected only when all the others blocks are connected
+            if self.assigned_subtasks[0].submit_behaviour:
+                is_connected_counter = 0
+                number_of_subtasks = len(current_task.sub_tasks)
+                for sub_task in current_task.sub_tasks:
+                    # Check for other agents
+                    if sub_task.assigned_agent != self._agent_name:
+                        if sub_task.is_connected:
+                            is_connected_counter += 1
+                # Check for all the other subtaks connected
+                if is_connected_counter == number_of_subtasks - 1:
+                    self.assigned_subtasks[0].is_connected = True
+            else:
+                self.assigned_subtasks[0].is_connected = True
+            # make the other guy's subtask completed and connected
+            # task_name = self.assigned_subtasks[0].parent_task_name
+            # current_task = self.tasks.get(task_name, None)
             for sub_task in current_task.sub_tasks:
                 # TODO check which is the completed sub_task if an agent can have more sub_tasks
+                # TODO because there is no communication, other agents updating your is_connected it shouldn't affect
                 if sub_task.assigned_agent == other_agent_name:
                     self.local_map._attached_blocks.append(Block(block_type=sub_task.type,
                                                                  position=sub_task.position))

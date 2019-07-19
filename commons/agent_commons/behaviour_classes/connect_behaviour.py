@@ -1,5 +1,6 @@
 from __future__ import division  # force floating point division when using plain /
 import rospy
+import random
 
 from behaviour_components.behaviours import BehaviourBase
 from diagnostic_msgs.msg import KeyValue
@@ -75,37 +76,86 @@ class ConnectBehaviour(BehaviourBase):
 
         # NEW
         nearby_agents = self.rhbp_agent.nearby_agents
+        # create randomly order copy of nearby agents
+        nearby_agents_random = nearby_agents[:]
+        random.shuffle(nearby_agents_random)
         number_of_blocks_attached = len(self.rhbp_agent.local_map._attached_blocks)
+
+        # relative to the submitter transform
+        relative_submitter_ratio = self.rhbp_agent.local_map._from_matrix_to_relative(active_subtask.position \
+                                            ,self.rhbp_agent.local_map._attached_blocks[0]._position)
+
+
+        print (self._agent_name)
         print ("PUTOS BLOCKSSSS" + str(number_of_blocks_attached))
         agent_to_connect = None
 
+        # # get name of agent to connect (in subtask order) and its block position for agent with more
+        # # than one block attached
+        # if number_of_blocks_attached > 1:
+        #     for agent_name in nearby_agents:
+        #         for subtask in active_task.sub_tasks:
+        #             if subtask.assigned_agent == agent_name:
+        #                 # Check if block is already attached
+        #                 for block in self.rhbp_agent.local_map._attached_blocks:
+        #                     distance2d = abs(block._position[0]) + abs(block._position[1]) \
+        #                                  - abs(subtask.position[0]) - abs(subtask.position[1])
+        #                     distance = abs(distance2d)
+        #                     print (self._agent_name)
+        #                     print (agent_name)
+        #                     print (distance)
+        #                     if distance == 1:  # if the blocks 1 step away, that is the one to connect
+        #                         block_position = block._position
+        #                         agent_to_connect = agent_name
+        #                     # else:
+        #                     #     agent_to_connect = None
+        #
+        # # block_position for the agent who has just one and has to detach
+        # else:
+        #     agent_to_connect = self.rhbp_agent.nearby_agents[0]
+        #     block_position = self.rhbp_agent.local_map._attached_blocks[0]._position
+        #     print (self._agent_name)
+        #     print (block_position)
+        #     print (agent_to_connect)
+
         # get name of agent to connect (in subtask order) and its block position for agent with more
         # than one block attached
-        if number_of_blocks_attached > 1:
-            for agent_name in nearby_agents:
-                for subtask in active_task.sub_tasks:
-                    if subtask.assigned_agent == agent_name:
-                        # Check if block is already attached
-                        for block in self.rhbp_agent.local_map._attached_blocks:
-                            distance2d = abs(block._position[0]) + abs(block._position[1]) \
-                                         - abs(subtask.position[0]) - abs(subtask.position[1])
-                            distance = abs(distance2d)
-                            print (self._agent_name)
-                            print (agent_name)
-                            print (distance)
-                            if distance == 1:  # if the blocks 1 step away, that is the one to connect
-                                block_position = block._position
-                                agent_to_connect = agent_name
-                            else:
-                                agent_to_connect = None
-
-        # block_position for the agent who has just one and has to detach
-        else:
-            agent_to_connect = self.rhbp_agent.nearby_agents[0]
-            block_position = self.rhbp_agent.local_map._attached_blocks[0]._position
-            print (self._agent_name)
-            print (block_position)
-            print (agent_to_connect)
+        #if number_of_blocks_attached > 1:
+        for close_by_agent in nearby_agents_random:
+            for subtask in active_task.sub_tasks:
+                if subtask.assigned_agent == close_by_agent and not subtask.complete \
+                        and close_by_agent != self._agent_name:
+                    # Check if block is already attached
+                    #if number_of_blocks_attached > 1:
+                    for block in self.rhbp_agent.local_map._attached_blocks:
+                        # block has to be transform to relative to the submitter
+                        # --> matrix and then rel -->submitter
+                        block_relative_to_submitter = self.rhbp_agent.local_map._from_relative_to_matrix(block._position, \
+                                                relative_submitter_ratio)
+                        distance2d = abs(block_relative_to_submitter[0] - subtask.position[0]) \
+                                + abs(block_relative_to_submitter[1] - subtask.position[1])
+                        distance = abs(distance2d)
+                        ##########
+                        print (self._agent_name)
+                        print (str(block_relative_to_submitter))
+                        print (close_by_agent)
+                        print(str(subtask.position))
+                        print (distance)
+                        ##########
+                        if distance == 1:  # if the blocks 1 step away, that is the one to connect
+                            block_position = block._position
+                            agent_to_connect = close_by_agent
+                    # else:
+                    #     block = self.rhbp_agent.local_map._attached_blocks[0]
+                    #     distance2d = abs(block._position[0]) + abs(block._position[1]) \
+                    #                  - abs(subtask.position[0]) - abs(subtask.position[1])
+                    #     distance = abs(distance2d)
+                    #     print (self._agent_name)
+                    #     print (close_by_agent)
+                    #     print (distance)
+                    #     if distance == 1:  # if the blocks 1 step away, that is the one to connect
+                    #         block_position = block._position
+                    #         agent_to_connect = close_by_agent
 
         if agent_to_connect is not None:
             # connect message
