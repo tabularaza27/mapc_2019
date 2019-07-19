@@ -29,7 +29,7 @@ from agent_commons.sensor_manager import SensorManager
 from classes.block import Block
 
 from classes.grid_map import GridMap
-from classes.tasks.task_decomposition import update_tasks
+from classes.tasks.update_tasks import update_tasks
 from classes.communications import Communication
 from classes.map_communication import MapCommunication
 

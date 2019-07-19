@@ -9,23 +9,14 @@ class SubTask:
     Each subtask gets auctioned among all available agents and agent with lowest bid gets assigned to the subtask.
     Note that an agent can only be assigned to one subtask of the same parent task
 
-    Several behaviours are needed for completion of a subtask.
-    The behaviours listed in COMMON_SUB_TASK_BEHAVIOURS every agent has to fulfill
-    One Agent of the whole task needs to do the Behaviours in the SUBMIT_BEHAVIOUR, the others the DETACH_BEHAVIOUR
-
-    For now as an easy solution: The Agent with the lowest agent name (e.g. agent1) does the submit behaviour
-    the others are doing the detach behaviour
-
+    Several behaviours are needed for completion of a subtask. ( see behaviour model )
+    One Agent of the whole task needs to do submit behaviour. The agent that does the subtask at the origin of the parent task
+    (in the GUI the block next to the red dot), does the submit. All other agents detach after connecting
 
     A Subtask is uniquely identifiable by its name. The naming convention is taskname_x-coord_y-coord
     example:
         task22_1_1
     """
-
-    # Note: another possibility ( what Ale suggested )  to keep track of subtask progress is via sensors of the agent
-    # COMMON_SUB_TASK_BEHAVIOURS = ["go_to_dispenser", "dispense_attach", "meet_to_connect", "connect"]
-    # SUBMIT_BEHAVIOUR = ["go_to_goal_area", "submit"]
-    # DETACH_BEHAVIOUR = ["detach"]
 
     def __init__(self, task_requirement, parent_task_name):
         """
@@ -58,10 +49,5 @@ class SubTask:
         self.path_to_meeting_point_id = None
         self.meeting_point = None
 
-        # data necessary fro connecting and submittin
+        # necessary for connecting and submitting
         self.is_connected = False
-
-        # ToDo decide on which behaviours are needed based on who are the other agents completing the parent task
-        # self.required_behaviours = [list_of_behaviours from above]
-        # next step required
-        # self.next_step = self.required_behaviours[0]

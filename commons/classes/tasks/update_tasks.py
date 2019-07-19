@@ -7,6 +7,7 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
     """updates task representation based on new percept.
 
     * adds tasks, that are new
+    * remove tasks, that are no longer in the perception
     * marks tasks that are fully auctioned ( all subtasks are assigned to an agent ). Task is ready to be executed
     * mark expired tasks as expired
     * marks complete tasks as complete
