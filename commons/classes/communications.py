@@ -2,8 +2,7 @@
 
 import rospy
 import uuid
-from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, \
-general_communication, subtask_update_communication
+from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, subtask_update_communication
 
 
 class Communication:
@@ -98,16 +97,15 @@ class Communication:
         Returns: void
         """
 
-        if self.wait == False:
-            msg = map_communication()
-            msg.message_id = self.generateID()
-            msg.agent_id = self._agent_name
-            msg.map = map
-            msg.lm_x = lm_x
-            msg.lm_y = lm_y
-            msg.rows = rows
-            msg.columns = columns
-            publisher.publish(msg)
+        msg = map_communication()
+        msg.message_id = self.generateID()
+        msg.agent_id = self._agent_name
+        msg.map = map
+        msg.lm_x = lm_x
+        msg.lm_y = lm_y
+        msg.rows = rows
+        msg.columns = columns
+        publisher.publish(msg)
 
     def send_message(self, publisher, id_to, message_type, params):
         """
