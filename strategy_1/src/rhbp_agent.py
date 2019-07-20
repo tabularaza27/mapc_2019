@@ -73,10 +73,13 @@ class RhbpAgent(object):
         self._pub_subtask_update = self._communication.start_subtask_update(self._callback_subtask_update)
 
         # auction structure
+
         self.auction = Auction(self)
         self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
 
+
         self.map_communication = MapCommunication(self)
+
 
         self._sim_started = False
 
@@ -130,9 +133,6 @@ class RhbpAgent(object):
             rospy.logwarn("%s idle_action(): sim not yet started", self._agent_name)
         else:  # Our decision-making has taken too long
             rospy.logwarn("%s: Decision-making timeout", self._agent_name)
-
-
-    
 
     def _sim_start_callback(self, msg):
         """
@@ -228,16 +228,37 @@ class RhbpAgent(object):
         if self.local_map.goal_area_fully_discovered:
             self.map_communication.publish_map()
 
+        # if last action was `dispense` and result = 'success' then can attach
+        if self.perception_provider.agent.last_action == "request" and self.perception_provider.agent.last_action_result == "success":
+            #TODO check if the subtask block type is the same of the block just dispensed
+            self.assigned_subtasks[0].is_dispensed = True
+
         # if last action was `connect` and result = 'success' then save the attached block
         if self.perception_provider.agent.last_action == "connect" and self.perception_provider.agent.last_action_result == "success":
             other_agent_name = self.perception_provider.agent.last_action_params[0]
-            self.assigned_subtasks[0].is_connected = True
-            # make the other guy's subtask completed and connected
+            #new
             task_name = self.assigned_subtasks[0].parent_task_name
             current_task = self.tasks.get(task_name, None)
-            a = 1
+            # For submitting agent is_connected only when all the others blocks are connected
+            if self.assigned_subtasks[0].submit_behaviour:
+                is_connected_counter = 0
+                number_of_subtasks = len(current_task.sub_tasks)
+                for sub_task in current_task.sub_tasks:
+                    # Check for other agents
+                    if sub_task.assigned_agent != self._agent_name:
+                        if sub_task.is_connected:
+                            is_connected_counter += 1
+                # Check for all the other subtaks connected
+                if is_connected_counter == number_of_subtasks - 1:
+                    self.assigned_subtasks[0].is_connected = True
+            else:
+                self.assigned_subtasks[0].is_connected = True
+            # make the other guy's subtask completed and connected
+            # task_name = self.assigned_subtasks[0].parent_task_name
+            # current_task = self.tasks.get(task_name, None)
             for sub_task in current_task.sub_tasks:
                 # TODO check which is the completed sub_task if an agent can have more sub_tasks
+                # TODO because there is no communication, other agents updating your is_connected it shouldn't affect
                 if sub_task.assigned_agent == other_agent_name:
                     self.local_map._attached_blocks.append(Block(block_type=sub_task.type,
                                                                  position=sub_task.position))
@@ -249,7 +270,10 @@ class RhbpAgent(object):
                 self.perception_provider.agent.last_action_result == "success":
             # TODO detach only the block in the direction of the detach
             self.local_map._attached_blocks = []
-            self.assigned_subtasks.pop()
+            for assigned_subtask in self.assigned_subtasks:
+                if assigned_subtask.is_connected == True: # DO NOT KNOW WHY THE PREVIOUS SUBTASK WAS DELETED
+                    assigned_subtask.is_complete = True
+                    self.assigned_subtasks.remove(assigned_subtask)
 
 
         # if last action was submit, detach the blocks
@@ -401,8 +425,14 @@ class RhbpAgent(object):
                                           activator=BooleanActivator(desiredValue=False)))
         # is not yet attached to a block of type of the current task
         attach.add_precondition(Condition(sensor=self.sensor_manager.attached_to_block, activator=BooleanActivator(desiredValue=False)))
+
+        # has already dispensed the block, temporary solution for lack of communication
+        attach.add_precondition(
+            Condition(sensor=self.sensor_manager.is_dispensed, activator=BooleanActivator(desiredValue=True)))
+
         # is next to a block
-        attach.add_precondition(Condition(sensor=self.sensor_manager.next_to_block, activator=BooleanActivator(desiredValue=True)))
+        attach.add_precondition(
+            Condition(sensor=self.sensor_manager.next_to_block, activator=BooleanActivator(desiredValue=True)))
         # has free capacity to attach
         attach.add_precondition(Condition(sensor=self.sensor_manager.fully_attached, activator=BooleanActivator(desiredValue=False)))
 

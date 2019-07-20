@@ -2,8 +2,7 @@
 
 import rospy
 import uuid
-from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, \
-general_communication, subtask_update_communication
+from mapc_rhbp_manual_player.msg import map_communication, auction_communication, personal_communication, subtask_update_communication
 
 
 class Communication:
