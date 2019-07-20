@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import rospy
 
+
 def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
     """
     merges the external_map and my_map and returns the merged_map + the updated origin
@@ -19,7 +20,7 @@ def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
     """
     # TODO PASS AND USE TOP_LEFT COORDINATES
     # TODO copy only the unknown in m2
-    #goal_landmark = 3
+    # goal_landmark = 3
 
     # Check rows and columns added in the merge map
     top_rows_to_add = int(external_land_mark[0] - my_land_mark[0])
@@ -29,7 +30,7 @@ def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
     bottom_rows_to_add = int(external_map.shape[0] - external_land_mark[0]) - int(my_map.shape[0] - my_land_mark[0])
     if bottom_rows_to_add < 0:
         bottom_rows_to_add = 0
-    
+
     left_columns_to_add = int(external_land_mark[1] - my_land_mark[1])
     if left_columns_to_add < 0:
         left_columns_to_add = 0
@@ -37,7 +38,6 @@ def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
     right_columns_to_add = int(external_map.shape[1] - external_land_mark[1]) - int(my_map.shape[1] - my_land_mark[1])
     if right_columns_to_add < 0:
         right_columns_to_add = 0
-
 
     # Fill extra columns and rows with -1
     fill_top = np.full((top_rows_to_add, my_map.shape[1]), -1)
@@ -52,7 +52,7 @@ def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
     fill_right = np.full((my_map.shape[0], right_columns_to_add), -1)
     my_map = np.c_[my_map, fill_right]
 
-    #showSingleMap(m2)
+    # showSingleMap(m2)
 
     # get new coordinates of landmarks of m2
     my_land_mark = (my_land_mark[0] + top_rows_to_add, my_land_mark[1] + left_columns_to_add)
@@ -67,30 +67,29 @@ def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
     # print ("SHAAAAPEEEEEEEEEEEEE M1!!!!!!!!!!!!!!!!!!!!!" + str(m1.shape))
     # print ("SHAAAAPEEEEEEEEEEEEE M2!!!!!!!!!!!!!!!!!!!!!" + str(m2.shape))
 
-
-    #showSingleMap(m2)
-    #showSingleMap(m1)
+    # showSingleMap(m2)
+    # showSingleMap(m1)
 
     for i in range(external_map.shape[0]):
         for j in range(external_map.shape[1]):
             cell_value = external_map[i, j]
 
-            if my_map[i+overlap_shift[0], j+overlap_shift[1]] == -1:
-                my_map[i+overlap_shift[0], j+overlap_shift[1]] = cell_value
+            if my_map[i + overlap_shift[0], j + overlap_shift[1]] == -1:
+                my_map[i + overlap_shift[0], j + overlap_shift[1]] = cell_value
 
     return my_map, new_origin
-    #showSingleMap(m2)
-
+    # showSingleMap(m2)
 
 
 def showSingleMap(map):
-    cmap = 'cool'#mpl.colors.ListedColormap(['grey','white', 'black', 'blue', 'red'])
+    cmap = 'cool'  # mpl.colors.ListedColormap(['grey','white', 'black', 'blue', 'red'])
     plt.matshow(map, cmap=cmap, vmin=-1, vmax=4)
     plt.show()
 
-def showAllMaps(m1,m2,m2_m):
-    rcParams['axes.titlepad'] = 20 
-    cmap = mpl.colors.ListedColormap(['grey','white', 'black', 'blue', 'red'])
+
+def showAllMaps(m1, m2, m2_m):
+    rcParams['axes.titlepad'] = 20
+    cmap = mpl.colors.ListedColormap(['grey', 'white', 'black', 'blue', 'red'])
 
     ax1 = plt.subplot(221)
     ax1.matshow(m1, cmap=cmap, vmin=-1, vmax=4)
@@ -110,22 +109,8 @@ def showAllMaps(m1,m2,m2_m):
 
 
 def main():
-    '''
-    m1 = [ [0,0,0,0,1],
-           [0,0,0,0,2],
-           [0,0,0,0,3],
-           [0,7,1,0,0],
-           [0,1,0,4,0],
-           [0,0,3,0,0],
-           [0,1,2,3,4] ]
+    '''run for local testing
 
-    m2 = [ [0,0,0,0,0],
-           [0,1,0,0,0],
-           [0,0,0,7,1],
-           [0,0,0,1,0],
-           [0,3,0,0,3] ]'''
-
-    '''
     m1 = [ [0,0,0,0],
            [0,4,0,0],
            [0,1,1,1],
@@ -138,20 +123,17 @@ def main():
            [0,1,1,0,0] ]
     '''
 
+    m1 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA1.txt", "rb"),
+                    delimiter=",", dtype=int)
+    m2 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA2.txt", "rb"),
+                    delimiter=",", dtype=int)
 
-    m1 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA1.txt", "rb"), delimiter=",", dtype=int)
-    m2 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA2.txt", "rb"), delimiter=",", dtype=int)
-
-    m2_m = mapMerge(m1, m2, (8,23),(6,22))
-
-
+    m2_m = mapMerge(m1, m2, (8, 23), (6, 22))
 
     m1 = np.array(m1)
     m2 = np.array(m2)
 
-
-
-    showAllMaps(m1,m2,m2_m)
+    showAllMaps(m1, m2, m2_m)
     showSingleMap(m1)
     showSingleMap(m2)
 
@@ -159,5 +141,4 @@ def main():
 
 
 if __name__ == '__main__':
-
     main()

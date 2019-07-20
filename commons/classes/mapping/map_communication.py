@@ -1,6 +1,6 @@
 """ This module contains the class that manages the map merge between the agents """
 
-from classes.map_merge import mapMerge
+from classes.mapping.map_merge import mapMerge
 import numpy as np
 import rospy
 
