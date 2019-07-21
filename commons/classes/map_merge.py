@@ -60,12 +60,8 @@ def mapMerge(external_map, my_map, external_land_mark, my_land_mark, my_origin):
     # get new coordinates of origin
     new_origin = np.array([my_origin[0] + top_rows_to_add, my_origin[1] + left_columns_to_add])
 
-    # print(lm1)
-    # print(lm2)
     overlap_shift = my_land_mark - external_land_mark
     # print("overlap_shift: " + str(overlap_shift))
-    # print ("SHAAAAPEEEEEEEEEEEEE M1!!!!!!!!!!!!!!!!!!!!!" + str(m1.shape))
-    # print ("SHAAAAPEEEEEEEEEEEEE M2!!!!!!!!!!!!!!!!!!!!!" + str(m2.shape))
 
 
     #showSingleMap(m2)
@@ -107,57 +103,3 @@ def showAllMaps(m1,m2,m2_m):
     plt.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.5)
 
     plt.show()
-
-
-def main():
-    '''
-    m1 = [ [0,0,0,0,1],
-           [0,0,0,0,2],
-           [0,0,0,0,3],
-           [0,7,1,0,0],
-           [0,1,0,4,0],
-           [0,0,3,0,0],
-           [0,1,2,3,4] ]
-
-    m2 = [ [0,0,0,0,0],
-           [0,1,0,0,0],
-           [0,0,0,7,1],
-           [0,0,0,1,0],
-           [0,3,0,0,3] ]'''
-
-    '''
-    m1 = [ [0,0,0,0],
-           [0,4,0,0],
-           [0,1,1,1],
-           [0,0,0,0] ]
-    
-    m2 = [ [1,0,1,0,0],
-           [1,1,1,0,0],
-           [0,0,0,0,4],
-           [0,1,0,0,1],
-           [0,1,1,0,0] ]
-    '''
-
-
-    m1 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA1.txt", "rb"), delimiter=",", dtype=int)
-    m2 = np.loadtxt(open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/map_merge/agentA2.txt", "rb"), delimiter=",", dtype=int)
-
-    m2_m = mapMerge(m1, m2, (8,23),(6,22))
-
-
-
-    m1 = np.array(m1)
-    m2 = np.array(m2)
-
-
-
-    showAllMaps(m1,m2,m2_m)
-    showSingleMap(m1)
-    showSingleMap(m2)
-
-    showSingleMap(m2_m)
-
-
-if __name__ == '__main__':
-
-    main()

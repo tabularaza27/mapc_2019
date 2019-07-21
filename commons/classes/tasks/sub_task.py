@@ -61,8 +61,3 @@ class SubTask:
         # data necessary for attaching, connecting and submitting
         self.is_dispensed = False
         self.is_connected = False
-
-        # ToDo decide on which behaviours are needed based on who are the other agents completing the parent task
-        # self.required_behaviours = [list_of_behaviours from above]
-        # next step required
-        # self.next_step = self.required_behaviours[0]

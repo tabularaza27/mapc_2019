@@ -53,12 +53,14 @@ class GridMap():
 
         # info about agent in map
         self._agent_position = np.array([0, 0])
+
         # IS IT USEFUL TO DRAW THE AGENT IN THE MAP?
         # agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
         # self._representation[agent_in_matrix[1]][agent_in_matrix[0]] = -4
         self._distances = np.array([])  # the matrix of all the distances from the agent
         self.is_at_goal_area = False
         self.failed_last_move = False
+
         # objects in map
         self._dispensers = []
         self._goal_areas = []
@@ -100,7 +102,7 @@ class GridMap():
         Args:
             perception (rhbp.perception_provider): the new perception of the agent
         """
-        # TODO CHECK IF THIS IS WORKING, create tests for rotate function
+        # if last action was `rotate` update blocks position
         if perception.agent.last_action == "rotate" and perception.agent.last_action_result == "success":
             for block in self._attached_blocks:
                 block.rotate(rotate_direction=perception.agent.last_action_params[0])
@@ -114,9 +116,10 @@ class GridMap():
 
         # if last action was `attach` update the attached_blocks list and update
         if perception.agent.last_action == "attach" and perception.agent.last_action_result == "success":
-            # TODO CAN'T JUST CHECK THE ACTIVE SUBTASK?
+            # TODO CHECK THE ACTIVE SUBTASK instead?
             attach_direction = perception.agent.last_action_params[0]
             relative_block_position = global_variables.MOVEMENTS[attach_direction]
+
             # find out type of block that was attached
             block_type = None
             for block in perception.blocks:
@@ -203,7 +206,6 @@ class GridMap():
         self._path_planner_representation[matrix_pos[0]][matrix_pos[1]] = global_variables.AGENT_CELL
 
         # update blocks
-        # todo take blocks attached to the agent into account --> alvaro
         for block in perception.blocks:
             block_rel_to_agent = np.array([block.pos.y, block.pos.x])
             attached = False
@@ -219,6 +221,7 @@ class GridMap():
                     matrix_pos[1]] = global_variables.BLOCK_CELL_STARTING_NUMBER + int(block.type[1])
 
         # TO SOLVE BUG WHEN AGENT THINKS TO HAVE BLOCKS ATTACHED THAT DO NOT EXIST
+        # TODO check if this is still a problem
         for attached_block in self._attached_blocks[:]:
             block_exist = False
             for block in perception.blocks:
@@ -236,7 +239,6 @@ class GridMap():
 
             pos = np.array([entity.pos.y, entity.pos.x]) + self._agent_position
             matrix_pos = self._from_relative_to_matrix(pos)
-            # first index --> y value, second  --> x value
 
             self._path_planner_representation[matrix_pos[0]][
                 matrix_pos[1]] = global_variables.ENTITY_CELL
@@ -244,7 +246,7 @@ class GridMap():
             # rospy.logdebug("temporary map: " + str(self._path_planner_representation))
 
     def _update_distances(self):
-        """update the matrix of distances from the agent"""
+        """update the matrix of distances from the agent to all the walkable cells"""
         dist_shape = self._representation.shape
         self._distances = np.full((dist_shape[0], dist_shape[1]), -1, dtype=int)
         # print(self._distances.shape)
@@ -306,8 +308,6 @@ class GridMap():
                     if direction != 'unknown position':
                         next_configuration = None
                         if direction == 'cw' or direction == 'ccw':
-                            # TODO CHECK IF THE NEXT ROTATION IS POSSIBLE
-                            # copy of the blocks
                             temp_blocks = copy.deepcopy(self._attached_blocks)
                             for block in temp_blocks:
                                 block.rotate(rotate_direction=direction)
@@ -319,9 +319,8 @@ class GridMap():
                             configuration_free = True
                         else:  # out of bounds
                             configuration_free = False
-                        # TODO CHECK UNKNOWN POSITION IN THIS CASE
+
                         # Check if the next_cell is still inside the path (unknown position error)
-                        # next_cell_rel = self._from_matrix_to_relative(next_cell_matrix)
                         if not (next_configuration == best_path).any():
                             configuration_free = False
                     else:
@@ -333,7 +332,7 @@ class GridMap():
                         # Recalculate path
                         best_path = path_creation_function(parameters)
                         path_id = self._save_path(best_path)
-                        # TODO this function is now unreadable, we need to refactor it and create a logic
+                        # TODO this whole function is a bit unreadable, we need to refactor it
                     else:
                         # direction is valid
                         valid_direction = True
@@ -362,7 +361,7 @@ class GridMap():
     def get_go_to_dispenser_move(self, subtask):
         """get the move direction for the go_to_dispenser behaviour
         Args:
-            subtask(): the subtask needed to recompute the path to the closest dispenser if needed
+            subtask(SubTask): the subtask needed to recompute the path to the closest dispenser if needed
 
         Returns:n,s,e or w or None
         """
@@ -372,13 +371,13 @@ class GridMap():
         path_id = None
         path_id, direction = self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
         if direction is None:
-            #find a new dispenser
+            # find a new dispenser
             new_dispenser_pos = self.get_closest_dispenser_position(subtask.type)
             parameters["dispenser_pos"] = new_dispenser_pos
             path_id, direction = self.get_move_direction(None, self._get_path_to_reach_dispenser, parameters)
 
-
         return path_id, direction
+
     def get_go_to_goal_area_move(self, path_id):
         """get the move direction for the reach_goal_area behaviour"""
         return self.get_move_direction(path_id, self._get_path_to_reach_goal_area)
@@ -391,8 +390,7 @@ class GridMap():
         Returns:n,s,e or w or None
         """
         parameters = dict()
-        # TODO change it back
-        #parameters["final_pos"] = meeting_position
+
         parameters["final_pos"] = subtask.meeting_point
         return self.get_move_direction(subtask.path_to_meeting_point_id, self._get_path_to_meeting_point, parameters)
 
@@ -404,6 +402,7 @@ class GridMap():
         Returns: The direction of the dispenser that is 1 step away, False otherwise
 
         """
+        # try all the 4 positions around the dispenser
         for direction in global_variables.MOVEMENTS:
             if direction != 'end':
                 close_cell_matrix = self._from_relative_to_matrix(
@@ -425,6 +424,7 @@ class GridMap():
         Returns:
             str: The direction of the block that is 1 step away, False otherwise
         """
+        # try all the 4 positions around the block
         for direction in global_variables.MOVEMENTS:
             close_cell_matrix = self._from_relative_to_matrix(
                 self._agent_position + global_variables.MOVEMENTS[direction]
@@ -437,25 +437,17 @@ class GridMap():
 
         return False
 
-    # def is_at_point(self, position):
-    #     """ Check if agent is arrived in the point with coordinates=relative_coord"""
-    #     if np.array_equal(self.get_agent_pos_and_blocks_array(), position):
-    #         return True
-    #     else:
-    #         return False
-
-    # TODO this shit is to avoid an error with different dimensionality between blocks_attached and meeting_point
     def is_at_point(self, position):
         """ Check if agent is arrived in the point with coordinates=relative_coord"""
         agent_and_blocks = self.get_agent_pos_and_blocks_array()
+        # TODO refactor this function to check if all the blocks are in position
+        # this [0:2] slice is to avoid an error with different dimensionality between blocks_attached and meeting_point
         meeting_point_elements = agent_and_blocks[0:2]
         if np.array_equal(meeting_point_elements, position):
             return True
         else:
             return False
 
-
-    ### PRIVATE METHODS ###
     def _get_value_of_cell(self, coord, maze=None):
         """get the value of the cell in a map=matrix
         Args:
@@ -471,14 +463,15 @@ class GridMap():
 
     def _remove_path(self, path_id):
         """ Remove a path from the dictionary of paths"""
-        if self.paths.has_key(path_id):
+        # TODO remove the paths more frequently, they are eating the memory up
+        if path_id in self.paths:
             del self.paths[path_id]
 
     def _save_path(self, path, path_id=-1):
         """ Save the path into the dictionary of paths and return the id"""
         if path_id == -1:
             path_id = random.randint(1, 9999999)
-            while self.paths.has_key(path_id):
+            while path_id in self.paths:
                 path_id = random.randint(1, 9999999)
         self.paths[path_id] = path
         return path_id
@@ -523,12 +516,14 @@ class GridMap():
         return relative_coord
 
     def list_from_relative_to_matrix(self, relative_coord_list):
+        """call from_relative_to_matrix on all the coordinates of a list"""
         new_list = []
         for coord in relative_coord_list:
             new_list.append(self._from_relative_to_matrix(coord))
         return np.array(new_list)
 
     def list_from_matrix_to_relative(self, matrix_coord_list):
+        """call from_matrix_to_relative on all the coordinates of a list"""
         new_list = []
         for coord in matrix_coord_list:
             new_list.append(self._from_matrix_to_relative(coord))
@@ -553,6 +548,8 @@ class GridMap():
             move_array = global_variables.MOVEMENTS[move]
             self._agent_position = self._agent_position + move_array
             agent_in_matrix = self._from_relative_to_matrix(self._agent_position)
+
+            # if the agent would see outside the actual representation matrix, expand the map
             if (agent_in_matrix <= self.agent_vision).any() \
                     or agent_in_matrix[1] + self.agent_vision >= self._representation.shape[1] \
                     or agent_in_matrix[0] + self.agent_vision >= self._representation.shape[0]:
@@ -632,7 +629,6 @@ class GridMap():
             for i in range(-self.agent_vision, self.agent_vision + 1):
                 cell = position + np.array([j, i])
                 if 0 < GridMap.manhattan_distance(position, cell) <= self.agent_vision:
-                    update_counter = False
                     if not GridMap.coord_inside_matrix(cell, self._representation.shape):
                         unknown_count += 1
                     else:
@@ -648,7 +644,6 @@ class GridMap():
         Returns: void
 
         """
-        top_discovered = False
         start_area = False
         top = 10000
         left = 10000
@@ -668,7 +663,6 @@ class GridMap():
                 break
 
         self.goal_top_left = self._from_matrix_to_relative(np.array([top, left]))
-
 
     def get_distance_and_path(self, a, b, return_path=False):
         """returns the distance and path from a point to another
@@ -708,16 +702,12 @@ class GridMap():
         """Calculates point that is most suited for exploring and path to it
 
         Args:
-            map_representation (np.array):
-            current_position (tuple): position of the agent
+            params(): possible parameters useful to find a better exploration path
 
         Returns:
             tuple: tuple containing best_point (tuple), best_path list(tuples), amount of unkown cells to be explored when this point is reached by the agent (int)
             int: -1 if map is fully discovered
         """
-        # map indices
-        lower_bound = 0
-        upper_bound = self._representation.shape[0]
 
         # keep track of best suitable points for exploration
 
@@ -745,37 +735,41 @@ class GridMap():
             else:
                 i += 1
         goal_area_in_border = False
+
+        #select only the points that are are interesting to explore
         interesting_points = []
         for point in possible_points:
             unknown_count = float(self._get_unknown_amount(point))
             if self._get_value_of_cell(point) == global_variables.GOAL_CELL:
-                unknown_count *= 10000
+                unknown_count *= 10000 # goal area cell are the most important to explore
                 goal_area_in_border = True
             if unknown_count > 0:
                 interesting_points.append(point)
                 unknown_counts.append(unknown_count)
 
         # DISCOVERING GOAL AREA
-        # TODO IF THE AGENT IS BORN IN THE GOAL AREA THIS IS NOT WORKING
         if not self.goal_area_fully_discovered:
             if goal_area_in_border:
                 self._start_discovering_goal_area = True
             if self._start_discovering_goal_area and not goal_area_in_border:
                 self.goal_area_fully_discovered = True
                 self._set_goal_top_left()
-        # calculate path length between current position and potential exploration points and choose the one with shortest path
+
+        # calculate path length between current position and potential exploration points
+        # and choose the one with shortest path
         shortest_path = 1000000
         best_point = None
         best_score = -1
-        #print ("points:" + str(possible_points))
+
+        # print ("points:" + str(possible_points))
         for i in range(len(interesting_points)):
-            #print(point)
-            #print(path)
+            # print(point)
+            # print(path)
             length = self._distances[interesting_points[i][0],interesting_points[i][1]]
-            if length == 0: # to avoid division per zero
+            if length == 0:  # to avoid division per zero
                 lenght = 100
             new_score = unknown_counts[i]/length
-            #print (length)
+            # print (length)
             update_new_highscore = False
             if new_score > best_score:
                 update_new_highscore = True
@@ -797,15 +791,17 @@ class GridMap():
                 origin=self.origin,
                 start=np.array([self._from_relative_to_matrix(self._agent_position)]),
                 end=np.array([best_point]))
-            # TODO somewhere if best_score = 0 always we should set the exploring sensor to 0?
+            # TODO somewhere if best_score = 0 always we should set the exploring sensor to 0
         else:
-            # TODO this will be used as a flag to avoid the agent to get stuck when there is no best point (map has been fully discovered)
+            # TODO this will be used as a flag to avoid the agent to get stuck
+            #  when there is no best point (map has been fully discovered)
             # Map fully discovered
             best_path = -1
 
         return best_path
 
     def get_trivial_meeting_point(self, task):
+        """get the meeting point as the top left corner of the goal area"""
         assigned_agents = []
         meeting_point = self._from_relative_to_matrix(self.goal_top_left)
         for sub in task.sub_tasks:
@@ -1113,7 +1109,12 @@ class GridMap():
 
     ### GO TO DISPENSER FUNCTIONS ###
     def _get_path_to_reach_dispenser(self, parameters):
-        """ Get path from agent to the dispenser """
+        """ Get path from agent to the dispenser
+
+        Args:
+            parameters:
+                dispenser_pos: the dispenser position in the map
+        """
         # TODO add attached blocks to the agent position
         if 'dispenser_pos' not in parameters:
             return None
@@ -1130,7 +1131,7 @@ class GridMap():
             )
             if GridPathPlanner.is_valid_path(path):
                 return path
-        # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION?
+        # TODO IF PATH IS NOT VALID? CHANGE DISPENSER LOCATION? yes
         return None
 
     def get_closest_dispenser_position(self, required_type):
@@ -1192,6 +1193,7 @@ class GridMap():
 
         Args:
             parameters:
+                final_pos: the final position and orientation of the agent and blocks
 
         """
         if 'final_pos' not in parameters:
@@ -1215,9 +1217,6 @@ class GridMap():
         )
 
         return path
-
-    def get_meeting_point(self, dispenser_distance, dispenser_name, agent_names):
-        return
 
     def _get_path_to_reach_goal_area(self, parameters):
         """get path from agent to the goal area"""
@@ -1326,23 +1325,3 @@ class GridMap():
             return "b{}".format(cell_value - global_variables.BLOCK_CELL_STARTING_NUMBER)
         else:
             return False
-
-def main():
-    import time
-
-    my_map = GridMap('Agent1', 5)
-    my_map._representation = np.loadtxt(open("../../data/generatedMaps/00/partial.csv", "rb"), delimiter=",")
-    my_map._update_distances()
-    my_map.origin = np.array([4, 14], dtype=np.int)
-    my_map._agent_position = np.array([0, 0], dtype=np.int)
-
-    start_time = time.time()
-    best_path = my_map._get_path_to_explore()
-    print ("---%s seconds ---" % (time.time() - start_time))
-    # print ("Best point:" + str(best_point))
-    print ("Best path:" + str(best_path))
-    # print ("Current high score:" + str(current_high_score))
-
-
-if __name__ == '__main__':
-    main()

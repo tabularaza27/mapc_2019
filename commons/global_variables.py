@@ -1,9 +1,11 @@
 import numpy as np
 
+#debug variables
 DEBUG_MODE = False
 LIVE_PLOTTING = True
 DUMP_CLASS = False
 
+# movements and directions useful variables
 MOVING_DIRECTIONS = [[-1, 0], [1, 0], [0, 1], [0, -1]]
 MOVEMENTS = {
     'n': np.array([-1, 0]),

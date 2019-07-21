@@ -31,6 +31,7 @@ class ReachGoalAreaBehaviour(BehaviourBase):
 
         self.rhbp_agent = rhbp_agent
         self.path_to_goal_area_id = None
+
     def do_step(self):
         path_id, direction = self.rhbp_agent.local_map.get_go_to_goal_area_move(self.path_to_goal_area_id)
         self.path_to_goal_area_id = path_id

@@ -196,11 +196,6 @@ class RhbpAgent(object):
 
         self.perception_provider.update_perception(request_action_msg=msg)
 
-
-        ### breakpoint after 30 steps to debug task subdivision every 30 steps
-        if self.perception_provider.simulation_step % 30 == 0 and self.perception_provider.simulation_step > 0:
-            rospy.logdebug('Simulationstep {}'.format(self.perception_provider.simulation_step))
-
         ###### UPDATE AND SYNCHRONIZATION ######
 
         # update tasks from perception
@@ -217,10 +212,14 @@ class RhbpAgent(object):
         # task auctioning
         self.auction.task_auctioning()
 
-        # map merging
-
+        # map update
         self.local_map.update_map(perception=self.perception_provider)
+
+        # map merging
         self.map_communication.map_merge()
+
+        # TODO understand a better order for this functions
+        # map update after merging
         self.local_map._update_path_planner_representation(perception=self.perception_provider)
         self.local_map._update_distances()
 
@@ -297,6 +296,7 @@ class RhbpAgent(object):
 
         # dumped class
         if global_variables.DUMP_CLASS:
+            # TODO use a relative path and save everything in the test folder
             test_case_number = 'fixed'
             file_name = 'task_assignment_for_' + str(self.number_of_agents) + '_' + test_case_number
             file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" \
@@ -492,13 +492,13 @@ class RhbpAgent(object):
         # effect is creating the shape
         connect.add_effect(Effect(self.sensor_manager.connect_successful.name, indicator=True))
         connect.add_effect(Effect(self.sensor_manager.shape_complete.name, indicator=True))
-        """
-        connect_successful_goal = GoalBase("connect_successful_goal", permanent=True,
-                                         conditions=[
-                                             Condition(self.sensor_manager.connect_successful, GreedyActivator())],
-                                         planner_prefix=self._agent_name)
-        self.goals.append(connect_successful_goal)
-        """
+
+        # connect_successful_goal = GoalBase("connect_successful_goal", permanent=True,
+        #                                  conditions=[
+        #                                      Condition(self.sensor_manager.connect_successful, GreedyActivator())],
+        #                                  planner_prefix=self._agent_name)
+        # self.goals.append(connect_successful_goal)
+
         #### Detach to Block ###
         detach = DetachBehaviour(name="detach", agent_name=self._agent_name, rhbp_agent=self)
         self.behaviours.append(detach)
@@ -566,59 +566,15 @@ class RhbpAgent(object):
         # effect of attach is that agent is attached to a block
         submit.add_effect(Effect(self.sensor_manager.points.name, indicator=True))
 
-
+        # our unique goal is to make points
         make_points_goal = GoalBase("make_points_goal", permanent=True,
                                    conditions=[
                                        Condition(self.sensor_manager.points, GreedyActivator())],
                                    planner_prefix=self._agent_name)
         self.goals.append(make_points_goal)
-        """
-        HERE
-        move_to_dispenser = MoveToDispenserBehaviour()
-        self.behaviours.append(move_to_dispenser)
-        move_to_dispenser.add_precondition(
-            Condition()
-        )
-        
-        # Random Move/Exploration
-        random_move = RandomMove(name="random_move", agent_name=self._agent_name)
-        self.behaviours.append(random_move)
-        random_move.add_effect(Effect(self.perception_provider.dispenser_visible_sensor.name, indicator=True))
-
-        
-        # Moving to a dispenser if in vision range
-        move_to_dispenser = MoveToDispenser(name="move_to_dispense", perception_provider=self.perception_provider,
-                                            agent_name=self._agent_name)
-        self.behaviours.append(move_to_dispenser)
-        move_to_dispenser.add_effect(
-            Effect(self.perception_provider.closest_dispenser_distance_sensor.name, indicator=-1, sensor_type=float))
-        move_to_dispenser.add_precondition(
-            Condition(self.perception_provider.dispenser_visible_sensor, BooleanActivator(desiredValue=True)))
-        move_to_dispenser.add_precondition(Condition(self.perception_provider.closest_dispenser_distance_sensor,
-                                            ThresholdActivator(isMinimum=True, thresholdValue=2)))
-
-        # Dispense a block if close enough
-        dispense = Dispense(name="dispense", perception_provider=self.perception_provider, agent_name=self._agent_name)
-        self.behaviours.append(dispense)
-        dispense.add_effect(
-            Effect(self.perception_provider.number_of_blocks_sensor.name, indicator=+1, sensor_type=float))
-
-        dispense.add_precondition(Condition(self.perception_provider.closest_dispenser_distance_sensor,
-                                            ThresholdActivator(isMinimum=False, thresholdValue=1)))
-
-        # Our simple goal is to create more and more blocks
-        dispense_goal = GoalBase("dispensing", permanent=True,
-                                 conditions=[Condition(self.perception_provider.number_of_blocks_sensor, GreedyActivator())],
-                                 planner_prefix=self._agent_name)
-        self.goals.append(dispense_goal)
-        """
-        # TODO meeting thing
-        # if self.assigned_tasks is not None:
-        #     task = self.assigned_tasks[self.assigned_tasks[0].parent_task_name]
 
 
-
-
+# the main that starts the agent
 if __name__ == '__main__':
     try:
         random.seed(30)

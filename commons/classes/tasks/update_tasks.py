@@ -43,7 +43,6 @@ def update_tasks(current_tasks, tasks_percept, simulation_step):
         del current_tasks[task_name]
 
     # mark expired tasks & mark complete tasks
-    # ToDo implement way so that completed and expired tasks don't get looped through again every time
     for task_name, task_object in new_tasks.iteritems():
         # skip expired and complete tasks
         if task_object.expired or task_object.complete:

@@ -172,8 +172,8 @@ class Auction:
 
                 bid_value = distance + min_dist  # distance from agent to dispenser + dispenser to goal
 
-                # TODO save task parameters dinamically every step to set sensors
-                # TODO uncomment this line and pass the position in coordinates relative to the top left of the goal area
+                # TODO uncomment this line and pass the position in coordinates
+                #  relative to the top left of the goal area
                 #subtask.meeting_point = end
                 #path_id = self.agent.local_map._save_path(path)
                 #subtask.path_to_dispenser_id = path_id

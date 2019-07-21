@@ -37,12 +37,12 @@ class ReachMeetingPointBehaviour(BehaviourBase):
         active_subtask = self.rhbp_agent.assigned_subtasks[0]  # type: SubTask
         current_task = self.rhbp_agent.tasks[active_subtask.parent_task_name]
 
-        # self.rhbp_agent.first_agent, self.rhbp_agent.second_agent, common_meeting_point \
-        #     = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
+        # TODO correct bug of map disruption in order to try again with the clever meeting point
         #self.rhbp_agent.nearby_agents, common_meeting_point = self.rhbp_agent.local_map.get_common_meeting_point(current_task)
         self.rhbp_agent.nearby_agents, common_meeting_point = self.rhbp_agent.local_map.get_trivial_meeting_point(
             current_task)
 
+        # get the position of agents and attached blocks for the connect action
         if common_meeting_point is not None:
             task_meeting_point = self.rhbp_agent.local_map.meeting_position(current_task, common_meeting_point)
 

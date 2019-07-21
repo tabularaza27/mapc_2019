@@ -39,8 +39,3 @@ class SubmitBehaviour(BehaviourBase):
         rospy.logdebug(self._agent_name + "::" + self._name + "submitting task " + str(task_name))
         action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_SUBMIT,
                                   params=params)
-        # direction = 'cw'
-        # params = [KeyValue(key="direction", value=direction)]
-        # rospy.logdebug(self._agent_name + "::" + self._name + " executing move to " + str(direction))
-        # action_generic_simple(publisher=self._pub_generic_action, action_type=GenericAction.ACTION_TYPE_ROTATE,
-        #                       params=params)
