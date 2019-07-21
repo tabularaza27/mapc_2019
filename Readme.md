@@ -23,7 +23,8 @@ cp group
 ## Start the simulation
 
 1. Run the server:  
-``` sh ../scripts/start_massim_src.sh ```
+``` sh ../scripts/start_massim_src.sh ```   (Choose ```conf/final_config.json``` as server configuration)
+
 
 2. Source the workspace:
 in another terminal window go to the mapc_workspace folder and source the setup file:  
