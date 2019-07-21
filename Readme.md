@@ -24,6 +24,19 @@ cp group
 
 5. Run `catkin_make` in the root folder of the mapc workspace
 
+## Start the simulation
+
+1. Run the server:  
+``` sh ../scripts/start_massim_src.sh ```
+
+2. Source the workspace:
+in another terminal window go to the mapc_workspace folder and source the setup file:  
+``` source devel/setup.bash ```
+
+3. Launch just 2 agents:  
+``` roslaunch strategy_1 rhbp_agents_strategy_2_agents.launch ```
+
+
 ## Code Structure
 In our Repo with have subfolders for different versions of the implementations, so we can later test different versions against each other
 
