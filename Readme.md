@@ -22,6 +22,9 @@ cp group
 
 ## Start the simulation
 
+Due to unresolved bugs, the following will start 2 Agents in a simplified map, completing tasks consisting of 2 blocks.
+
+
 1. Run the server:  
 ``` sh ../scripts/start_massim_src.sh ```   (Choose ```conf/final_config.json``` as server configuration)
 
@@ -33,8 +36,11 @@ in another terminal window go to the mapc_workspace folder and source the setup 
 3. Launch just 2 agents:  
 ``` roslaunch strategy_1 rhbp_agents_strategy_2_agents.launch ```
 
+
 The amount of agents in the simulation needs to be spceified in the ```__init__()``` (line 73) of ```src/group5/strategy_1/src/rhbp_agent.py```.
 It needs to match the amount of launched agents. The reason is that during the auctioning process the agents wait for all other agents to place their bids.
+
+
 
 
 ## Code Structure
