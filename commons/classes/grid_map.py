@@ -368,8 +368,17 @@ class GridMap():
         """
         parameters = dict()
         parameters["dispenser_pos"] = self._from_relative_to_matrix(subtask.closest_dispenser_position, self.goal_top_left)
-        return self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
+        direction = None
+        path_id = None
+        path_id, direction = self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
+        if direction is None:
+            #find a new dispenser
+            new_dispenser_pos = self.get_closest_dispenser_position(subtask.type)
+            parameters["dispenser_pos"] = new_dispenser_pos
+            path_id, direction = self.get_move_direction(None, self._get_path_to_reach_dispenser, parameters)
 
+
+        return path_id, direction
     def get_go_to_goal_area_move(self, path_id):
         """get the move direction for the reach_goal_area behaviour"""
         return self.get_move_direction(path_id, self._get_path_to_reach_goal_area)
@@ -809,6 +818,7 @@ class GridMap():
 
         lowest_dist_disp = 10000
         lowest_dist_goal = 10000
+        common_meeting_point = None
         dispenser_position = []
         dist_to_dispenser = []
         assigned_agents = []
@@ -904,7 +914,8 @@ class GridMap():
         # closest_agent_2 = assigned_agents[second_agent]
 
         #return closest_agent_1, closest_agent_2, common_meeting_point
-
+        if common_meeting_point is None:
+            debug=1
         #return common_meeting_point
         return assigned_agents, common_meeting_point
 

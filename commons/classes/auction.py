@@ -63,6 +63,7 @@ class Auction:
                         else:
                             # invalid dispenser position
                             closest_dispenser_position = np.array([-1000000, -1000000])
+                            bid_value = -1
                         self.agent._communication.send_bid(self._pub_auction, subtask_id, bid_value, distance_to_dispenser, closest_dispenser_position[0], closest_dispenser_position[1])
                 
                 # STEP 2: WAIT FOR ALL THE BIDS OR A TIMEOUT
@@ -173,7 +174,6 @@ class Auction:
 
                 # TODO save task parameters dinamically every step to set sensors
                 # TODO uncomment this line and pass the position in coordinates relative to the top left of the goal area
-                #subtask.closest_dispenser_position = pos
                 #subtask.meeting_point = end
                 #path_id = self.agent.local_map._save_path(path)
                 #subtask.path_to_dispenser_id = path_id
