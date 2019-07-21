@@ -43,7 +43,7 @@ In our Repo with have subfolders for different versions of the implementations, 
 * *mapc_rhbp_manual_player* (agents subscribe to the ros topic created by the manual_player_package to control the agents with the keyboard) --> this implementation is not very clean yet
 * *strategy_1* this is the current implementation of our strategy
 
-All classes and functionalities can be found in ```/commons```. The reason why it is outsourced, is that it can now be easily imported to different strategies.
+All classes and functionalities can be found in ```/commons```. The reason why it is outsourced, is that it can now easily be imported to different strategies.
 
 ## Map Live Plotting
 

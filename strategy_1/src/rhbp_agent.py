@@ -70,7 +70,7 @@ class RhbpAgent(object):
         # auction structure
 
         self.auction = Auction(self)
-        self.number_of_agents = 2  # TODO: check if there's a way to get it automatically
+        self.number_of_agents = 2  # number_of_agents needs to match amount of launched agents
 
 
         self.map_communication = MapCommunication(self)
@@ -79,7 +79,7 @@ class RhbpAgent(object):
         self._sim_started = False
 
         # agent attributes
-        self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5)  # TODO change to get the vision
+        self.local_map = GridMap(agent_name=self._agent_name, agent_vision=5)
         
 
         # instantiate the sensor manager passing a reference to this agent
@@ -509,7 +509,6 @@ class RhbpAgent(object):
         detach.add_precondition(
             Condition(sensor=self.sensor_manager.can_submit, activator=BooleanActivator(desiredValue=False)))
 
-        # effect of attach is that agent is attached to a block
         detach.add_effect(Effect(self.sensor_manager.points.name, indicator=True))
 
         #### Go to goal area ###
@@ -532,7 +531,7 @@ class RhbpAgent(object):
         go_to_goal_area.add_precondition(
             Condition(sensor=self.sensor_manager.at_goal_area, activator=BooleanActivator(desiredValue=False)))
 
-        # effect of attach is that agent is attached to a block
+        # effect is that agent is at goal area
         go_to_goal_area.add_effect(Effect(self.sensor_manager.at_goal_area.name, indicator=True))
 
         #### Submit ###
@@ -558,7 +557,7 @@ class RhbpAgent(object):
         submit.add_precondition(
             Condition(sensor=self.sensor_manager.at_goal_area, activator=BooleanActivator(desiredValue=True)))
 
-        # effect of attach is that agent is attached to a block
+        # effect of is that points are earned
         submit.add_effect(Effect(self.sensor_manager.points.name, indicator=True))
 
         # our unique goal is to make points
