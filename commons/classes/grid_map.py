@@ -368,8 +368,17 @@ class GridMap():
         """
         parameters = dict()
         parameters["dispenser_pos"] = self._from_relative_to_matrix(subtask.closest_dispenser_position, self.goal_top_left)
-        return self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
+        direction = None
+        path_id = None
+        path_id, direction = self.get_move_direction(subtask.path_to_dispenser_id, self._get_path_to_reach_dispenser, parameters)
+        if direction is None:
+            #find a new dispenser
+            new_dispenser_pos = self.get_closest_dispenser_position(subtask.type)
+            parameters["dispenser_pos"] = new_dispenser_pos
+            path_id, direction = self.get_move_direction(None, self._get_path_to_reach_dispenser, parameters)
 
+
+        return path_id, direction
     def get_go_to_goal_area_move(self, path_id):
         """get the move direction for the reach_goal_area behaviour"""
         return self.get_move_direction(path_id, self._get_path_to_reach_goal_area)
@@ -796,18 +805,30 @@ class GridMap():
 
         return best_path
 
+    def get_trivial_meeting_point(self, task):
+        assigned_agents = []
+        meeting_point = self._from_relative_to_matrix(self.goal_top_left)
+        for sub in task.sub_tasks:
+            # name of agents assigned
+            assigned_agents.append(sub.assigned_agent)
+
+        return assigned_agents, meeting_point
+
+
     def get_common_meeting_point(self, task):
         """ Compute a common meeting point for performing a connection between several agents.
 
         Args:
             task (key): task assigned to the agent
         Returns:
+            assigned_agents(list): list of agents involved in the task
             common_meeting_point (np.array): common meeting point (in relative coordinates to the top left corner of
                 the goal area.
         """
 
         lowest_dist_disp = 10000
         lowest_dist_goal = 10000
+        common_meeting_point = None
         dispenser_position = []
         dist_to_dispenser = []
         assigned_agents = []
