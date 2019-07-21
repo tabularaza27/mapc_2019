@@ -27,14 +27,14 @@ class GridPathPlanner():
 
         Args:
             maze (np.array): given map
-            origin (np.array): given origin of the agent
+            origin (np.array): given origin of the agent (in matrix notation)
             start (np.array): starting position in the map of the object compose by the agent and all the blocks
                 attached to it (in matrix notation)
             end (np.array): ending position in the map of the object compose by the agent and all the blocks
                 attached to it (in matrix notation)
 
         Returns:
-            list: path in relative coordinates
+            list: path in relative coordinates (to the origin)
 
         """
 
@@ -183,7 +183,7 @@ class GridPathPlanner():
             direction (string): Direction of the rotation (cw = Clockwise or ccw = Counterclockwise)
 
         Returns:
-            np.array: Node rotated in map coordinates
+            np.array: Node rotated in matrix notation
 
         """
         # Rotation transformations
@@ -327,6 +327,7 @@ class GridPathPlanner():
                     print ("action is unknown")
                     next_action = 'unknown translation'
                     return next_action
+
     @staticmethod
     def is_valid_path(path):
         """check if a path is valid"""

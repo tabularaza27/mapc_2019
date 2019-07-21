@@ -797,8 +797,7 @@ class GridMap():
         return best_path
 
     def get_common_meeting_point(self, task):
-        """
-        Compute a common meeting point for performing a connection between several agents.
+        """ Compute a common meeting point for performing a connection between several agents.
 
         Args:
             task (key): task assigned to the agent
@@ -815,8 +814,8 @@ class GridMap():
         possible_meeting_points = []
 
         for sub in task.sub_tasks:
-            if True:    # Right now we don't change common meeting point
-            #if sub.complete is not True:
+            if True:    # Right now we keep common meeting point to be between the two closest dispensers
+            # if sub.complete is not True:
                 # transform from relative to top_left to matrix
                 dispenser_rel = self._from_relative_to_matrix(sub.closest_dispenser_position, self.goal_top_left)
                 # transform from relative to matrix
@@ -831,10 +830,10 @@ class GridMap():
             cell_value = self._get_value_of_cell(dispenser)
             if not cell_value >= global_variables.DISPENSER_STARTING_NUMBER \
                     and cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
-                return None
+                return None, None
 
         # calculate distance matrix for each dispenser
-        # TODO dont calculate twice distance d1-d2 and d2-d1 (how?)
+        # TODO avoid calculate twice distance d1-d2 and d2-d1
         for i, disp_i in enumerate(dispenser_position):
             dist_matrix = self.distance_matrix(disp_i)
             # get the distance from each pair of dispenser
@@ -847,7 +846,8 @@ class GridMap():
                         second_agent = j    # second couple of closest agents
                         lowest_dist_matrix = dist_matrix    # distance matrix from 1st to 2nd dispenser
 
-        # Meeting point distance = (distance between dispenser + distance agent2 to dispenser)/2 - distance agent1 to dispenser
+        # Meeting point distance =
+        # (distance between dispenser + distance agent2 to dispenser)/2 - distance agent1 to dispenser
         middle_point_distance = int((lowest_dist_disp + dist_to_dispenser[second_agent])/2 - \
                                     dist_to_dispenser[first_agent])
 
@@ -899,29 +899,20 @@ class GridMap():
                 lowest_dist_goal = dist_to_goal
                 common_meeting_point = point
 
-        # save names of closest agents
-        # closest_agent_1 = assigned_agents[first_agent]
-        # closest_agent_2 = assigned_agents[second_agent]
-
-        #return closest_agent_1, closest_agent_2, common_meeting_point
-
-        #return common_meeting_point
         return assigned_agents, common_meeting_point
 
     def meeting_position(self, task, common_meeting_point):
-        """ #TODO change description
-        It returns a position for the agent and blocks attached around a common meeting point associated to a task
+        """It returns a position for the agent and blocks attached around a common meeting point associated to a task
 
         Args:
             task (key): task assigned to the agent
-            common_meeting_point (np.array): Common meeting point for several agents to connect
+            common_meeting_point (np.array): Common meeting point for all the agents associated to a particular task
 
         Returns:
             meeting_position (np.array): Position of the agent and blocks attached around the meeting point or
                                             recomputed common meeting point
         """
 
-        #nearby_agents = []
         task_figure, submitting_agent_index = self.create_figure(task)
         multiple_agent_meeting_position = self.agent_position_in_figure(task_figure, \
                                                                         submitting_agent_index, common_meeting_point)
@@ -933,24 +924,9 @@ class GridMap():
                 agent_index = 2*sub_index
                 block_index = agent_index + 1
                 single_agent_meeting_position = multiple_agent_meeting_position[agent_index:block_index + 1]
-                # # Nearby agent names (to connect)
-                # block_position = abs(sub.position[0]) + abs(sub.position[1])
-                # for sub_task in task.sub_tasks:
-                #     if abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position - 1:
-                #         nearby_agents.append(sub_task.assigned_agent)
-                #     elif abs(sub_task.position[0]) + abs(sub_task.position[1]) == block_position + 1:
-                #         nearby_agents.append(sub_task.assigned_agent)
-
-
-        # todo delete
-        #print (self.agent_name + ": common meeting point =" + str(common_meeting_point))
-        # print (self.agent_name + ": multiple agent pos =" + str(multiple_agent_meeting_position) \
-        #        + "Agent to connect:" + str(nearby_agents))
 
         # Transform to relative
         single_agent_meeting_position = self._from_matrix_to_relative(single_agent_meeting_position)
-
-        #return nearby_agents, single_agent_meeting_position
 
         return single_agent_meeting_position
 
@@ -959,9 +935,8 @@ class GridMap():
         particular task
 
         Args:
-            task: task assigned
+            task (key): task assigned
 
-        Returns:
         Returns:
             figure (np.array): [Agent_name + relative block position]
         """
@@ -980,15 +955,18 @@ class GridMap():
                     submitting_agent_index = sub_index
         else:
             # No figure for task
-            return None
+            return None, None
 
         return figure, submitting_agent_index
 
     def agent_position_in_figure(self, figure_rel, submitting_agent_index, common_meeting_point):
 
         free_figure_basic = figure_rel[:]
+        # meeting point shift multiplier (in case any possible combination around the common meeting point is possible)
         mp_shift_times = 1
+        # meeting point shift values
         mp_shift_values = np.array([[0, 0], [-1, 0], [0, 1], [1, 0], [0, -1]])  # same, up, right, down, left
+        # agents shift values (different positions around the block attached)
         agent_shift_values = np.array([[-1, 0], [1, 0], [0, 1], [0, -1]])  # up, down, right, left
 
         # common meeting point already in matrix notation
@@ -1015,21 +993,21 @@ class GridMap():
         # Figure composition
         # Submitting agent and blocks have fixed position
         while True:
-            # counter = 0
-            mp_shift_amount = mp_shift_values * mp_shift_times  # if there is no position around meeting point, shift
+            mp_shift_amount = mp_shift_values * mp_shift_times  # if there is no position around meeting point
             for mp_shift in mp_shift_amount:
                 # Establish common meeting point value
                 submitting_agent_meeting_position = common_mp_matrix + mp_shift
+
                 # Check if the position of the submitting agent is reachable (inside the wall boundaries)
                 path_to_submitting_agent_position = self.path_planner.astar(
-                    # TODO could it be better to use path_planner_representation? possible errors?
                     maze=self._representation,
                     origin=self.origin,
                     start=np.array([self._from_relative_to_matrix(self._agent_position)]),
                     end=np.array([submitting_agent_meeting_position]))
-                # TODO is there a function for invalid paths?
+                # Check if path is reachable
                 if path_to_submitting_agent_position is None or path_to_submitting_agent_position == 'invalid end':
                     continue   # next shift for common meeting point
+
                 # Submitting agent meeting position is fixed
                 free_figure_basic[2*submitting_agent_index] = submitting_agent_meeting_position
                 # Blocks are fixed
@@ -1076,7 +1054,6 @@ class GridMap():
 
                     # If valid figure composition, check if figure position is feasible in the map
                     if not invalid_figure_composition:
-                        # TODO Refactor free_spot function
                         if self.free_spot_for_meeting(free_figure_shifted):
                             # Figure composition found
                             return free_figure_shifted
@@ -1084,18 +1061,18 @@ class GridMap():
             # Increase the shifts values of common meeting point by 1
             mp_shift_times += 1
 
-    #TODO this has to be rethink, right now it is the same as is_walkable. We need to find a way to track if a cell
-    # is occupied by an ally and the block we expect or not
     def free_spot_for_meeting(self, composition, maze=None):
-        """Right now this function is as is_walkable but ignore agents and blocks, so it is a
-        temporal fix for a problem with the end position of figure composition
+        """Check if a figure composition (blocks and agents around) location is possible (there is no collision
+        with obstacles)
 
         Args:
-            composition:
-            maze:
+            composition (list): Figure composition consists on the blocks composing the figure and the agents
+                around needed to connect it.
+            maze (np.array):
 
         Returns:
-
+            (Bool): True - If figure composition location is possible
+                    False - If figure composition location is NOT possible
         """
 
         if maze is None:
@@ -1105,7 +1082,6 @@ class GridMap():
 
         for cell in composition:
             cell_value = self._get_value_of_cell(cell, map_representation)
-            #if GridPathPlanner.is_walkable(cell_value):
             # We are avoiding meeting on top of dispensers due to it leads to possible wrong behaviors
             if cell_value in (global_variables.EMPTY_CELL, global_variables.GOAL_CELL, global_variables.AGENT_CELL):
                 continue
