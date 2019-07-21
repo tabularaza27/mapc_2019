@@ -45,15 +45,16 @@ In our Repo with have subfolders for different versions of the implementations, 
 
 All classes and functionalities can be found in ```/commons```. The reason why it is outsourced, is that it can now be easily imported to different strategies.
 
+## Map Live Plotting
+
+For Debugging purposes current representation of the maps of each agent can be plotted (live) via
+```python /commons/map_live_plotting.py```
+
 ### GIT Workflow
 
 * Use of IDE (e.g. PyCharm) is recommended, it makes handling the remotes of the different repos and submodules very easy
 * Check out this [Guide](https://nvie.com/posts/a-successful-git-branching-model/) for GIT Branching workflow 
 
-## Execution
-*Attention*: Don't forget to run ```catkin_make``` after cloning our repo
-
-See the Readme.md files of the corresponding packages for instructions on execution
 
 ## Code Style and Documentation
 * Have a look at the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html), especially chapter 3.8 on Comments and Docstrings
