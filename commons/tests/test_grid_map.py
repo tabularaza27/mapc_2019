@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from classes.grid_map import GridMap
+from classes.mapping.grid_map import GridMap
 
 @pytest.fixture
 def my_map():

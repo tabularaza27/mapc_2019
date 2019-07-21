@@ -2,10 +2,9 @@
 
 import time
 import numpy as np
-import random
 import rospy
 from collections import OrderedDict
-from classes.bid import Bid
+from classes.auctioning.bid import Bid
 
 
 class Auction:

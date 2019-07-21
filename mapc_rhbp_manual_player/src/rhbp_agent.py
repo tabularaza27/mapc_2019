@@ -9,9 +9,9 @@ from agent_common.behaviours import ManualMove  # RandomMove, Dispense, MoveToDi
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 
-from classes.grid_map import GridMap
+from classes.mapping.grid_map import GridMap
 
-from classes.communications import Communication
+from classes.communication.communications import Communication
 
 from collections import OrderedDict
 

@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
-from classes.grid_map import GridMap
-from classes.map_merge import mapMerge
+from classes.mapping.grid_map import GridMap
+from classes.mapping.map_merge import mapMerge
 
 def load_map(map_name, origin):
     my_map = GridMap('Agent1', 5)

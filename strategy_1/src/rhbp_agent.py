@@ -1,8 +1,4 @@
 #!/usr/bin/env python2
-import time
-import numpy as np
-import random
-from collections import OrderedDict
 import rospy
 
 from mapc_ros_bridge.msg import RequestAction, GenericAction, SimStart, SimEnd, Bye
@@ -26,17 +22,16 @@ from agent_commons.behaviour_classes.submit_behaviour import SubmitBehaviour
 from agent_commons.providers import PerceptionProvider
 from agent_commons.agent_utils import get_bridge_topic_prefix
 from agent_commons.sensor_manager import SensorManager
-from classes.block import Block
+from classes.mapping.block import Block
 
-from classes.grid_map import GridMap
+from classes.mapping.grid_map import GridMap
 from classes.tasks.update_tasks import update_tasks
-from classes.communications import Communication
-from classes.map_communication import MapCommunication
+from classes.communication.communications import Communication
+from classes.mapping.map_communication import MapCommunication
 
 import pickle
 
-from classes.bid import Bid
-from classes.auction import Auction
+from classes.auctioning.auction import Auction
 
 import random
 
