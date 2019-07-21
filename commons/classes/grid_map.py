@@ -805,6 +805,16 @@ class GridMap():
 
         return best_path
 
+    def get_trivial_meeting_point(self, task):
+        assigned_agents = []
+        meeting_point = self._from_relative_to_matrix(self.goal_top_left)
+        for sub in task.sub_tasks:
+            # name of agents assigned
+            assigned_agents.append(sub.assigned_agent)
+
+        return assigned_agents, meeting_point
+
+
     def get_common_meeting_point(self, task):
         """
         Compute a common meeting point for performing a connection between several agents.
@@ -812,6 +822,7 @@ class GridMap():
         Args:
             task (key): task assigned to the agent
         Returns:
+            assigned_agents(list): list of agents involved in the task
             common_meeting_point (np.array): common meeting point (in relative coordinates to the top left corner of
                 the goal area.
         """
