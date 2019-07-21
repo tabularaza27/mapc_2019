@@ -8,9 +8,8 @@ from sub_task import SubTask
 class Task:
     """This class represents one single task in the massim environment.
 
-    The task is decomposed in its subtask when it is initialized. Each requirement of the task ( see example below )
+    The task is decomposed in its subtasks when it is initialized. Each requirement of the task ( see example below )
     is a subtask, that needs to be completed by an agent. When all sub tasks are marked complete, the task is complete.
-
     """
 
     def __init__(self, task_percept):

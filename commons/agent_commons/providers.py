@@ -99,9 +99,6 @@ class PerceptionProvider(object):
     def _update_entities(self, request_action_msg):
         """ update entity perception
 
-        ToDo:
-            add attribute if entity is from our or different team
-
         Args:
             request_action_msg: full current request action message object
 
