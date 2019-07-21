@@ -598,7 +598,10 @@ class GridMap():
     def _get_data_directory(self):
         """Returns Directory where map data is stored for plotting purposes"""
         data_path = get_data_location()
-        return os.path.join(data_path, 'generatedMaps', 'tmp_maps')
+        tmp_maps_path = os.path.join(data_path, 'generatedMaps', 'tmp_maps')
+        if not os.path.isdir(tmp_maps_path):
+            os.makedirs(tmp_maps_path)
+        return tmp_maps_path
 
     def _write_data_to_file(self):
         """writes two dimensional np.array to .txt file named after agent and in data directory"""
