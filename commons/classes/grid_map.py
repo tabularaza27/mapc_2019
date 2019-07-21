@@ -826,12 +826,12 @@ class GridMap():
                 # name of agents assigned
                 assigned_agents.append(sub.assigned_agent)
 
-        # Check if dispensers are actually in its position
-        for dispenser in dispenser_position:
-            cell_value = self._get_value_of_cell(dispenser)
-            if not cell_value >= global_variables.DISPENSER_STARTING_NUMBER \
-                    and cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
-                return None
+        # # Check if dispensers are actually in its position
+        # for dispenser in dispenser_position:
+        #     cell_value = self._get_value_of_cell(dispenser)
+        #     if not cell_value >= global_variables.DISPENSER_STARTING_NUMBER \
+        #             and cell_value < global_variables.BLOCK_CELL_STARTING_NUMBER:
+        #         return None
 
         # calculate distance matrix for each dispenser
         # TODO dont calculate twice distance d1-d2 and d2-d1 (how?)
@@ -893,20 +893,19 @@ class GridMap():
                             possible_meeting_points.append([row_index, col_index])
 
         # Get the point with the lowest distance to the goal top left corner
-        for point in possible_meeting_points:
-            dist_to_goal = abs(point[0] - goal_top_left_matrix[0]) + abs(point[1] - goal_top_left_matrix[1])
-            if dist_to_goal < lowest_dist_goal:
-                lowest_dist_goal = dist_to_goal
-                common_meeting_point = point
-
-        # save names of closest agents
-        # closest_agent_1 = assigned_agents[first_agent]
-        # closest_agent_2 = assigned_agents[second_agent]
+        if possible_meeting_points is not None:
+            for point in possible_meeting_points:
+                dist_to_goal = abs(point[0] - goal_top_left_matrix[0]) + abs(point[1] - goal_top_left_matrix[1])
+                if dist_to_goal < lowest_dist_goal:
+                    lowest_dist_goal = dist_to_goal
+                    common_meeting_point = point
+        else:
+            common_meeting_point = None
 
         #return closest_agent_1, closest_agent_2, common_meeting_point
 
         #return common_meeting_point
-        return assigned_agents, common_meeting_point
+        return common_meeting_point
 
     def meeting_position(self, task, common_meeting_point):
         """ #TODO change description
@@ -920,8 +919,7 @@ class GridMap():
             meeting_position (np.array): Position of the agent and blocks attached around the meeting point or
                                             recomputed common meeting point
         """
-
-        #nearby_agents = []
+        ordered_assigned_agents = []
         task_figure, submitting_agent_index = self.create_figure(task)
         multiple_agent_meeting_position = self.agent_position_in_figure(task_figure, \
                                                                         submitting_agent_index, common_meeting_point)
@@ -942,17 +940,17 @@ class GridMap():
                 #         nearby_agents.append(sub_task.assigned_agent)
 
 
-        # todo delete
-        #print (self.agent_name + ": common meeting point =" + str(common_meeting_point))
-        # print (self.agent_name + ": multiple agent pos =" + str(multiple_agent_meeting_position) \
-        #        + "Agent to connect:" + str(nearby_agents))
-
         # Transform to relative
         single_agent_meeting_position = self._from_matrix_to_relative(single_agent_meeting_position)
 
-        #return nearby_agents, single_agent_meeting_position
+        # Save agents assigned in order from further to closer to the submitter
+        for index, element in enumerate(task_figure):
+            if index % 2 == 0:      # agent
+                ordered_assigned_agents.append(element)
 
-        return single_agent_meeting_position
+        return ordered_assigned_agents, single_agent_meeting_position
+
+        #return single_agent_meeting_position
 
     def create_figure(self, task):
         """ Create a list of agents and relative positions of blocks (to the submitting agent) associated to a
@@ -966,21 +964,55 @@ class GridMap():
             figure (np.array): [Agent_name + relative block position]
         """
 
-        figure = []
+        figure_length = 2*len(task.sub_tasks)
+        figure = [None]*figure_length
+        last_agent_index = - 1
 
-        # Figure is a list of pairs (agent_name,block position) in the same order as the subtasks
-        if task.sub_tasks is not None:      # Ensure there are subtasks
+
+        # # Figure is a list of pairs (agent_name,block position) from further to closer to the submitter agent
+        # if task.sub_tasks is not None:      # Ensure there are subtasks
+        #     for sub_index, sub in enumerate(task.sub_tasks):
+        #         # Save agent name
+        #         figure.append(sub.assigned_agent)
+        #         # Save block position
+        #         figure.append(sub.position)
+        #         # Save submitting agent index
+        #         if sub.submit_behaviour:    # True
+        #             submitting_agent_index = sub_index
+        # else:
+        #     # No figure for task
+        #     return None
+
+        # Figure is a list of pairs (agent_name,block position) from further to closer to the submitter agent
+        if task.sub_tasks is not None:  # Ensure there are subtasks
             for sub_index, sub in enumerate(task.sub_tasks):
-                # Save agent name
-                figure.append(sub.assigned_agent)
-                # Save block position
-                figure.append(sub.position)
                 # Save submitting agent index
-                if sub.submit_behaviour:    # True
+                if sub.submit_behaviour:  # True
                     submitting_agent_index = sub_index
+                # Check block position distance to submitter
+                agent_index = abs(sub.position[0]) + abs(sub.position[1]) - 1
+                # Index indicates distance to submitter, if it is the same, save it on the next free spot in figure
+                if last_agent_index == agent_index:
+                    agent_index += 1
+                # Calculate index for each agent and block.
+                # Order between blocks and agent is swap so it is correct when we reversed at the end
+                figure_block_index = 2*agent_index
+                figure_agent_index = figure_block_index + 1
+
+                # update the last block index
+                last_agent_index = agent_index
+
+                # Save agent name
+                figure[figure_agent_index] = sub.assigned_agent
+                # Save block position
+                figure[figure_block_index] = sub.position
+
         else:
             # No figure for task
             return None
+
+        # Swap the order so the figure order is from further to closer distance to the submitter
+        figure = list(reversed(figure))
 
         return figure, submitting_agent_index
 

@@ -240,30 +240,48 @@ class RhbpAgent(object):
             task_name = self.assigned_subtasks[0].parent_task_name
             current_task = self.tasks.get(task_name, None)
             # For submitting agent is_connected only when all the others blocks are connected
-            if self.assigned_subtasks[0].submit_behaviour:
-                is_connected_counter = 0
-                number_of_subtasks = len(current_task.sub_tasks)
-                for sub_task in current_task.sub_tasks:
-                    # Check for other agents
-                    if sub_task.assigned_agent != self._agent_name:
-                        if sub_task.is_connected:
-                            is_connected_counter += 1
-                # Check for all the other subtaks connected
-                if is_connected_counter == number_of_subtasks - 1:
-                    self.assigned_subtasks[0].is_connected = True
-            else:
+            # if self.assigned_subtasks[0].submit_behaviour:
+            #     is_connected_counter = 0
+            #     number_of_subtasks = len(current_task.sub_tasks)
+            #     for sub_task in current_task.sub_tasks:
+            #         # Check for other agents
+            #         if sub_task.assigned_agent != self._agent_name:
+            #             if sub_task.is_connected:
+            #                 is_connected_counter += 1
+            #     # Check for all the other subtaks connected
+            #     if is_connected_counter == number_of_subtasks - 1:
+            #         self.assigned_subtasks[0].is_connected = True
+            # else:
+            #     self.assigned_subtasks[0].is_connected = True
+
+            is_connected_counter = 0
+            number_of_subtasks = len(current_task.sub_tasks)
+            for sub_task in current_task.sub_tasks:
+                # Check for other agents
+                if sub_task.assigned_agent != self._agent_name:
+                    if sub_task.complete:
+                        is_connected_counter += 1
+            # Check for all the other subtaks connected
+            if self.assigned_subtasks[0].submit_behaviour and is_connected_counter == number_of_subtasks - 1:
                 self.assigned_subtasks[0].is_connected = True
+            elif is_connected_counter == number_of_subtasks == 2:
+                self.assigned_subtasks[0].is_connected = True
+
+            # update complete subtask
+            self._communication.send_subtask_update(self._pub_subtask_update, "done", \
+                                                    self.assigned_subtasks[0].sub_task_name)
+
             # make the other guy's subtask completed and connected
             # task_name = self.assigned_subtasks[0].parent_task_name
             # current_task = self.tasks.get(task_name, None)
-            for sub_task in current_task.sub_tasks:
-                # TODO check which is the completed sub_task if an agent can have more sub_tasks
-                # TODO because there is no communication, other agents updating your is_connected it shouldn't affect
-                if sub_task.assigned_agent == other_agent_name:
-                    self.local_map._attached_blocks.append(Block(block_type=sub_task.type,
-                                                                 position=sub_task.position))
-                    sub_task.is_connected = True
-                    sub_task.complete = True
+            # for sub_task in current_task.sub_tasks:
+            #     # TODO check which is the completed sub_task if an agent can have more sub_tasks
+            #     # TODO because there is no communication, other agents updating your is_connected it shouldn't affect
+            #     if sub_task.assigned_agent == other_agent_name:
+            #         self.local_map._attached_blocks.append(Block(block_type=sub_task.type,
+            #                                                      position=sub_task.position))
+            #         sub_task.is_connected = True
+            #         sub_task.complete = True
 
         # if last action was detach, detach the blocks
         if self.perception_provider.agent.last_action == "detach" and \
@@ -297,7 +315,7 @@ class RhbpAgent(object):
 
         # dumped class
         if global_variables.DUMP_CLASS:
-            test_case_number = 'fixed'
+            test_case_number = 'true_test'
             file_name = 'task_assignment_for_' + str(self.number_of_agents) + '_' + test_case_number
             file_object = open("/home/alvaro/Desktop/AAIP/mapc_workspace/src/group5/strategy_1/src/" \
                                + file_name + '.dat', "wb")
