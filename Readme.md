@@ -17,7 +17,12 @@ This code is adapted from the mapc_rhbp_example package from Christopher
 ```cd /src```  
 ```git clone git@gitlab.tubit.tu-berlin.de:aaip-ss19/group5.git```
 
-4. Run `catkin_make` in the root folder of the mapc workspace
+4. Copy the server configuration and map contained in data/FINAL_SERVER_SETUP in the massim server configuration folder massim/server/conf/
+cp group  
+``` cp group5/data/FINAL_SERVER_SETUP/final_config.json ../third-party/massim/server/conf/ ```  
+``` cp group5/data/FINAL_SERVER_SETUP/test.bmp ../third-party/massim/server/conf/maps/ ```
+
+5. Run `catkin_make` in the root folder of the mapc workspace
 
 ## Code Structure
 In our Repo with have subfolders for different versions of the implementations, so we can later test different versions against each other
