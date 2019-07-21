@@ -48,7 +48,7 @@ All classes and functionalities can be found in ```/commons```. The reason why i
 ## Map Live Plotting
 
 For Debugging purposes current representation of the maps of each agent can be plotted (live) via
-```python /commons/map_live_plotting.py```
+```python commons/map_live_plotting.py```
 
 ### GIT Workflow
 
