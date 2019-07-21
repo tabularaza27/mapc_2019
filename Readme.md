@@ -1,10 +1,6 @@
 # Group5 Implementation for MAPC 2019
 
-This code is adapted from the mapc_rhbp_example package from Christopher
-
->This is a very basic example that shows how RHBP can be used within the Multiagent Programming Contest Scenario of 2019.
->The implemented agents are exploring there environment by randomly moving around. Once they are able to perceive a dispenser 
->in their vision range they approach it and start dispensing.
+This code is the final implementation of Group 5 for MAPC 19
 
 ## Setup
 
@@ -36,13 +32,18 @@ in another terminal window go to the mapc_workspace folder and source the setup 
 3. Launch just 2 agents:  
 ``` roslaunch strategy_1 rhbp_agents_strategy_2_agents.launch ```
 
+The amount of agents in the simulation needs to be spceified in the ```__init__()``` (line 73) of ```src/group5/strategy_1/src/rhbp_agent.py```.
+It needs to match the amount of launched agents. The reason is that during the auctioning process the agents wait for all other agents to place their bids.
+
 
 ## Code Structure
 In our Repo with have subfolders for different versions of the implementations, so we can later test different versions against each other
 
 * *manual_player_package* (is used by *mapc_rhbp_manual_player*)
 * *mapc_rhbp_manual_player* (agents subscribe to the ros topic created by the manual_player_package to control the agents with the keyboard) --> this implementation is not very clean yet
-* *strategy_1* for now it is just a copy of the example
+* *strategy_1* this is the current implementation of our strategy
+
+All classes and functionalities can be found in ```/commons```. The reason why it is outsourced, is that it can now be easily imported to different strategies.
 
 ### GIT Workflow
 
@@ -53,15 +54,6 @@ In our Repo with have subfolders for different versions of the implementations, 
 *Attention*: Don't forget to run ```catkin_make``` after cloning our repo
 
 See the Readme.md files of the corresponding packages for instructions on execution
-
-## Exercises
-
-Possible exercises to get used to the frameworks:
-
-* Only create a particular number of blocks (per type).
-* Implement a more systematic exploration.
-* Search for particular dispenser types.
-* Implement a more sophisticated path planning once a dispenser is perceivable e.g. going around other entities.
 
 ## Code Style and Documentation
 * Have a look at the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html), especially chapter 3.8 on Comments and Docstrings
