@@ -1,6 +1,6 @@
 # Group5 Implementation for MAPC 2019
 
-This code is the final implementation of Group 5 for MAPC 19
+This code is the final implementation for MAPC 19
 
 ## Setup
 
